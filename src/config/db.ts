@@ -1,11 +1,6 @@
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient();
-
-const dynamoDb = DynamoDBDocumentClient.from(client);
-
-module.exports = {
-  dynamoDb,
-  tableName: process.env.TABLE_NAME
-};
+export const dynamoDb = DynamoDBDocumentClient.from(client);
+export const tableName = process.env.TABLE_NAME;
