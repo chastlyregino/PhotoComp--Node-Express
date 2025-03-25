@@ -1,25 +1,17 @@
-// // File with intentional issues to test pre-commit hooks
+const express = require(`express`);
+const orgController = require(`./controller/orgContoller`);
 
-// const greeting = (name: string) => {
-//     // eslint-disable-next-line no-console
-//     console.log('Hello, ' + name + '!'); // Using console.log and double quotes
+const app = express();
+const PORT = 3000;
 
-//     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//     const unused = 'This variable is never used';
+app.use(express.json());
 
-//     return 'Greeting completed'; // Missing semicolon
-//   };
+app.use(`/organizations`, orgController);
 
-//   export default greeting;
+app.all(/(.*)/, (req: any, res: any) => {
+  res.status(404).json({ message: `Invalid Page!` });
+}); // for non-existent pages and methods
 
-// File with intentional issues to test pre-commit hooks
-
-const greeting = (name: string) => {
-  console.log('Hello, ' + name + '!'); // Using console.log and double quotes
-
-  const unused = 'This variable is never used';
-
-  return 'Greeting completed'; // Missing semicolon
-};
-
-export default greeting;
+app.listen(PORT, () => {
+  console.log(`Server is listening on http://localhost:${PORT}`);
+});
