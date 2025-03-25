@@ -25,6 +25,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "photocomp--node-express": "file:",
     "swagger-ui-express": "^5.0.1",
     "typescript": "^5.8.2",
     "uuid": "^11.1.0",
