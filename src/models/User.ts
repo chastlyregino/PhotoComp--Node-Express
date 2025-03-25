@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 
 export enum UserRole {
-  MEMBER = 'MEMBER',
-  ADMIN = 'ADMIN',
+  USER = 'USER',    // Default role for registered users
+  MEMBER = 'MEMBER', // User who is part of an organization
+  ADMIN = 'ADMIN',   // User with admin privileges in an organization
 }
 
 export enum UserStatus {
@@ -24,6 +25,9 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   type: 'USER';
+  // GSI attributes
+  GSI1PK?: string; // EMAIL#<email>
+  GSI1SK?: string; // USER#<id>
 }
 
 export interface UserOrganization {
@@ -58,11 +62,14 @@ export const createUserFromRegister = (registerRequest: RegisterRequest): User =
     email: registerRequest.email,
     firstName: registerRequest.firstName,
     lastName: registerRequest.lastName,
-    password: registerRequest.password, // This will be hashed before saving
-    role: UserRole.MEMBER,
+    password: registerRequest.password,
+    role: UserRole.USER, // Default role is USER
     status: UserStatus.ACTIVE,
     createdAt: now,
     updatedAt: now,
-    type: 'USER'
+    type: 'USER',
+    // GSI for email lookups
+    GSI1PK: `EMAIL#${registerRequest.email}`,
+    GSI1SK: `USER#${id}`,
   };
 };
