@@ -1,76 +1,69 @@
-import { PutCommand, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { dynamoDb, TABLE_NAME } from '../utils/db';
-import { User } from '../models/User';
-import { AppError } from '../middlewares/errorHandler';
+import { dynamoDb, TABLE_NAME } from '../config/db';
+import { User, UserRole, UserStatus } from '../models/User';
+import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { AppError } from '../middleware/errorHandler';
 
 export class UserRepository {
-  /**
-   * Create a new user in the database
-   */
   async createUser(user: User): Promise<User> {
     try {
       await dynamoDb.send(
         new PutCommand({
           TableName: TABLE_NAME,
           Item: user,
-          ConditionExpression: 'attribute_not_exists(PK)'
+          ConditionExpression: 'attribute_not_exists(PK)',
         })
       );
-      
       return user;
     } catch (error: any) {
       if (error.name === 'ConditionalCheckFailedException') {
         throw new AppError('User already exists', 409);
       }
-      throw new AppError(`Error creating user: ${error.message}`, 500);
+      throw new AppError(`Failed to create user: ${error.message}`, 500);
     }
   }
 
-  /**
-   * Find a user by their ID
-   */
-  async findUserById(userId: string): Promise<User | null> {
+  async findUserByEmail(email: string): Promise<User | null> {
     try {
-      const response = await dynamoDb.send(
+      const params = {
+        TableName: TABLE_NAME,
+        IndexName: 'EmailIndex',
+        KeyConditionExpression: 'email = :email',
+        ExpressionAttributeValues: {
+          ':email': email,
+        },
+      };
+
+      const result = await dynamoDb.send(new QueryCommand(params));
+
+      if (!result.Items || result.Items.length === 0) {
+        return null;
+      }
+
+      return result.Items[0] as User;
+    } catch (error: any) {
+      throw new AppError(`Failed to find user by email: ${error.message}`, 500);
+    }
+  }
+
+  async getUserById(userId: string): Promise<User | null> {
+    try {
+      const result = await dynamoDb.send(
         new GetCommand({
           TableName: TABLE_NAME,
           Key: {
             PK: `USER#${userId}`,
-            SK: `PROFILE#${userId}`
-          }
-        })
-      );
-      
-      return response.Item as User || null;
-    } catch (error: any) {
-      throw new AppError(`Error fetching user: ${error.message}`, 500);
-    }
-  }
-
-  /**
-   * Find a user by their email address
-   */
-  async findUserByEmail(email: string): Promise<User | null> {
-    try {
-      const response = await dynamoDb.send(
-        new QueryCommand({
-          TableName: TABLE_NAME,
-          IndexName: 'EmailIndex',
-          KeyConditionExpression: 'email = :email',
-          ExpressionAttributeValues: {
-            ':email': email,
+            SK: `PROFILE#${userId}`,
           },
-          FilterExpression: 'begins_with(PK, :pk) AND type = :type',
         })
       );
-      
-      if (response.Items && response.Items.length > 0) {
-        return response.Items[0] as User;
+
+      if (!result.Item) {
+        return null;
       }
-      
-      return null;
+
+      return result.Item as User;
     } catch (error: any) {
-      throw new AppError(`Error finding user by email: ${error.message}`, 500);
+      throw new AppError(`Failed to get user by ID: ${error.message}`, 500);
     }
   }
 }
