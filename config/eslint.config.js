@@ -11,7 +11,8 @@ export default defineConfig([
     rules: {
       "no-unused-vars": "warn",
       "no-undef": "error",
-      "indent": ["error", 4] // Indentation with 2 spaces
+      "indent": ["error", 4],
+      "semi": ["error", "always"]
     },
   },
 ]);
