@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { UserService } from '../services/userService';
-import { RegisterRequest } from '../models/User';
+import { AuthRequest, RegisterRequest } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
 
 const userService = new UserService();
@@ -56,6 +56,46 @@ authRouter.post('/register', async (req: Request, res: Response) => {
     return res.status(500).json({
       status: 'error',
       message: 'Registration failed'
+    });
+  }
+});
+
+authRouter.post('/login', async (req: Request, res: Response) => {
+  try {
+    // Validate request body
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      throw new AppError('Email and password are required', 400);
+    }
+    
+    const authRequest: AuthRequest = {
+      email,
+      password
+    };
+    
+    // Login the user
+    const result = await userService.login(authRequest);
+    
+    // Return the user data and token
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: result.user,
+        token: result.token
+      }
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message
+      });
+    }
+    
+    return res.status(500).json({
+      status: 'error',
+      message: 'Login failed'
     });
   }
 });
