@@ -56,7 +56,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
+        PointInTimeRecoveryEnabled: false
       SSESpecification:
         SSEEnabled: true
       Tags:
