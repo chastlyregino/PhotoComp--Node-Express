@@ -15,18 +15,19 @@ export const errorHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   console.error(err);
   
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       status: 'error',
       message: err.message
     });
+    return;
   }
 
   // Default error response
-  return res.status(500).json({
+  res.status(500).json({
     status: 'error',
     message: 'Internal server error'
   });
