@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+    "coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "swagger-ui-express": "^5.0.1",
+    "typescript": "^5.8.2",
     "uuid": "^11.1.0",
     "winston": "3.14.2"
   }
