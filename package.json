@@ -6,17 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
-    "lint-staged": {
-      "*.{js,jsx,ts,tsx}": [
-        "eslint --fix",
-        "prettier --write"
-      ],
-      "*.{json,css,md}": [
-        "prettier --write"
-      ]
-    },
-    "prepare": "husky"
+    "coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "keywords": [],
   "author": "",
