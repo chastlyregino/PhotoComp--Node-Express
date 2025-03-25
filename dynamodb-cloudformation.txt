@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for PhotoComp DynamoDB table'
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: PhotoComp
+    Description: Name of the application
+  
+  Environment:
+    Type: String
+    Default: Dev
+    AllowedValues:
+      - Dev
+      - Test
+      - Prod
+    Description: Deployment environment
+
+Resources:
+  PhotoCompTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ApplicationName}-${Environment}-Table
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+        - AttributeName: type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: TypeIndex
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  TableName:
+    Description: Name of the DynamoDB table
+    Value: !Ref PhotoCompTable
+    Export:
+      Name: !Sub ${ApplicationName}-${Environment}-TableName
+  
+  TableArn:
+    Description: ARN of the DynamoDB table
+    Value: !GetAtt PhotoCompTable.Arn
+    Export:
+      Name: !Sub ${ApplicationName}-${Environment}-TableArn
