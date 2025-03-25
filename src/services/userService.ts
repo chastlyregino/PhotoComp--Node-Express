@@ -27,19 +27,24 @@ export class UserService {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(user.password, salt);
       
-      // Save the user to the database
-      const createdUser = await this.userRepository.createUser(user);
-      
-      // Generate JWT token
-      const token = this.generateToken(createdUser);
-      
-      // Return user (without password) and token
-      const { password, ...userWithoutPassword } = createdUser;
-      
-      return {
-        user: userWithoutPassword as Omit<User, 'password'>,
-        token
-      };
+      try {
+        // Save the user to the database
+        const createdUser = await this.userRepository.createUser(user);
+        
+        // Generate JWT token
+        const token = this.generateToken(createdUser);
+        
+        // Return user (without password) and token
+        const { password, ...userWithoutPassword } = createdUser;
+        
+        return {
+          user: userWithoutPassword as Omit<User, 'password'>,
+          token
+        };
+      } catch (error) {
+        // This will specifically catch the database error from createUser
+        throw new AppError(`Registration failed: ${(error as Error).message}`, 500);
+      }
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
