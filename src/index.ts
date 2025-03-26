@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { authRouter } from './controllers/authController';
-import { orgController } from './controller/orgController';
+import { orgRouter } from './controllers/orgController';
 import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables
@@ -20,14 +20,14 @@ app.use(errorHandler);
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use(`/organizations`, orgController);
+app.use(`/organizations`, authRouter, orgRouter);
 
 // Default route
 app.get('/', (req, res) => {
   res.send('PhotoComp API is running');
 });
 
-app.all((req, res, next) => {
+app.all(/(.*)/, (req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
   res.status(404);
   next(error);
