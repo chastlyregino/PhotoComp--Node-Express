@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 
 export enum UserRole {
-  USER = 'USER',    // Default role for registered users
-  MEMBER = 'MEMBER', // User who is part of an organization
-  ADMIN = 'ADMIN',   // User with admin privileges in an organization
+    USER = 'USER', // Default role for registered users
+    MEMBER = 'MEMBER', // User who is part of an organization
+    ADMIN = 'ADMIN', // User with admin privileges in an organization
 }
 
 
@@ -26,13 +26,13 @@ export interface User {
 
 
 export interface AuthRequest {
-  email: string;
-  password: string;
+    email: string;
+    password: string;
 }
 
 export interface RegisterRequest extends AuthRequest {
-  firstName: string;
-  lastName: string;
+    firstName: string;
+    lastName: string;
 }
 
 export const createUserFromRegister = (registerRequest: RegisterRequest): User => {

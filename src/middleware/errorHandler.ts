@@ -21,10 +21,10 @@ export class AppError extends Error {
  * Processes all errors passed to next() throughout the application
  */
 export const errorHandler = (
-  err: Error | AppError,
-  req: Request,
-  res: Response,
-  next: NextFunction
+    err: Error | AppError,
+    req: Request,
+    res: Response,
+    next: NextFunction
 ): void => {
   // Log error for debugging purposes
   console.error('Error:', err);

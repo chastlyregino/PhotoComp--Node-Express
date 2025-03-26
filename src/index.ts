@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { authRouter } from './controllers/authController';
 import { orgRouter } from './controllers/orgController';
+import { authenticate } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables
@@ -20,11 +21,11 @@ app.use(errorHandler);
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use(`/organizations`, authRouter, orgRouter);
+app.use(`/organizations`, orgRouter); // add authenticate middleware
 
 // Default route
 app.get('/', (req, res) => {
-  res.send('PhotoComp API is running');
+    res.send('PhotoComp API is running');
 });
 
 app.all(/(.*)/, (req, res, next) => {
