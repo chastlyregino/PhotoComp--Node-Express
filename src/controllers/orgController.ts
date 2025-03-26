@@ -8,106 +8,107 @@ export const orgRouter = Router();
 // throw new AppError('Email, password, first name, and last name are required', 400);
 
 orgRouter.get(`/`, async (req: Request, res: Response) => {
-  try {
-    const org = req.body; // change it with getter method
+    try {
+        const org = req.body; // change it with getter method
 
-    if (org) {
-      res.status(200).json({ message: `Here are your organizations!`, org: org });
-    } else {
-      // res.status(204).json({ message: `No organizations found!` });
-      throw new AppError(`No organizations found!`, 204);
+        if (org) {
+            res.status(200).json({ message: `Here are your organizations!`, org: org });
+        } else {
+            // res.status(204).json({ message: `No organizations found!` });
+            throw new AppError(`No organizations found!`, 204);
+        }
+    } catch (error) {
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to retrieve organizations',
+        });
     }
-  } catch (error) {
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({
-        status: 'error',
-        message: error.message
-      });
-    }
-    
-    return res.status(500).json({
-      status: 'error',
-      message: 'Failed to retrieve organizations'
-    });
-  }
 });
 
 orgRouter.post(`/`, async (req: Request, res: Response) => {
-  const org = req.body; // change it with a setter method
+    const org = req.body; // change it with a setter method
 
-  if (org) {
-    res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
-  } else {
-    res.status(400).json({ message: `Organization not created`, org: req.body });
-  }
+    if (org) {
+        res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
+    } else {
+        res.status(400).json({ message: `Organization not created`, org: req.body });
+    }
 });
 
 orgRouter.patch(`/`, async (req: Request, res: Response) => {
-  const org = req.body; // update with getOrg()
+    const org = req.body; // update with getOrg()
 
-  if (org) {
-    const updatedOrg = org; // update with updateOrg()
+    if (org) {
+        const updatedOrg = org; // update with updateOrg()
 
-    if (updatedOrg) {
-      res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
+        if (updatedOrg) {
+            res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
+        } else {
+            res.status(200).json({ message: `Organization not updated!` });
+        }
     } else {
-      res.status(200).json({ message: `Organization not updated!` });
+        res.status(400).json({ message: `Organization not found!` });
     }
-  } else {
-    res.status(400).json({ message: `Organization not found!` });
-  }
 }); //update the name and logo of the org
 
-orgRouter.get(`/members`, async (req: Request, res: Response) => {
-  const members = req.body; //update with getMembers
+// members Route
+// orgRouter.get(`/members`, async (req: Request, res: Response) => {
+//   const members = req.body; //update with getMembers
 
-  if (members) {
-    res.status(200).json({ message: `Org Members!`, orgMembers: members });
-  } else {
-    res.status(400).json({ message: `No members found!` });
-  }
-});
+//   if (members) {
+//     res.status(200).json({ message: `Org Members!`, orgMembers: members });
+//   } else {
+//     res.status(400).json({ message: `No members found!` });
+//   }
+// });
 
-orgRouter.post(`/members`, async (req: Request, res: Response) => {
-  const member = req.body; //update with updateMemberStatus()
+// orgRouter.post(`/members`, async (req: Request, res: Response) => {
+//   const member = req.body; //update with updateMemberStatus()
 
-  if (member) {
-    res.status(201).json({ message: `Member status updated!`, orgMember: member });
-  } else {
-    res.status(400).json({ message: `Failed to update member status!` });
-  }
-});
+//   if (member) {
+//     res.status(201).json({ message: `Member status updated!`, orgMember: member });
+//   } else {
+//     res.status(400).json({ message: `Failed to update member status!` });
+//   }
+// });
 
-orgRouter.delete(`/members`, async (req: Request, res: Response) => {
-  const members = req.body; //update with getMembers
+// orgRouter.delete(`/members`, async (req: Request, res: Response) => {
+//   const members = req.body; //update with getMembers
 
-  if (members) {
-    const member = members; // update with .getMember
-    if (member) {
-      res.status(200).json({ message: `Member deleted!`, orgMember: req.body });
-    } else {
-      res.status(400).json({ message: `No member found!` });
-    }
-  } else {
-    res.status(400).json({ message: `No members found!` });
-  }
-});
+//   if (members) {
+//     const member = members; // update with .getMember
+//     if (member) {
+//       res.status(200).json({ message: `Member deleted!`, orgMember: req.body });
+//     } else {
+//       res.status(400).json({ message: `No member found!` });
+//     }
+//   } else {
+//     res.status(400).json({ message: `No members found!` });
+//   }
+// });
 
-orgRouter.patch(`/members`, async (req: Request, res: Response) => {
-  const members = req.body; //update with getMembers
+// orgRouter.patch(`/members`, async (req: Request, res: Response) => {
+//   const members = req.body; //update with getMembers
 
-  if (members) {
-    const member = members; // update with .getMember
-    if (member) {
-      const updatedMember = member; // update with .updateMemberRole()
-      if (updatedMember) {
-        res.status(200).json({ message: `Member role updated!`, orgMember: req.body });
-      }
-      res.status(400).json({ message: `Failed to  update Member role!` });
-    } else {
-      res.status(400).json({ message: `No member found!` });
-    }
-  } else {
-    res.status(400).json({ message: `No members found!` });
-  }
-});
+//   if (members) {
+//     const member = members; // update with .getMember
+//     if (member) {
+//       const updatedMember = member; // update with .updateMemberRole()
+//       if (updatedMember) {
+//         res.status(200).json({ message: `Member role updated!`, orgMember: req.body });
+//       }
+//       res.status(400).json({ message: `Failed to  update Member role!` });
+//     } else {
+//       res.status(400).json({ message: `No member found!` });
+//     }
+//   } else {
+//     res.status(400).json({ message: `No members found!` });
+//   }
+// });
