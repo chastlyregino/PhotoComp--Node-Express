@@ -1,19 +1,38 @@
-const express = require(`express`);
-//const orgService = require(`../service/orgService.js`);
+import { Request, Response, Router } from 'express';
+//import { OrgService } from '../services/orgService';
+//import { AuthRequest, RegisterRequest } from '../models/User';
+import { AppError } from '../middleware/errorHandler';
 
-const router = express.Router();
+export const orgRouter = Router();
 
-router.get(`/`, async (req: any, res: any) => {
-  const org = req.body; // change it with getter method
+// throw new AppError('Email, password, first name, and last name are required', 400);
 
-  if (org) {
-    res.status(200).json({ message: `Here are your organizations!`, org: org });
-  } else {
-    res.status(204).json({ message: `No organizations found!` });
+orgRouter.get(`/`, async (req: Request, res: Response) => {
+  try {
+    const org = req.body; // change it with getter method
+
+    if (org) {
+      res.status(200).json({ message: `Here are your organizations!`, org: org });
+    } else {
+      // res.status(204).json({ message: `No organizations found!` });
+      throw new AppError(`No organizations found!`, 204);
+    }
+  } catch (error) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message
+      });
+    }
+    
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to retrieve organizations'
+    });
   }
 });
 
-router.post(`/`, async (req: any, res: any) => {
+orgRouter.post(`/`, async (req: Request, res: Response) => {
   const org = req.body; // change it with a setter method
 
   if (org) {
@@ -23,11 +42,11 @@ router.post(`/`, async (req: any, res: any) => {
   }
 });
 
-router.patch(`/`, async (req: any, res: any) => {
+orgRouter.patch(`/`, async (req: Request, res: Response) => {
   const org = req.body; // update with getOrg()
 
   if (org) {
-    const updatedOrg = org; // update with updateOrgName()
+    const updatedOrg = org; // update with updateOrg()
 
     if (updatedOrg) {
       res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
@@ -37,9 +56,9 @@ router.patch(`/`, async (req: any, res: any) => {
   } else {
     res.status(400).json({ message: `Organization not found!` });
   }
-}); //update the name of the org
+}); //update the name and logo of the org
 
-router.get(`/members`, async (req: any, res: any) => {
+orgRouter.get(`/members`, async (req: Request, res: Response) => {
   const members = req.body; //update with getMembers
 
   if (members) {
@@ -49,7 +68,7 @@ router.get(`/members`, async (req: any, res: any) => {
   }
 });
 
-router.post(`/members`, async (req: any, res: any) => {
+orgRouter.post(`/members`, async (req: Request, res: Response) => {
   const member = req.body; //update with updateMemberStatus()
 
   if (member) {
@@ -59,7 +78,7 @@ router.post(`/members`, async (req: any, res: any) => {
   }
 });
 
-router.delete(`/members`, async (req: any, res: any) => {
+orgRouter.delete(`/members`, async (req: Request, res: Response) => {
   const members = req.body; //update with getMembers
 
   if (members) {
@@ -74,7 +93,7 @@ router.delete(`/members`, async (req: any, res: any) => {
   }
 });
 
-router.patch(`/members`, async (req: any, res: any) => {
+orgRouter.patch(`/members`, async (req: Request, res: Response) => {
   const members = req.body; //update with getMembers
 
   if (members) {
@@ -92,5 +111,3 @@ router.patch(`/members`, async (req: any, res: any) => {
     res.status(400).json({ message: `No members found!` });
   }
 });
-
-module.exports = router;
