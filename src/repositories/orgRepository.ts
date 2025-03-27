@@ -1,14 +1,14 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import {
     Organization,
-    createOrganization,
+    OrganizationCreateRequest,
     OrganizationUpdateRequest,
 } from '../models/Organizations';
 import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 export class OrgRepository {
-    async createOrg(org: Organization): Promise<Organization> {
+    async createOrg(org: Organization): Promise<OrganizationCreateRequest> {
         try {
             await dynamoDb.send(
                 new PutCommand({
@@ -72,7 +72,7 @@ export class OrgRepository {
         }
     }
 
-    async updateOrgById(org: Organization): Promise<Organization | null> {
+    async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
         try {
             const params = {
                 TableName: TABLE_NAME,
