@@ -56,7 +56,7 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
             throw new AppError('User not found', 404);
         }
 
-        const org = orgService.findOrgsByUser(user.PK.slice(4)); // change it with getter method
+        const org = orgService.findOrgsByUser(user.SK); // change it with getter method
 
         if (org) {
             res.status(200).json({ message: `Here are your organizations!`, org: org });
