@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
-//import { OrgService } from '../services/orgService';
-//import { AuthRequest, RegisterRequest } from '../models/User';
+import { OrgService } from '../services/orgService';
+import { Organization, OrganizationCreateRequest, OrganizationUpdateRequest, UserOrganizationRelationship } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 
 export const orgRouter = Router();
