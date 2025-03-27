@@ -36,7 +36,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
             role: UserRole;
         };
 
-        req.user = decoded;
+        res.locals.user = decoded;
         next();
     } catch (error) {
         return res.status(401).json({

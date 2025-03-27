@@ -1,15 +1,29 @@
 import { Request, Response, Router } from 'express';
+import { UserService } from '../services/userService';
 import { OrgService } from '../services/orgService';
-import { Organization, OrganizationCreateRequest, OrganizationUpdateRequest, UserOrganizationRelationship } from '../models/Organizations';
+import {
+    Organization,
+    OrganizationCreateRequest,
+    OrganizationUpdateRequest,
+    UserOrganizationRelationship,
+} from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 
+const userService = new UserService();
+const orgService = new OrgService();
 export const orgRouter = Router();
 
 // throw new AppError('Email, password, first name, and last name are required', 400);
 
 orgRouter.get(`/`, async (req: Request, res: Response) => {
     try {
-        const org = req.body; // change it with getter method
+        const user = await userService.findUserByEmail(res.locals.user.email);
+
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
+
+        const org = orgService.findOrgsByUser(user.PK.slice(4)); // change it with getter method
 
         if (org) {
             res.status(200).json({ message: `Here are your organizations!`, org: org });
@@ -33,7 +47,20 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
 });
 
 orgRouter.post(`/`, async (req: Request, res: Response) => {
-    const org = req.body; // change it with a setter method
+    const { name, logoUrl } = req.body;
+
+    const user = await userService.findUserByEmail(res.locals.user.email);
+
+    if (!user) {
+        throw new AppError('User not found', 404);
+    }
+
+    const organization: OrganizationCreateRequest = {
+        name,
+        logoUrl,
+    };
+
+    const org = await orgService.createOrg(organization, user.id);
 
     if (org) {
         res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
