@@ -31,7 +31,7 @@ export class OrgRepository {
             const params = {
                 TableName: TABLE_NAME,
                 IndexName: 'OrgIdIndex',
-                KeyConditionExpression: 'GSI2PK = :idKey',
+                KeyConditionExpression: 'GSI2SK = :idKey',
                 ExpressionAttributeValues: {
                     ':idKey': `ORG#${id}`,
                 },
@@ -54,9 +54,9 @@ export class OrgRepository {
             const params = {
                 TableName: TABLE_NAME,
                 IndexName: 'UserIdIndex',
-                KeyConditionExpression: 'GSI2SK = :userIdKey',
+                KeyConditionExpression: 'GSI2PK = :userIdKey',
                 ExpressionAttributeValues: {
-                    ':userIdKey': `ORG#${userId}`,
+                    ':userIdKey': `USER#${userId}`,
                 },
             };
 
@@ -77,7 +77,7 @@ export class OrgRepository {
             const params = {
                 TableName: TABLE_NAME,
                 IndexName: 'OrgIdIndex',
-                KeyConditionExpression: 'GSI2PK = :idKey',
+                KeyConditionExpression: 'GSI2SK = :idKey',
                 UpdateExpression:
                     'SET name = :name, description = :desciption, isPublic = :isPublic',
                 ExpressionAttributeValues: {
