@@ -21,7 +21,7 @@ app.use(errorHandler);
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use(`/organizations`, orgRouter); // add authenticate middleware
+app.use(`/organizations`, authenticate, orgRouter); // add authenticate middleware
 
 // Default route
 app.get('/', (req, res) => {

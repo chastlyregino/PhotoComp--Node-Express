@@ -23,7 +23,7 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
             throw new AppError('User not found', 404);
         }
 
-        const org = orgService.findOrgsByUser(user.PK.slice(4)); // change it with getter method
+        const org = orgService.findOrgsByUser(user.SK); // change it with getter method
 
         if (org) {
             res.status(200).json({ message: `Here are your organizations!`, org: org });
@@ -47,25 +47,40 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
 });
 
 orgRouter.post(`/`, async (req: Request, res: Response) => {
-    const { name, logoUrl } = req.body;
+    try {
+        const { name, logoUrl } = req.body;
 
-    const user = await userService.findUserByEmail(res.locals.user.email);
+        const user = await userService.findUserByEmail(res.locals.user.email);
 
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
 
-    const organization: OrganizationCreateRequest = {
-        name,
-        logoUrl,
-    };
+        const organization: OrganizationCreateRequest = {
+            name,
+            logoUrl,
+        };
 
-    const org = await orgService.createOrg(organization, user.id);
+        const org = await orgService.createOrg(organization, user.id);
 
-    if (org) {
-        res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
-    } else {
-        res.status(400).json({ message: `Organization not created`, org: req.body });
+        if (org) {
+            res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
+        } else {
+            throw new AppError(`Organization not created`, 400);
+        }
+
+    } catch (error) {
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to create organization',
+        });
     }
 });
 

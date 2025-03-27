@@ -56,7 +56,7 @@ export class OrgRepository {
                 IndexName: 'UserIdIndex',
                 KeyConditionExpression: 'GSI2PK = :userIdKey',
                 ExpressionAttributeValues: {
-                    ':userIdKey': `USER#${userId}`,
+                    ':userIdKey': userId,
                 },
             };
 
