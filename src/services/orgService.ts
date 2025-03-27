@@ -6,7 +6,7 @@ import {
     OrganizationUpdateRequest,
     updateOrganization,
     UserOrganizationRelationship,
-    createOrganizationAdmin,
+    addOrganizationAdmin,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 

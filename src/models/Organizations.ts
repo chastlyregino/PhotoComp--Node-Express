@@ -13,6 +13,8 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     type: 'ORGANIZATION';
+    role: UserRole,
+    joinedAt: string, 
     isPublic: boolean;
     logoUrl: string;
 
@@ -62,6 +64,8 @@ export const updateOrganization = (
         createdAt: org.createdAt,
         updatedAt: now,
         type: `ORGANIZATION`,
+        role: org.role,
+        joinedAt: org.joinedAt,
         isPublic: request.isPublic || org.isPublic,
         logoUrl: request.logoUrl || org.logoUrl,
         website: request.website,
@@ -90,6 +94,8 @@ export const createOrganization = (
         createdAt: now,
         updatedAt: now,
         type: 'ORGANIZATION',
+        role: UserRole.ADMIN,
+        joinedAt: now,
         isPublic: true,
         logoUrl: request.logoUrl,
         website: request.website,
@@ -102,7 +108,7 @@ export const createOrganization = (
 };
 
 // For creating the relationship between an organization and its admin
-export const createOrganizationAdmin = (
+export const addOrganizationAdmin = (
     organizationId: string,
     userId: string
 ): UserOrganizationRelationship => {
