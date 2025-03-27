@@ -56,6 +56,31 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
             throw new AppError('User not found', 404);
         }
 
+        const org = orgService.findOrgsByUser(user.PK.slice(4)); // change it with getter method
+
+        if (org) {
+            res.status(200).json({ message: `Here are your organizations!`, org: org });
+        } else {
+            // res.status(204).json({ message: `No organizations found!` });
+            throw new AppError(`No organizations found!`, 204);
+        }
+    } catch (error) {
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to retrieve organizations',
+        });
+    }
+});
+
+orgRouter.post(`/`, async (req: Request, res: Response) => {
+    try {
         const { name, logoUrl } = req.body;
         const organization: OrganizationCreateRequest = {
             name,
