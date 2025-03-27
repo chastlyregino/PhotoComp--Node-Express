@@ -23,17 +23,6 @@ export interface User {
     GSI1SK?: 'ENTITY'; // ENTITY
 }
 
-export interface UserOrganization {
-    PK: string; // USER#<userId>
-    SK: string; // ORG#<organizationId>
-    userId: string;
-    organizationId: string;
-    role: UserRole;
-    status: UserStatus;
-    joinedAt: string;
-    type: 'USER_ORG';
-}
-
 export interface AuthRequest {
     email: string;
     password: string;
