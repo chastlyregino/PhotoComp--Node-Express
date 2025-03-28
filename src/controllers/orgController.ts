@@ -50,6 +50,9 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
     try {
         const { name, logoUrl } = req.body;
 
+        if(!name || !logoUrl) {
+            throw new AppError('Name and logoUrl are required', 400);
+        }
         const user = await userService.findUserByEmail(res.locals.user.email);
 
         if (!user) {
