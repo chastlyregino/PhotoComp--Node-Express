@@ -2,15 +2,20 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '../models/User';
 
-export interface AuthRequest extends Request {
-    user?: {
+// Define interface to extend Express Response.locals
+declare global {
+  namespace Express {
+    interface Locals {
+      user?: {
         id: string;
         email: string;
         role: UserRole;
-    };
+      };
+    }
+  }
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
 
@@ -36,7 +41,8 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
             role: UserRole;
         };
 
-        res.locals.user = decoded;
+        // Set user info in res.locals
+        res.locals.user = decoded;   
         next();
     } catch (error) {
         return res.status(401).json({
@@ -46,8 +52,9 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 };
 
-export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || req.user.role !== UserRole.ADMIN) {
+export const authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
+    // Check res.locals.user
+    if (!res.locals.user || res.locals.user.role !== UserRole.ADMIN) {
         return res.status(403).json({
             status: 'error',
             message: 'Access denied. Admin privileges required.',

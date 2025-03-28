@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use(`/organizations`, authenticate, orgRouter); // add authenticate middleware
+app.use('/organizations', authenticate, orgRouter);
 
 // Default route
 app.get('/', (req, res) => {
@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 });
 
 // Default 404 for non-existent pages and methods
-app.all(/(.*)/, (req: any, res: any) => {
+app.all(/(.*)/, (req, res) => {
     res.status(404).json({ message: `Invalid Page!` });
 });
 

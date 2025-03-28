@@ -16,6 +16,10 @@ export const orgRouter = Router();
 // Get all organizations for the current user
 orgRouter.get('/', async (req: Request, res: Response) => {
     try {
+        if (!res.locals.user) {
+            throw new AppError('Authentication required', 401);
+        }
+
         const user = await userService.findUserByEmail(res.locals.user.email);
 
         if (!user) {
@@ -64,6 +68,10 @@ orgRouter.get('/', async (req: Request, res: Response) => {
 // Create a new organization
 orgRouter.post('/', async (req: Request, res: Response) => {
     try {
+        if (!res.locals.user) {
+            throw new AppError('Authentication required', 401);
+        }
+
         const { name, logoUrl, description, website, contactEmail } = req.body;
 
         if (!name) {
@@ -116,20 +124,39 @@ orgRouter.post('/', async (req: Request, res: Response) => {
 });
 
 orgRouter.patch(`/`, async (req: Request, res: Response) => {
-    const org = req.body; // update with getOrg()
-
-    if (org) {
-        const updatedOrg = org; // update with updateOrg()
-
-        if (updatedOrg) {
-            res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
-        } else {
-            res.status(200).json({ message: `Organization not updated!` });
+    try {
+        if (!res.locals.user) {
+            throw new AppError('Authentication required', 401);
         }
-    } else {
-        res.status(400).json({ message: `Organization not found!` });
+        
+        const org = req.body;
+
+        if (org) {
+            const updatedOrg = org;
+
+            if (updatedOrg) {
+                res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
+            } else {
+                res.status(200).json({ message: `Organization not updated!` });
+            }
+        } else {
+            res.status(400).json({ message: `Organization not found!` });
+        }
+    } catch (error) {
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to update organization',
+        });
     }
-}); //update the name and logo of the org
+});
+
 
 // members Route
 // orgRouter.get(`/members`, async (req: Request, res: Response) => {
