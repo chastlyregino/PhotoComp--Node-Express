@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { Request, Response, NextFunction, Router } from 'express';
 import { UserService } from '../services/userService';
 import { OrgService } from '../services/orgService';
 import {
@@ -15,7 +15,7 @@ export const orgRouter = Router();
 
 // throw new AppError('Email, password, first name, and last name are required', 400);
 
-orgRouter.get(`/`, async (req: Request, res: Response) => {
+orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = await userService.findUserByEmail(res.locals.user.email);
 
@@ -32,25 +32,15 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
             throw new AppError(`No organizations found!`, 204);
         }
     } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to retrieve organizations',
-        });
+        next(error);
     }
 });
 
-orgRouter.post(`/`, async (req: Request, res: Response) => {
+orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
 
-        if(!name || !logoUrl) {
+        if (!name || !logoUrl) {
             throw new AppError('Name and logoUrl are required', 400);
         }
         const user = await userService.findUserByEmail(res.locals.user.email);
@@ -71,23 +61,12 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
         } else {
             throw new AppError(`Organization not created`, 400);
         }
-
     } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to create organization',
-        });
+        next(error);
     }
 });
 
-orgRouter.patch(`/`, async (req: Request, res: Response) => {
+orgRouter.patch(`/`, async (req: Request, res: Response, next: NextFunction) => {
     const org = req.body; // update with getOrg()
 
     if (org) {
