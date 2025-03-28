@@ -16,10 +16,6 @@ export const orgRouter = Router();
 // Get all organizations for the current user
 orgRouter.get('/', async (req: Request, res: Response) => {
     try {
-        if (!res.locals.user) {
-            throw new AppError('Authentication required', 401);
-        }
-
         const user = await userService.findUserByEmail(res.locals.user.email);
 
         if (!user) {
@@ -68,10 +64,6 @@ orgRouter.get('/', async (req: Request, res: Response) => {
 // Create a new organization
 orgRouter.post('/', async (req: Request, res: Response) => {
     try {
-        if (!res.locals.user) {
-            throw new AppError('Authentication required', 401);
-        }
-
         const { name, logoUrl, description, website, contactEmail } = req.body;
 
         if (!name) {
@@ -125,10 +117,6 @@ orgRouter.post('/', async (req: Request, res: Response) => {
 
 orgRouter.patch(`/`, async (req: Request, res: Response) => {
     try {
-        if (!res.locals.user) {
-            throw new AppError('Authentication required', 401);
-        }
-        
         const org = req.body;
 
         if (org) {

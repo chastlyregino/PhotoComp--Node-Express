@@ -6,7 +6,7 @@ import { UserRole } from '../models/User';
 declare global {
   namespace Express {
     interface Locals {
-      user?: {
+      user: {
         id: string;
         email: string;
         role: UserRole;
@@ -41,8 +41,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
             role: UserRole;
         };
 
-        // Set user info in res.locals
-        res.locals.user = decoded;   
+        res.locals.user = decoded;
         next();
     } catch (error) {
         return res.status(401).json({
@@ -53,7 +52,6 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 };
 
 export const authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
-    // Check res.locals.user
     if (!res.locals.user || res.locals.user.role !== UserRole.ADMIN) {
         return res.status(403).json({
             status: 'error',
