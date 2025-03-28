@@ -5,6 +5,7 @@ import { authRouter } from './controllers/authController';
 import { orgRouter } from './controllers/orgController';
 import { authenticate } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
+import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +19,7 @@ app.use(express.json());
 
 // Error handling middleware must be used after all routes
 app.use(errorHandler);
+app.use(loggerMethodMiddleware);
 
 // Routes
 app.use('/api/auth', authRouter);
