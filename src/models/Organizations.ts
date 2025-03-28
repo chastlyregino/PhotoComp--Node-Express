@@ -13,8 +13,8 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     type: 'ORGANIZATION';
-    role: UserRole,
-    joinedAt: string, 
+    role: UserRole;
+    joinedAt: string;
     isPublic: boolean;
     logoUrl: string;
 
