@@ -1,25 +1,35 @@
-// // File with intentional issues to test pre-commit hooks
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { orgRouter } from './controllers/orgController';
+import { authRouter } from './controllers/authController';
+import { authenticate } from './middleware/authMiddleware';
+import { errorHandler } from './middleware/errorHandler';
 
-// const greeting = (name: string) => {
-//     // eslint-disable-next-line no-console
-//     console.log('Hello, ' + name + '!'); // Using console.log and double quotes
+dotenv.config();
 
-//     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//     const unused = 'This variable is never used';
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-//     return 'Greeting completed'; // Missing semicolon
-//   };
+app.use(cors());
+app.use(express.json());
 
-//   export default greeting;
+// Routes
+app.use('/api/auth', authRouter);
+app.use(`/organizations`, authenticate, orgRouter); // add authenticate middleware
 
-// File with intentional issues to test pre-commit hooks
+// Default route
+app.get('/', (req, res) => {
+    res.send('PhotoComp API is running');
+});
 
-const greeting = (name: string) => {
-  console.log('Hello, ' + name + '!'); // Using console.log and double quotes
+// Default 404 for non-existent pages and methods
+app.all(/(.*)/, (req: any, res: any) => {
+    res.status(404).json({ message: `Invalid Page!` });
+});
 
-  const unused = 'This variable is never used';
+app.use(errorHandler);
 
-  return 'Greeting completed'; // Missing semicolon
-};
-
-export default greeting;
+app.listen(PORT, () => {
+    console.log(`Server is listening on http://localhost:${PORT}`);
+});
