@@ -1,6 +1,5 @@
 import { logger } from '../util/logger';
 import { Request, Response, NextFunction } from 'express';
-import { loggerErrorMiddleware } from './loggerMiddleware';
 
 /**
  * Custom application error class
