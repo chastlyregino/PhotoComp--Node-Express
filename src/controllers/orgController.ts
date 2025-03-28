@@ -115,36 +115,6 @@ orgRouter.post('/', async (req: Request, res: Response) => {
     }
 });
 
-orgRouter.patch(`/`, async (req: Request, res: Response) => {
-    try {
-        const org = req.body;
-
-        if (org) {
-            const updatedOrg = org;
-
-            if (updatedOrg) {
-                res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
-            } else {
-                res.status(200).json({ message: `Organization not updated!` });
-            }
-        } else {
-            res.status(400).json({ message: `Organization not found!` });
-        }
-    } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to update organization',
-        });
-    }
-});
-
 
 // members Route
 // orgRouter.get(`/members`, async (req: Request, res: Response) => {

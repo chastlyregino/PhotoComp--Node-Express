@@ -74,24 +74,4 @@ export class OrgService {
             );
         }
     }
-
-    async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
-        try {
-            const updatedOrg = updateOrganization({
-                name: org.name,
-                description: org.description,
-                logoUrl: org.logoUrl,
-                isPublic: org.isPublic,
-                website: org.website,
-                contactEmail: org.contactEmail
-            }, org);
-
-            return await this.orgRepository.updateOrgById(updatedOrg);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Updating Organization failed: ${(error as Error).message}`, 500);
-        }
-    }
 }

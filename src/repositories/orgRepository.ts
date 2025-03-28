@@ -99,39 +99,4 @@ export class OrgRepository {
             throw new AppError(`Failed to find organizations by user: ${error.message}`, 500);
         }
     }
-
-    async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
-        try {
-            const params = {
-                TableName: TABLE_NAME,
-                Key: {
-                    PK: `ORG#${org.id}`,
-                    SK: org.SK, 
-                },
-                UpdateExpression:
-                    'SET #name = :name, description = :description, logoUrl = :logoUrl, isPublic = :isPublic, updatedAt = :updatedAt',
-                ExpressionAttributeNames: {
-                    '#name': 'name', // Using ExpressionAttributeNames for reserved keyword 'name'
-                },
-                ExpressionAttributeValues: {
-                    ':name': org.name,
-                    ':description': org.description || null,
-                    ':logoUrl': org.logoUrl,
-                    ':isPublic': org.isPublic,
-                    ':updatedAt': new Date().toISOString(),
-                },
-                ReturnValues: 'ALL_NEW' as const, // Use const assertion to fix the type
-            };
-
-            const result = await dynamoDb.send(new UpdateCommand(params));
-
-            if (!result.Attributes) {
-                throw new AppError('Failed to update organization', 500);
-            }
-
-            return result.Attributes as any;
-        } catch (error: any) {
-            throw new AppError(`Failed to update organization: ${error.message}`, 500);
-        }
-    }
 }
