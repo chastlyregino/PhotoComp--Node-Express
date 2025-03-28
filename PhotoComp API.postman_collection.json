@@ -1,0 +1,741 @@
+{
+	"info": {
+		"_postman_id": "0b10673b-6ca5-4888-b317-93af65502cb6",
+		"name": "PhotoComp API",
+		"description": "Test suite for PhotoComp API authentication and organization endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42793464"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has token and user data\", function () {",
+									"    pm.expect(response.data).to.have.property('token');",
+									"    pm.expect(response.data).to.have.property('user');",
+									"    pm.expect(response.data.user).to.have.property('id');",
+									"    pm.expect(response.data.user).to.have.property('email');",
+									"});",
+									"",
+									"// Save token for future requests",
+									"if (response.data && response.data.token) {",
+									"    pm.collectionVariables.set(\"token\", response.data.token);",
+									"}",
+									"",
+									"// Save user ID for future requests",
+									"if (response.data && response.data.user && response.data.user.id) {",
+									"    pm.collectionVariables.set(\"userId\", response.data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"Password123\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user and get authentication token"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has token and user data\", function () {",
+									"    pm.expect(response.data).to.have.property('token');",
+									"    pm.expect(response.data).to.have.property('user');",
+									"});",
+									"",
+									"// Save token for future requests",
+									"if (response.data && response.data.token) {",
+									"    pm.collectionVariables.set(\"token\", response.data.token);",
+									"}",
+									"",
+									"// Save user ID for future requests",
+									"if (response.data && response.data.user && response.data.user.id) {",
+									"    pm.collectionVariables.set(\"userId\", response.data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with existing user credentials"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for registration and login"
+		},
+		{
+			"name": "Organizations",
+			"item": [
+				{
+					"name": "Create Organization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has organization data\", function () {",
+									"    pm.expect(response.data).to.have.property('organization');",
+									"    pm.expect(response.data.organization).to.have.property('id');",
+									"    pm.expect(response.data.organization).to.have.property('name');",
+									"});",
+									"",
+									"// Save organization ID for future requests",
+									"if (response.data && response.data.organization && response.data.organization.id) {",
+									"    pm.collectionVariables.set(\"orgId\", response.data.organization.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Organization\",\n    \"description\": \"This is a test organization\",\n    \"logoUrl\": \"https://example.com/logo.png\",\n    \"website\": \"https://testorg.example.com\",\n    \"contactEmail\": \"contact@testorg.example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						},
+						"description": "Create a new organization"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Organizations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has organizations data\", function () {",
+									"    pm.expect(response.data).to.have.property('organizations');",
+									"    pm.expect(response.data.organizations).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						},
+						"description": "Get all organizations for the current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Organization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"{{orgId}}\",\n    \"name\": \"Updated Organization Name\",\n    \"description\": \"This is an updated description\",\n    \"logoUrl\": \"https://example.com/updated-logo.png\",\n    \"isPublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						},
+						"description": "Update an organization's details"
+					},
+					"response": []
+				}
+			],
+			"description": "Organization management endpoints"
+		},
+		{
+			"name": "Test Workflow",
+			"item": [
+				{
+					"name": "Register New User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Registration successful\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(response.status).to.eql('success');",
+									"});",
+									"",
+									"// Save token and user ID",
+									"if (response.data && response.data.token) {",
+									"    pm.collectionVariables.set(\"token\", response.data.token);",
+									"}",
+									"if (response.data && response.data.user && response.data.user.id) {",
+									"    pm.collectionVariables.set(\"userId\", response.data.user.id);",
+									"}",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Create First Organization\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate a unique email for testing",
+									"const timestamp = new Date().getTime();",
+									"const email = `test.user.${timestamp}@example.com`;",
+									"pm.variables.set('testEmail', email);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"StrongPass123\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create First Organization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Organization created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(response.status).to.eql('success');",
+									"    pm.expect(response.data.organization).to.have.property('id');",
+									"});",
+									"",
+									"// Save org ID",
+									"if (response.data && response.data.organization && response.data.organization.id) {",
+									"    pm.collectionVariables.set(\"orgId\", response.data.organization.id);",
+									"}",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Create Second Organization\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"First Test Org\",\n    \"description\": \"This is my first test organization\",\n    \"logoUrl\": \"https://via.placeholder.com/150\",\n    \"website\": \"https://firstorg.example.com\",\n    \"contactEmail\": \"contact@firstorg.example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Second Organization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Second organization created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.status).to.eql('success');",
+									"});",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Get All Organizations\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Second Test Org\",\n    \"description\": \"This is my second test organization\",\n    \"logoUrl\": \"https://via.placeholder.com/150\",\n    \"website\": \"https://secondorg.example.com\",\n    \"contactEmail\": \"contact@secondorg.example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Organizations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Get organizations successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(response.status).to.eql('success');",
+									"    pm.expect(response.data.organizations).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"At least two organizations exist\", function () {",
+									"    pm.expect(response.data.organizations.length).to.be.at.least(2);",
+									"});",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Update First Organization\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update First Organization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Organization update successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().message).to.include('Organization updated');",
+									"});",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Logout (Expired Token)\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"{{orgId}}\",\n    \"name\": \"Updated First Org\",\n    \"description\": \"This organization has been updated\",\n    \"logoUrl\": \"https://via.placeholder.com/200\",\n    \"isPublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout (Expired Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Clear token to simulate logout",
+									"pm.collectionVariables.set(\"token\", \"\");",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Verify Authentication Required\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "This is a simulated logout by clearing the token variable. Note: There's no actual logout endpoint in the API."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Authentication Required",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Authentication required error\", function () {",
+									"    pm.response.to.have.status(401);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.status).to.eql('error');",
+									"    pm.expect(response.message).to.include('Authentication required');",
+									"});",
+									"",
+									"// Continue with next request in the folder",
+									"postman.setNextRequest(\"Login Again\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login Again",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"",
+									"pm.test(\"Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(response.status).to.eql('success');",
+									"    pm.expect(response.data).to.have.property('token');",
+									"});",
+									"",
+									"// Save new token",
+									"if (response.data && response.data.token) {",
+									"    pm.collectionVariables.set(\"token\", response.data.token);",
+									"}",
+									"",
+									"// End workflow",
+									"postman.setNextRequest(\"Verify Login Success\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"StrongPass123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Login Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Access granted after login\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.status).to.eql('success');",
+									"    pm.expect(response.data.organizations).to.be.an('array');",
+									"});",
+									"",
+									"// End of workflow - no more requests to follow",
+									"postman.setNextRequest(null);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/organizations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"organizations"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Full workflow test from registration to organization management"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "orgId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
