@@ -1,4 +1,4 @@
-import { Request, Response, Router, NextFunction } from 'express';
+import { Request, Response, Router } from 'express';
 import { UserService } from '../services/userService';
 import { AuthRequest, RegisterRequest } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
@@ -7,7 +7,7 @@ const userService = new UserService();
 export const authRouter = Router();
 
 // Register endpoint
-authRouter.post('/register', async (req: Request, res: Response, next: NextFunction) => {
+authRouter.post('/register', async (req: Request, res: Response) => {
     try {
         // Validate request body
         const { email, password, firstName, lastName } = req.body;
@@ -46,11 +46,21 @@ authRouter.post('/register', async (req: Request, res: Response, next: NextFunct
             },
         });
     } catch (error) {
-        next(error);
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            status: 'error',
+            message: 'Registration failed',
+        });
     }
 });
 
-authRouter.post('/login', async (req: Request, res: Response, next: NextFunction) => {
+authRouter.post('/login', async (req: Request, res: Response) => {
     try {
         // Validate request body
         const { email, password } = req.body;
@@ -76,6 +86,16 @@ authRouter.post('/login', async (req: Request, res: Response, next: NextFunction
             },
         });
     } catch (error) {
-        next(error);
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
+        return res.status(500).json({
+            status: 'error',
+            message: 'Login failed',
+        });
     }
 });
