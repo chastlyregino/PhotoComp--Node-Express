@@ -5,6 +5,7 @@ import { orgRouter } from './controllers/orgController';
 import { authRouter } from './controllers/authController';
 import { authenticate } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
+import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 
 dotenv.config();
 
@@ -13,6 +14,10 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Super middleware
+app.use(errorHandler);
+app.use(loggerMethodMiddleware);
 
 // Routes
 app.use('/api/auth', authRouter);
@@ -27,8 +32,6 @@ app.get('/', (req, res) => {
 app.all(/(.*)/, (req: any, res: any) => {
     res.status(404).json({ message: `Invalid Page!` });
 });
-
-app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on http://localhost:${PORT}`);
