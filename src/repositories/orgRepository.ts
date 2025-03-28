@@ -47,52 +47,28 @@ export class OrgRepository {
             throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
         }
     }
-
     async findOrgsByUser(userId: string): Promise<Organization[] | null> {
         try {
             const params = {
                 TableName: TABLE_NAME,
-                IndexName: 'EmailIndex', // Using the GSI1 index (renamed to EmailIndex in CloudFormation)
-                KeyConditionExpression: 'GSI1PK = :userKey',
-                FilterExpression: 'type = :orgType',
+                IndexName: 'TypeIndex', 
+                KeyConditionExpression: '#itemType = :orgType',
+                FilterExpression: 'createdBy = :userId',
+                ExpressionAttributeNames: {
+                    '#itemType': 'type'
+                },
                 ExpressionAttributeValues: {
-                    ':userKey': `USER#${userId}`,
                     ':orgType': 'ORGANIZATION',
+                    ':userId': userId
                 },
             };
-
+    
             const result = await dynamoDb.send(new QueryCommand(params));
-
+    
             if (!result.Items || result.Items.length === 0) {
                 return [];
             }
-
-            return result.Items as Organization[];
-        } catch (error: any) {
-            throw new AppError(`Failed to find organizations by user: ${error.message}`, 500);
-        }
-    }
-
-    // Alternative query method using GSI2 if it was defined in the CloudFormation template
-    async findOrgsByUserAlternative(userId: string): Promise<Organization[] | null> {
-        try {
-            const params = {
-                TableName: TABLE_NAME,
-                KeyConditionExpression: 'PK = :userKey AND begins_with(SK, :orgPrefix)',
-                FilterExpression: 'type = :orgType',
-                ExpressionAttributeValues: {
-                    ':userKey': `USER#${userId}`,
-                    ':orgPrefix': 'ORG#',
-                    ':orgType': 'ORGANIZATION',
-                },
-            };
-
-            const result = await dynamoDb.send(new QueryCommand(params));
-
-            if (!result.Items || result.Items.length === 0) {
-                return [];
-            }
-
+    
             return result.Items as Organization[];
         } catch (error: any) {
             throw new AppError(`Failed to find organizations by user: ${error.message}`, 500);
