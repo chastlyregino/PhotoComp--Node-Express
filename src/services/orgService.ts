@@ -61,9 +61,9 @@ export class OrgService {
         }
     }
 
-    async findOrgsByUser(userId: string): Promise<Organization[] | null> {
+    async findOrgsCreatedByUser(userId: string): Promise<Organization[] | null> {
         try {
-            return await this.orgRepository.findOrgsByUser(userId);
+            return await this.orgRepository.findOrgsCreatedByUser(userId);
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
@@ -85,7 +85,7 @@ export class OrgService {
                 website: org.website,
                 contactEmail: org.contactEmail
             }, org);
-            
+
             return await this.orgRepository.updateOrgById(updatedOrg);
         } catch (error) {
             if (error instanceof AppError) {

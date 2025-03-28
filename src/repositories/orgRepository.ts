@@ -47,7 +47,7 @@ export class OrgRepository {
             throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
         }
     }
-    async findOrgsByUser(userId: string): Promise<Organization[] | null> {
+    async findOrgsCreatedByUser(userId: string): Promise<Organization[] | null> {
         try {
             // Set up query parameters for the DynamoDB operation
             const params = {

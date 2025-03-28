@@ -22,7 +22,7 @@ orgRouter.get('/', async (req: Request, res: Response) => {
             throw new AppError('User not found', 404);
         }
 
-        const organizations = await orgService.findOrgsByUser(user.id);
+        const organizations = await orgService.findOrgsCreatedByUser(user.id);
 
         if (organizations && organizations.length > 0) {
             // Clean up the response data to remove internal keys
