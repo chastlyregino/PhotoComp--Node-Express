@@ -5,17 +5,16 @@ import {
     Organization,
     OrganizationCreateRequest,
     OrganizationUpdateRequest,
-    UserOrganizationRelationship,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
+import { UserRole } from '../models/User';
 
 const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-// throw new AppError('Email, password, first name, and last name are required', 400);
-
-orgRouter.get(`/`, async (req: Request, res: Response) => {
+// Get all organizations for the current user
+orgRouter.get('/', async (req: Request, res: Response) => {
     try {
         const user = await userService.findUserByEmail(res.locals.user.email);
 
@@ -23,13 +22,29 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
             throw new AppError('User not found', 404);
         }
 
-        const org = orgService.findOrgsByUser(user.SK); // change it with getter method
+        const organizations = await orgService.findOrgsByUser(user.id);
 
-        if (org) {
-            res.status(200).json({ message: `Here are your organizations!`, org: org });
+        if (organizations && organizations.length > 0) {
+            // Clean up the response data to remove internal keys
+            const cleanedOrgs = organizations.map(org => {
+                const { PK, SK, GSI1PK, GSI1SK, GSI2PK, GSI2SK, ...cleanOrg } = org;
+                return cleanOrg;
+            });
+            
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    organizations: cleanedOrgs
+                }
+            });
         } else {
-            // res.status(204).json({ message: `No organizations found!` });
-            throw new AppError(`No organizations found!`, 204);
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    organizations: []
+                },
+                message: "No organizations found"
+            });
         }
     } catch (error) {
         if (error instanceof AppError) {
@@ -46,9 +61,14 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
     }
 });
 
-orgRouter.post(`/`, async (req: Request, res: Response) => {
+// Create a new organization
+orgRouter.post('/', async (req: Request, res: Response) => {
     try {
-        const { name, logoUrl } = req.body;
+        const { name, logoUrl, description, website, contactEmail } = req.body;
+
+        if (!name) {
+            throw new AppError('Organization name is required', 400);
+        }
 
         const user = await userService.findUserByEmail(res.locals.user.email);
 
@@ -56,19 +76,30 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
             throw new AppError('User not found', 404);
         }
 
-        const organization: OrganizationCreateRequest = {
+        const organizationRequest: OrganizationCreateRequest = {
             name,
-            logoUrl,
+            logoUrl: logoUrl || '',
+            description,
+            website,
+            contactEmail
         };
 
-        const org = await orgService.createOrg(organization, user.id);
+        const newOrg = await orgService.createOrg(organizationRequest, user.id);
 
-        if (org) {
-            res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
+        if (newOrg) {
+            // Update user role to admin if successful
+            await userService.updateUserRole(user.id, UserRole.ADMIN);
+            
+            res.status(201).json({
+                status: 'success',
+                data: {
+                    organization: newOrg
+                },
+                message: 'Organization created successfully'
+            });
         } else {
-            throw new AppError(`Organization not created`, 400);
+            throw new AppError('Failed to create organization', 400);
         }
-
     } catch (error) {
         if (error instanceof AppError) {
             return res.status(error.statusCode).json({

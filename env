@@ -1,0 +1,4 @@
+TABLE_NAME=PhotoComp-Dev-Table
+JWT_SECRET=your_jwt_secret_here
+EXPIRES_IN=1h
+REGION=us-west-2

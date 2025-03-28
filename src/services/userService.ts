@@ -1,5 +1,5 @@
 import { UserRepository } from '../repositories/userRepository';
-import { User, RegisterRequest, createUserFromRegister, AuthRequest } from '../models/User';
+import { User, RegisterRequest, createUserFromRegister, AuthRequest, UserRole } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -93,6 +93,28 @@ export class UserService {
                 throw error;
             }
             throw new AppError(`Login failed: ${(error as Error).message}`, 500);
+        }
+    }
+
+    // New method to update user role
+    async updateUserRole(userId: string, role: UserRole): Promise<User | null> {
+        try {
+            const user = await this.userRepository.getUserById(userId);
+            
+            if (!user) {
+                throw new AppError('User not found', 404);
+            }
+            
+            // Update the user's role
+            user.role = role;
+            user.updatedAt = new Date().toISOString();
+            
+            return await this.userRepository.updateUser(user);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to update user role: ${(error as Error).message}`, 500);
         }
     }
 

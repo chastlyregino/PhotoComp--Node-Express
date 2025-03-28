@@ -5,8 +5,6 @@ import {
     createOrganization,
     OrganizationUpdateRequest,
     updateOrganization,
-    UserOrganizationRelationship,
-    addOrganizationAdmin,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 
@@ -18,26 +16,23 @@ export class OrgService {
     }
 
     async createOrg(
-        createOrg: OrganizationCreateRequest,
+        createOrgRequest: OrganizationCreateRequest,
         userId: string
-    ): Promise<OrganizationCreateRequest | null> {
+    ): Promise<Organization | null> {
         try {
-            //add unique org name logic
-
-            //enter create logic here
-            const org = createOrganization(createOrg, userId);
+            // Create the organization object from the request
+            const org = createOrganization(createOrgRequest, userId);
 
             try {
-                const creatOrg = await this.orgRepository.createOrg(org);
-
-                //need to think about return value also in repo
-                return createOrg;
+                // Persist to database
+                const createdOrg = await this.orgRepository.createOrg(org);
+                return createdOrg;
             } catch (error) {
                 if (error instanceof AppError) {
                     throw error;
                 }
                 throw new AppError(
-                    `Organization creation failed: DB! ${(error as Error).message}`,
+                    `Organization creation failed: ${(error as Error).message}`,
                     500
                 );
             }
@@ -46,7 +41,7 @@ export class OrgService {
                 throw error;
             }
             throw new AppError(
-                `Organization creation failed: Model! ${(error as Error).message}`,
+                `Organization creation failed: ${(error as Error).message}`,
                 500
             );
         }
@@ -54,15 +49,13 @@ export class OrgService {
 
     async findOrgById(id: string): Promise<Organization | null> {
         try {
-            //enter findById logic here
-            //const org =
             return await this.orgRepository.findOrgById(id);
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
             throw new AppError(
-                `Finding Organization by ID failed! ${(error as Error).message}`,
+                `Finding Organization by ID failed: ${(error as Error).message}`,
                 500
             );
         }
@@ -70,14 +63,13 @@ export class OrgService {
 
     async findOrgsByUser(userId: string): Promise<Organization[] | null> {
         try {
-            //enter findByUser logic here
             return await this.orgRepository.findOrgsByUser(userId);
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
             throw new AppError(
-                `Finding Organization by User failed! ${(error as Error).message}`,
+                `Finding Organizations by User failed: ${(error as Error).message}`,
                 500
             );
         }
@@ -85,14 +77,21 @@ export class OrgService {
 
     async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
         try {
-            //enter update logic here
-            //need to think about return value also in repo
-            return await this.orgRepository.updateOrgById(org);
+            const updatedOrg = updateOrganization({
+                name: org.name,
+                description: org.description,
+                logoUrl: org.logoUrl,
+                isPublic: org.isPublic,
+                website: org.website,
+                contactEmail: org.contactEmail
+            }, org);
+            
+            return await this.orgRepository.updateOrgById(updatedOrg);
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
+            throw new AppError(`Updating Organization failed: ${(error as Error).message}`, 500);
         }
     }
 }
