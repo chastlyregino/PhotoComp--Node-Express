@@ -23,12 +23,15 @@ app.get('/', (req, res) => {
     res.send('PhotoComp API is running');
 });
 
+
+app.use(errorHandler);
+
+
 // Default 404 for non-existent pages and methods
 app.all(/(.*)/, (req, res) => {
     res.status(404).json({ message: `Invalid Page!` });
 });
 
-app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on http://localhost:${PORT}`);
