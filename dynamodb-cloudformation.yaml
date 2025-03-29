@@ -20,7 +20,7 @@ Resources:
   PhotoCompTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${ApplicationName}-${Environment}-Table
+      TableName: TABLE_NAME_HERE
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: PK
@@ -64,16 +64,3 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Environment
           Value: !Ref Environment
-
-Outputs:
-  TableName:
-    Description: Name of the DynamoDB table
-    Value: !Ref PhotoCompTable
-    Export:
-      Name: !Sub ${ApplicationName}-${Environment}-TableName
-  
-  TableArn:
-    Description: ARN of the DynamoDB table
-    Value: !GetAtt PhotoCompTable.Arn
-    Export:
-      Name: !Sub ${ApplicationName}-${Environment}-TableArn
