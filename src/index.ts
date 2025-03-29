@@ -34,5 +34,11 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
+
+// powershell
+// $env:NODE_ENV="production"; npm run dev
+
+// terminal
+// NODE_ENV=production npm run dev
