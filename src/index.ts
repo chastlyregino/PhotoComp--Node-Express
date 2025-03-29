@@ -1,25 +1,44 @@
-// // File with intentional issues to test pre-commit hooks
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { authRouter } from './controllers/authController';
+import { errorHandler } from './middleware/errorHandler';
 
-// const greeting = (name: string) => {
-//     // eslint-disable-next-line no-console
-//     console.log('Hello, ' + name + '!'); // Using console.log and double quotes
+// Load environment variables
+dotenv.config();
 
-//     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//     const unused = 'This variable is never used';
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-//     return 'Greeting completed'; // Missing semicolon
-//   };
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-//   export default greeting;
+// Routes
+app.use('/api/auth', authRouter);
 
-// File with intentional issues to test pre-commit hooks
+// Default route
+app.get('/', (req, res) => {
+  res.send('PhotoComp API is running');
+});
 
-const greeting = (name: string) => {
-  console.log('Hello, ' + name + '!'); // Using console.log and double quotes
+// 404 handler - must be before the error handler
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  res.status(404);
+  next(error);
+});
 
-  const unused = 'This variable is never used';
+// Error handling middleware must be used after all routes
+app.use(errorHandler);
 
-  return 'Greeting completed'; // Missing semicolon
-};
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+});
 
-export default greeting;
+// powershell
+// $env:NODE_ENV="production"; npm run dev
+
+// terminal
+// NODE_ENV=production npm run dev
