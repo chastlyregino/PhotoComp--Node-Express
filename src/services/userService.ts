@@ -11,10 +11,14 @@ export class UserService {
     this.userRepository = userRepository;
   }
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findUserByEmail(email);
+  }
+
   async register(registerRequest: RegisterRequest): Promise<{ user: Omit<User, 'password'>, token: string }> {
     try {
       // Check if user with this email already exists
-      const existingUser = await this.userRepository.findUserByEmail(registerRequest.email);
+      const existingUser = await this.getUserByEmail(registerRequest.email);
 
       if (existingUser) {
         throw new AppError('Email already in use', 409);

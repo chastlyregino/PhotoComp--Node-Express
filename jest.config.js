@@ -14,8 +14,6 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  // Setup file to run before tests
-  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
   // Add roots to help with module resolution
   roots: ['<rootDir>'],
   modulePaths: ['<rootDir>']
