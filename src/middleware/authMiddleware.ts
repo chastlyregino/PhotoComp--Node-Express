@@ -39,10 +39,10 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
             // Store user info in res.locals for consistency
             res.locals.user = decoded;
             
-            
             next();
         } catch (error) {
-            return next(new AppError('Invalid authentication token', 401));
+            // Pass the original JWT error to errorHandler middleware
+            return next(error);
         }
     } catch (error) {
         return next(new AppError('Authentication failed', 401));
@@ -54,7 +54,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
  * Must be used after authenticate middleware
  */
 export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-    // Check res.locals first (preferred approach)
+
     const user = res.locals.user;
     
     if (!user || user.role !== UserRole.ADMIN) {
