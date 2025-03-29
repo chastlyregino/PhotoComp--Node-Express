@@ -3,7 +3,17 @@ import { User, UserRole, UserStatus } from '../models/User';
 import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
+/**
+ * Repository class for User-related database operations
+ * Handles CRUD operations for user data in DynamoDB
+ */
 export class UserRepository {
+    /**
+     * Create a new user in the database
+     * @param user The user object to create
+     * @returns The created user
+     * @throws AppError if user already exists or operation fails
+     */
     async createUser(user: User): Promise<User> {
         try {
             await dynamoDb.send(
@@ -22,6 +32,12 @@ export class UserRepository {
         }
     }
 
+    /**
+     * Find a user by email address
+     * @param email Email address to search for
+     * @returns The user object or null if not found
+     * @throws AppError if operation fails
+     */
     async findUserByEmail(email: string): Promise<User | null> {
         try {
             const params = {
@@ -45,6 +61,12 @@ export class UserRepository {
         }
     }
 
+    /**
+     * Get a user by their ID
+     * @param userId The user ID to look up
+     * @returns The user object or null if not found
+     * @throws AppError if operation fails
+     */
     async getUserById(userId: string): Promise<User | null> {
         try {
             const result = await dynamoDb.send(

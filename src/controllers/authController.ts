@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { Request, Response, NextFunction, Router } from 'express';
 import { UserService } from '../services/userService';
 import { AuthRequest, RegisterRequest } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
@@ -6,8 +6,11 @@ import { AppError } from '../middleware/errorHandler';
 const userService = new UserService();
 export const authRouter = Router();
 
-// Register endpoint
-authRouter.post('/register', async (req: Request, res: Response) => {
+/**
+ * Register a new user
+ * @route POST /api/auth/register
+ */
+authRouter.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate request body
     const { email, password, firstName, lastName } = req.body;
@@ -46,21 +49,16 @@ authRouter.post('/register', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({
-        status: 'error',
-        message: error.message
-      });
-    }
-    
-    return res.status(500).json({
-      status: 'error',
-      message: 'Registration failed'
-    });
+    // Pass all errors to the error middleware
+    next(error);
   }
 });
 
-authRouter.post('/login', async (req: Request, res: Response) => {
+/**
+ * Login an existing user
+ * @route POST /api/auth/login
+ */
+authRouter.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate request body
     const { email, password } = req.body;
@@ -86,16 +84,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({
-        status: 'error',
-        message: error.message
-      });
-    }
-    
-    return res.status(500).json({
-      status: 'error',
-      message: 'Login failed'
-    });
+    // Pass all errors to the error middleware
+    next(error);
   }
 });

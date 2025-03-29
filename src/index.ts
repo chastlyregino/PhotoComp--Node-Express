@@ -22,6 +22,13 @@ app.get('/', (req, res) => {
   res.send('PhotoComp API is running');
 });
 
+// 404 handler - must be before the error handler
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  res.status(404);
+  next(error);
+});
+
 // Error handling middleware must be used after all routes
 app.use(errorHandler);
 
