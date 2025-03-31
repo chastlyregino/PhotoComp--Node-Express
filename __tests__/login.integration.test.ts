@@ -1,7 +1,7 @@
 // Mock the modules before any imports
 jest.mock('bcryptjs', () => ({
-  genSalt: jest.fn(),
-  hash: jest.fn(),
+  genSalt: jest.fn().mockResolvedValue('salt'),
+  hash: jest.fn().mockResolvedValue('hashedPassword'),
   compare: jest.fn()
 }));
 
@@ -26,9 +26,10 @@ jest.mock('../src/config/db', () => ({
   TABLE_NAME: 'test-table'
 }));
 
+// Now import dependencies after mocks are set up
 import request from 'supertest';
 import express from 'express';
-import { UserRole, UserStatus } from '../src/models/User';
+import { UserRole } from '../src/models/User';
 import jwt from 'jsonwebtoken';
 import { dynamoDb } from '../src/config/db';
 import bcrypt from 'bcryptjs';
@@ -61,14 +62,13 @@ describe('Auth Integration Tests', () => {
 
     const existingUser = {
       PK: 'USER#123',
-      SK: 'PROFILE#123',
+      SK: 'ENTITY',
       id: '123',
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
       password: 'hashedPassword123',
       role: UserRole.USER,
-      status: UserStatus.ACTIVE,
       createdAt: '2023-01-01T00:00:00.000Z',
       updatedAt: '2023-01-01T00:00:00.000Z',
       type: 'USER',
@@ -182,7 +182,7 @@ describe('Auth Integration Tests', () => {
         .expect(500);
 
       expect(response.body.status).toBe('error');
-      expect(response.body.message).toContain('failed');
+      expect(response.body.message).toContain('Database connection failed');
 
       // Verify DynamoDB was called
       expect(mockDynamoSend).toHaveBeenCalledTimes(1);
@@ -193,14 +193,13 @@ describe('Auth Integration Tests', () => {
     it('should generate a valid JWT token with correct payload', async () => {
       const existingUser = {
         PK: 'USER#123',
-        SK: 'PROFILE#123',
+        SK: 'ENTITY',
         id: '123',
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
         password: 'hashedPassword123',
         role: UserRole.USER,
-        status: UserStatus.ACTIVE,
         createdAt: '2023-01-01T00:00:00.000Z',
         updatedAt: '2023-01-01T00:00:00.000Z',
         type: 'USER',

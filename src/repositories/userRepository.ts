@@ -1,5 +1,5 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
-import { User, UserRole, UserStatus } from '../models/User';
+import { User, UserRole } from '../models/User';
 import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 

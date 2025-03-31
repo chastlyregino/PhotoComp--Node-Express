@@ -6,22 +6,16 @@ export enum UserRole {
   ADMIN = 'ADMIN',   // User with admin privileges in an organization
 }
 
-export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  PENDING = 'PENDING',
-}
 
 export interface User {
   PK: string; // USER#<id>
-  SK: string; // PROFILE#<id>
+  SK: 'ENTITY'; 
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   password: string;
   role: UserRole;
-  status: UserStatus;
   createdAt: string;
   updatedAt: string;
   type: 'USER';
@@ -30,16 +24,6 @@ export interface User {
   GSI1SK?: string; // USER#<id>
 }
 
-export interface UserOrganization {
-  PK: string; // USER#<userId>
-  SK: string; // ORG#<organizationId>
-  userId: string;
-  organizationId: string;
-  role: UserRole;
-  status: UserStatus;
-  joinedAt: string;
-  type: 'USER_ORG';
-}
 
 export interface AuthRequest {
   email: string;
@@ -57,14 +41,13 @@ export const createUserFromRegister = (registerRequest: RegisterRequest): User =
   
   return {
     PK: `USER#${id}`,
-    SK: `PROFILE#${id}`,
+    SK: `ENTITY`,
     id,
     email: registerRequest.email,
     firstName: registerRequest.firstName,
     lastName: registerRequest.lastName,
     password: registerRequest.password,
     role: UserRole.USER, // Default role is USER
-    status: UserStatus.ACTIVE,
     createdAt: now,
     updatedAt: now,
     type: 'USER',
