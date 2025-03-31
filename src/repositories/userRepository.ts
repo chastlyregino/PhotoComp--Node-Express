@@ -42,10 +42,11 @@ export class UserRepository {
         try {
             const params = {
                 TableName: TABLE_NAME,
-                IndexName: 'EmailIndex',
-                KeyConditionExpression: 'GSI1PK = :emailKey',
+                IndexName: 'GSI1PK-GSI1SK-INDEX',
+                KeyConditionExpression: 'GSI1PK = :emailKey AND GSI1SK = :entityValue',
                 ExpressionAttributeValues: {
                     ':emailKey': `EMAIL#${email}`,
+                    ':entityValue': 'ENTITY'
                 },
             };
 
@@ -74,7 +75,7 @@ export class UserRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `USER#${userId}`,
-                        SK: `PROFILE#${userId}`,
+                        SK: `ENTITY`,
                     },
                 })
             );
