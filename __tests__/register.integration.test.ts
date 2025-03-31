@@ -1,3 +1,12 @@
+// Now import dependencies after mocks are set up
+import request from 'supertest';
+import express from 'express';
+import { UserRole } from '../src/models/User';
+import jwt from 'jsonwebtoken';
+import { dynamoDb } from '../src/config/db';
+import bcrypt from 'bcryptjs';
+import { setupTestEnvironment, createTestApp } from './utils/test-utils';
+
 // Mock the modules before any imports
 jest.mock('bcryptjs', () => ({
   genSalt: jest.fn().mockResolvedValue('salt'),
@@ -26,14 +35,7 @@ jest.mock('../src/config/db', () => ({
   TABLE_NAME: 'test-table'
 }));
 
-// Now import dependencies after mocks are set up
-import request from 'supertest';
-import express from 'express';
-import { UserRole, UserStatus } from '../src/models/User';
-import jwt from 'jsonwebtoken';
-import { dynamoDb } from '../src/config/db';
-import bcrypt from 'bcryptjs';
-import { setupTestEnvironment, createTestApp } from './utils/test-utils';
+
 
 // Cast the mock for type safety
 const mockDynamoSend = dynamoDb.send as jest.Mock;
@@ -104,7 +106,7 @@ describe('Auth Integration Tests', () => {
         return Promise.resolve({
           Items: [{
             PK: 'USER#123',
-            SK: 'PROFILE#123',
+            SK: 'ENTITY',
             id: '123',
             email: validRegistration.email,
             firstName: 'Existing',
