@@ -21,7 +21,7 @@ export interface User {
   type: 'USER';
   // GSI attributes
   GSI1PK?: string; // EMAIL#<email>
-  GSI1SK?: string; // USER#<id>
+  GSI1SK?: 'ENTITY'; // ENTITY
 }
 
 
@@ -53,6 +53,6 @@ export const createUserFromRegister = (registerRequest: RegisterRequest): User =
     type: 'USER',
     // GSI for email lookups
     GSI1PK: `EMAIL#${registerRequest.email}`,
-    GSI1SK: `USER#${id}`,
+    GSI1SK: `ENTITY`,
   };
 };

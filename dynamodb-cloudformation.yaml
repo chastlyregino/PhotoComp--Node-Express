@@ -20,7 +20,7 @@ Resources:
   PhotoCompTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: PhotoComp Table
+      TableName: PhotoCompTable
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: PK
