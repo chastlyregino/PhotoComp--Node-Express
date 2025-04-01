@@ -83,10 +83,10 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
     try {
         const { name, logoUrl } = req.body;
 
-        if(!name || !logoUrl) {
+        if (!name || !logoUrl) {
             throw new AppError('Name and logoUrl are required', 400);
         }
-        const user = await userService.findUserByEmail(res.locals.user.email);
+        const user = await userService.getUserByEmail(res.locals.user.email);
 
         if (!user) {
             throw new AppError('User not found', 404);
@@ -118,7 +118,6 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
         } else {
             throw new AppError(`Organization not created`, 400);
         }
-
     } catch (error) {
         if (error instanceof AppError) {
             return res.status(error.statusCode).json({

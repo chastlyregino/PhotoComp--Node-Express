@@ -1,0 +1,287 @@
+{
+    "info": {
+        "_postman_id": "c9a8d4bc-158e-4d9b-b440-c5e71877a54e",
+        "name": "PhotoComp API",
+        "description": "API collection for PhotoComp - a photo-sharing event platform",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "42793464"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Parse the response",
+                                    "const responseJson = pm.response.json();",
+                                    "",
+                                    "// Test for successful registration",
+                                    "pm.test(\"Registration successful\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    pm.response.to.be.json;",
+                                    "    pm.expect(responseJson.status).to.eql('success');",
+                                    "    pm.expect(responseJson.data).to.have.property('token');",
+                                    "    pm.expect(responseJson.data).to.have.property('user');",
+                                    "});",
+                                    "",
+                                    "// If registration is successful, store the token and user information",
+                                    "if (pm.response.code === 201 && responseJson.status === 'success') {",
+                                    "    // Store the token",
+                                    "    pm.collectionVariables.set('authToken', responseJson.data.token);",
+                                    "    ",
+                                    "    // Store user information",
+                                    "    if (responseJson.data.user) {",
+                                    "        pm.collectionVariables.set('userId', responseJson.data.user.id);",
+                                    "        pm.collectionVariables.set('userEmail', responseJson.data.user.email);",
+                                    "        pm.collectionVariables.set('userRole', responseJson.data.user.role);",
+                                    "    }",
+                                    "    ",
+                                    "    console.log('Saved token and user info after registration');",
+                                    "}",
+                                    "",
+                                    "// Test for validation of required fields",
+                                    "pm.test(\"User object has required fields\", function () {",
+                                    "    if (pm.response.code === 201) {",
+                                    "        const user = responseJson.data.user;",
+                                    "        pm.expect(user).to.have.property('email');",
+                                    "        pm.expect(user).to.have.property('firstName');",
+                                    "        pm.expect(user).to.have.property('lastName');",
+                                    "        pm.expect(user).to.have.property('role');",
+                                    "        pm.expect(user).to.have.property('status');",
+                                    "        pm.expect(user).to.not.have.property('password');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "// Generate a random email to avoid conflicts with existing users",
+                                    "const randomString = Math.random().toString(36).substring(2, 8);",
+                                    "const email = `user_${randomString}@example.com`;",
+                                    "",
+                                    "// Set the email as an environment variable",
+                                    "pm.collectionVariables.set('userEmail', email);",
+                                    "",
+                                    "// Set email in the request body",
+                                    "pm.variables.set('email', email);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"Password123\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/auth/register",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "auth", "register"]
+                        },
+                        "description": "Register a new user in the PhotoComp application"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Parse the response",
+                                    "const responseJson = pm.response.json();",
+                                    "",
+                                    "// Test for successful login",
+                                    "pm.test(\"Login successful\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.response.to.be.json;",
+                                    "    pm.expect(responseJson.status).to.eql('success');",
+                                    "    pm.expect(responseJson.data).to.have.property('token');",
+                                    "    pm.expect(responseJson.data).to.have.property('user');",
+                                    "});",
+                                    "",
+                                    "// If login is successful, store the token and user information",
+                                    "if (pm.response.code === 200 && responseJson.status === 'success') {",
+                                    "    // Store the token",
+                                    "    pm.collectionVariables.set('authToken', responseJson.data.token);",
+                                    "    ",
+                                    "    // Store user information",
+                                    "    if (responseJson.data.user) {",
+                                    "        pm.collectionVariables.set('userId', responseJson.data.user.id);",
+                                    "        pm.collectionVariables.set('userEmail', responseJson.data.user.email);",
+                                    "        pm.collectionVariables.set('userRole', responseJson.data.user.role);",
+                                    "    }",
+                                    "    ",
+                                    "    console.log('Saved token and user info after login');",
+                                    "}",
+                                    "",
+                                    "// Test for user object structure",
+                                    "pm.test(\"User object has expected properties\", function () {",
+                                    "    if (pm.response.code === 200) {",
+                                    "        const user = responseJson.data.user;",
+                                    "        pm.expect(user).to.have.property('id');",
+                                    "        pm.expect(user).to.have.property('email');",
+                                    "        pm.expect(user).to.have.property('firstName');",
+                                    "        pm.expect(user).to.have.property('lastName');",
+                                    "        pm.expect(user).to.not.have.property('password');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "// Use the email from collection variables if available",
+                                    "const storedEmail = pm.collectionVariables.get('userEmail');",
+                                    "",
+                                    "// If no email is stored (first run), we'll use a default",
+                                    "if (!storedEmail) {",
+                                    "    console.log('No stored email found. Run Register User first or set userEmail manually.');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"Password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/auth/login",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "auth", "login"]
+                        },
+                        "description": "Login with existing user credentials"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Authentication endpoints for user registration and login"
+        },
+        {
+            "name": "API Health Check",
+            "item": [
+                {
+                    "name": "Check API Status",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"API is running\", function () {",
+                                    "    pm.response.to.have.body(\"PhotoComp API is running\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/",
+                            "host": ["{{baseUrl}}"],
+                            "path": [""]
+                        },
+                        "description": "Check if the API server is running"
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{authToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Global pre-request script that runs before each request",
+                    "// For example, you can check if the token is expired and refresh it"
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Global test script that runs after each request",
+                    "// For example, you can log response times or handle common error patterns"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "authToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "userId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "userEmail",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "userRole",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}
