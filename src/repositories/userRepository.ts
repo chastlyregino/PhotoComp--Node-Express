@@ -1,6 +1,6 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { User, UserRole } from '../models/User';
-import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 /**
@@ -87,6 +87,45 @@ export class UserRepository {
             return result.Item as User;
         } catch (error: any) {
             throw new AppError(`Failed to get user by ID: ${error.message}`, 500);
+        }
+    }
+
+    /**
+    * Delete a user by their ID
+    * @param userId The user ID to delete
+    * @returns True if deletion was successful
+    * @throws AppError if user doesn't exist or operation fails
+    */
+    async deleteUserById(userId: string): Promise<boolean> {
+        try {
+            // First verify the user exists
+            const user = await this.getUserById(userId);
+
+            if (!user) {
+                throw new AppError('User not found', 404);
+            }
+
+            // Delete the user from the database
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `USER#${userId}`,
+                        SK: 'ENTITY',
+                    },
+                    // Ensure the item exists before deleting
+                    ConditionExpression: 'attribute_exists(PK)'
+                })
+            );
+
+            return true;
+        } catch (error: any) {
+
+            if (error.name === 'ConditionalCheckFailedException') {
+                throw new AppError('User not found', 404);
+            }
+
+            throw new AppError(`Failed to delete user: ${error.message}`, 500);
         }
     }
 }
