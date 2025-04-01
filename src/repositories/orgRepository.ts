@@ -67,7 +67,7 @@ export class OrgRepository {
         }
     }
 
-// Code below is for future tickets. use/remove when necessary - SCRUM-53
+    // Code below is for future tickets. use/remove when necessary - SCRUM-53
     // async findOrgsByUser(userId: string): Promise<Organization[] | null> {
     //     try {
     //         const params = {
@@ -80,7 +80,7 @@ export class OrgRepository {
     //         };
 
     //         const result = await dynamoDb.send(new QueryCommand(params));
-    //         console.log(result);
+    //         //console.log(result);
     //         if (!result.Items || result.Items.length === 0) {
     //             return [];
     //         }

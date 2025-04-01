@@ -94,8 +94,8 @@ export class OrgService {
             );
         }
     }
-    
-// Code below is for future tickets. use/remove when necessary - SCRUM-53
+
+    // Code below is for future tickets. use/remove when necessary - SCRUM-53
     // async findOrgsByUser(userId: string): Promise<Organization[] | null> {
     //     try {
     //         //enter findByUser logic here

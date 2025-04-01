@@ -99,8 +99,8 @@ export const updateOrganization = (
 
 // For creating the relationship between an organization and its admin
 export interface UserOrganizationRelationship {
-    PK: string; // ORG#NAME
-    SK: string; // USER#<userId>
+    PK: string; // USER#<userId>
+    SK: string; // ORG#NAME
     userId: string;
     organizationName: string;
     role: UserRole;
@@ -108,8 +108,8 @@ export interface UserOrganizationRelationship {
     type: 'USER_ORG';
 
     // GSI for fetching all organizations a user belongs to
-    GSI1PK?: string; // USER#<userId>
-    GSI1SK?: string; // ORG#NAME
+    GSI1PK?: string; // ORG#NAME
+    GSI1SK?: string; // USER#<userId>
 }
 
 export const addOrganizationAdmin = (
@@ -119,16 +119,16 @@ export const addOrganizationAdmin = (
     const now = new Date().toISOString();
 
     return {
-        PK: `ORG#${organizationName.toUpperCase()}`,
-        SK: `USER#${userId}`,
+        PK: `USER#${userId}`,
+        SK: `ORG#${organizationName.toUpperCase()}`,
         userId,
         organizationName: organizationName,
         role: UserRole.ADMIN,
         joinedAt: now,
         type: 'USER_ORG',
         // Add GSI for querying all organizations a user belongs to
-        GSI1PK: `USER#${userId}`,
-        GSI1SK: `ORG#${organizationName.toUpperCase()}`,
+        GSI1PK: `ORG#${organizationName.toUpperCase()}`,
+        GSI1SK: `USER#${userId}`,
     };
 };
 
