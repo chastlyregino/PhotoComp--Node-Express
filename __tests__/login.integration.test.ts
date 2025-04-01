@@ -61,9 +61,9 @@ describe('Auth Integration Tests', () => {
     };
 
     const existingUser = {
-      PK: 'USER#123',
+      PK: 'USER#TESTUSER',
       SK: 'ENTITY',
-      id: '123',
+      username: 'TESTUSER',
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
@@ -73,7 +73,7 @@ describe('Auth Integration Tests', () => {
       updatedAt: '2023-01-01T00:00:00.000Z',
       type: 'USER',
       GSI1PK: 'EMAIL#test@example.com',
-      GSI1SK: 'USER#123'
+      GSI1SK: 'ENTITY'
     };
 
     it('should login successfully with valid credentials', async () => {
@@ -101,6 +101,7 @@ describe('Auth Integration Tests', () => {
       expect(response.body.data.user.email).toBe(validLogin.email);
       expect(response.body.data.user.firstName).toBe(existingUser.firstName);
       expect(response.body.data.user.lastName).toBe(existingUser.lastName);
+      expect(response.body.data.user.username).toBe(existingUser.username);
 
       // Verify password is not returned
       expect(response.body.data.user.password).toBeUndefined();
@@ -109,6 +110,7 @@ describe('Auth Integration Tests', () => {
       expect(mockDynamoSend).toHaveBeenCalledTimes(1);
     });
 
+    // Other tests remain similar but with username instead of id
     it('should return 401 when user does not exist', async () => {
       // Mock dynamoDb.send for findUserByEmail (no user found)
       mockDynamoSend.mockImplementationOnce(() => {
@@ -192,9 +194,9 @@ describe('Auth Integration Tests', () => {
   describe('JWT Token Verification for Login', () => {
     it('should generate a valid JWT token with correct payload', async () => {
       const existingUser = {
-        PK: 'USER#123',
+        PK: 'USER#TESTUSER',
         SK: 'ENTITY',
-        id: '123',
+        username: 'TESTUSER',
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
@@ -204,7 +206,7 @@ describe('Auth Integration Tests', () => {
         updatedAt: '2023-01-01T00:00:00.000Z',
         type: 'USER',
         GSI1PK: 'EMAIL#test@example.com',
-        GSI1SK: 'USER#123'
+        GSI1SK: 'ENTITY'
       };
 
       // Mock dynamoDb.send for findUserByEmail
@@ -233,7 +235,7 @@ describe('Auth Integration Tests', () => {
       // Verify token contains correct user information
       expect(decodedToken.email).toBe(validLogin.email);
       expect(decodedToken.role).toBe(UserRole.USER);
-      expect(decodedToken.id).toBe('123');
+      expect(decodedToken.username).toBe('TESTUSER');
       expect(decodedToken.iat).toBeDefined(); // Issued at time
       expect(decodedToken.exp).toBeDefined(); // Expiration time
     });

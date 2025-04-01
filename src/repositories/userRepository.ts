@@ -26,7 +26,7 @@ export class UserRepository {
             return user;
         } catch (error: any) {
             if (error.name === 'ConditionalCheckFailedException') {
-                throw new AppError('User already exists', 409);
+                throw new AppError('Username already taken', 409);
             }
             throw new AppError(`Failed to create user: ${error.message}`, 500);
         }
@@ -63,18 +63,21 @@ export class UserRepository {
     }
 
     /**
-     * Get a user by their ID
-     * @param userId The user ID to look up
+     * Find a user by username
+     * @param username Username to search for (case insensitive)
      * @returns The user object or null if not found
      * @throws AppError if operation fails
      */
-    async getUserById(userId: string): Promise<User | null> {
+    async findUserByUsername(username: string): Promise<User | null> {
         try {
+            // Convert username to uppercase for consistent lookup
+            const uppercaseUsername = username.toUpperCase();
+            
             const result = await dynamoDb.send(
                 new GetCommand({
                     TableName: TABLE_NAME,
                     Key: {
-                        PK: `USER#${userId}`,
+                        PK: `USER#${uppercaseUsername}`,
                         SK: `ENTITY`,
                     },
                 })
@@ -86,7 +89,7 @@ export class UserRepository {
 
             return result.Item as User;
         } catch (error: any) {
-            throw new AppError(`Failed to get user by ID: ${error.message}`, 500);
+            throw new AppError(`Failed to find user by username: ${error.message}`, 500);
         }
     }
 }

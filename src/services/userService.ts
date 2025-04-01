@@ -15,12 +15,40 @@ export class UserService {
     return await this.userRepository.findUserByEmail(email);
   }
 
+  async getUserByUsername(username: string): Promise<User | null> {
+    return await this.userRepository.findUserByUsername(username);
+  }
+
+  /**
+   * Validates username format
+   * @param username Username to validate
+   * @throws AppError if username is invalid
+   */
+  private validateUsername(username: string): void {
+    // Username requirements: 3-20 alphanumeric characters and underscores only
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      throw new AppError(
+        'Username must be 3-20 characters and contain only letters, numbers, and underscores', 
+        400
+      );
+    }
+  }
+
   async register(registerRequest: RegisterRequest): Promise<{ user: Omit<User, 'password'>, token: string }> {
     try {
-      // Check if user with this email already exists
-      const existingUser = await this.getUserByEmail(registerRequest.email);
+      // Validate username format
+      this.validateUsername(registerRequest.username);
 
-      if (existingUser) {
+      // Check if username is already taken (case insensitive)
+      const existingUserByUsername = await this.getUserByUsername(registerRequest.username);
+      if (existingUserByUsername) {
+        throw new AppError('Username already taken', 409);
+      }
+
+      // Check if user with this email already exists
+      const existingUserByEmail = await this.getUserByEmail(registerRequest.email);
+      if (existingUserByEmail) {
         throw new AppError('Email already in use', 409);
       }
 
@@ -95,7 +123,7 @@ export class UserService {
   private generateToken(user: User): string {
     return jwt.sign(
       {
-        id: user.id,
+        username: user.username,
         email: user.email,
         role: user.role
       },

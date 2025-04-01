@@ -35,8 +35,6 @@ jest.mock('../src/config/db', () => ({
   TABLE_NAME: 'test-table'
 }));
 
-
-
 // Cast the mock for type safety
 const mockDynamoSend = dynamoDb.send as jest.Mock;
 
@@ -60,6 +58,7 @@ describe('Auth Integration Tests', () => {
     const validRegistration = {
       email: 'newuser@example.com',
       password: 'Password123',
+      username: 'newuser',
       firstName: 'New',
       lastName: 'User'
     };
@@ -69,6 +68,13 @@ describe('Auth Integration Tests', () => {
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({
           Items: []
+        });
+      });
+      
+      // Mock dynamoDb.send for findUserByUsername (no user found)
+      mockDynamoSend.mockImplementationOnce(() => {
+        return Promise.resolve({
+          Item: null
         });
       });
 
@@ -89,6 +95,7 @@ describe('Auth Integration Tests', () => {
 
       // Verify user data is correct
       expect(response.body.data.user.email).toBe(validRegistration.email);
+      expect(response.body.data.user.username).toBe(validRegistration.username.toUpperCase());
       expect(response.body.data.user.firstName).toBe(validRegistration.firstName);
       expect(response.body.data.user.lastName).toBe(validRegistration.lastName);
       expect(response.body.data.user.role).toBe(UserRole.USER);
@@ -96,8 +103,8 @@ describe('Auth Integration Tests', () => {
       // Verify password is not returned
       expect(response.body.data.user.password).toBeUndefined();
 
-      // Verify DynamoDB was called correctly
-      expect(mockDynamoSend).toHaveBeenCalledTimes(2);
+      // Verify DynamoDB was called correctly (finding by email, by username, and creating)
+      expect(mockDynamoSend).toHaveBeenCalledTimes(3);
     });
 
     it('should return 409 when email is already in use', async () => {
@@ -105,9 +112,9 @@ describe('Auth Integration Tests', () => {
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({
           Items: [{
-            PK: 'USER#123',
+            PK: 'USER#EXISTINGUSER',
             SK: 'ENTITY',
-            id: '123',
+            username: 'EXISTINGUSER',
             email: validRegistration.email,
             firstName: 'Existing',
             lastName: 'User',
@@ -128,9 +135,41 @@ describe('Auth Integration Tests', () => {
       expect(mockDynamoSend).toHaveBeenCalledTimes(1);
     });
 
+    it('should return 409 when username is already taken', async () => {
+      // Mock dynamoDb.send for findUserByEmail (no user found)
+      mockDynamoSend.mockImplementationOnce(() => {
+        return Promise.resolve({
+          Items: []
+        });
+      });
+      
+      // Mock dynamoDb.send for findUserByUsername (user found)
+      mockDynamoSend.mockImplementationOnce(() => {
+        return Promise.resolve({
+          Item: {
+            PK: `USER#${validRegistration.username.toUpperCase()}`,
+            SK: 'ENTITY',
+            username: validRegistration.username.toUpperCase(),
+            email: 'existing@example.com'
+          }
+        });
+      });
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send(validRegistration)
+        .expect(409);
+
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBe('Username already taken');
+
+      // Verify DynamoDB was called for findUserByEmail and findUserByUsername
+      expect(mockDynamoSend).toHaveBeenCalledTimes(2);
+    });
+
     it('should return 400 for missing required fields', async () => {
       const incompleteRegistration = {
-        // Missing password and lastName
+        // Missing username, password and lastName
         email: 'newuser@example.com',
         firstName: 'New'
       };
@@ -165,6 +204,24 @@ describe('Auth Integration Tests', () => {
       expect(mockDynamoSend).not.toHaveBeenCalled();
     });
 
+    it('should return 400 for invalid username format', async () => {
+      const invalidUsernameRegistration = {
+        ...validRegistration,
+        username: 'inv@lid_user!' // Invalid username with special characters
+      };
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send(invalidUsernameRegistration)
+        .expect(400);
+
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toContain('Username must be');
+
+      // Verify DynamoDB was not called
+      expect(mockDynamoSend).not.toHaveBeenCalled();
+    });
+
     it('should return 400 for password too short', async () => {
       const weakPasswordRegistration = {
         ...validRegistration,
@@ -190,6 +247,13 @@ describe('Auth Integration Tests', () => {
           Items: []
         });
       });
+      
+      // Mock dynamoDb.send for findUserByUsername (no user found) 
+      mockDynamoSend.mockImplementationOnce(() => {
+        return Promise.resolve({
+          Item: null
+        });
+      });
 
       // Mock dynamoDb.send for createUser to throw an error
       mockDynamoSend.mockImplementationOnce(() => {
@@ -205,7 +269,7 @@ describe('Auth Integration Tests', () => {
       expect(response.body.message).toContain('failed');
 
       // Verify DynamoDB was called
-      expect(mockDynamoSend).toHaveBeenCalledTimes(2);
+      expect(mockDynamoSend).toHaveBeenCalledTimes(3);
     });
   });
 
@@ -214,6 +278,7 @@ describe('Auth Integration Tests', () => {
       const validRegistration = {
         email: 'newuser@example.com',
         password: 'Password123',
+        username: 'newuser',
         firstName: 'New',
         lastName: 'User'
       };
@@ -222,6 +287,13 @@ describe('Auth Integration Tests', () => {
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({
           Items: []
+        });
+      });
+      
+      // Mock dynamoDb.send for findUserByUsername (no user found)
+      mockDynamoSend.mockImplementationOnce(() => {
+        return Promise.resolve({
+          Item: null
         });
       });
 
@@ -241,7 +313,7 @@ describe('Auth Integration Tests', () => {
       // Verify token contains correct user information
       expect(decodedToken.email).toBe(validRegistration.email);
       expect(decodedToken.role).toBe(UserRole.USER);
-      expect(decodedToken.id).toBeDefined();
+      expect(decodedToken.username).toBe(validRegistration.username.toUpperCase());
       expect(decodedToken.iat).toBeDefined(); // Issued at time
       expect(decodedToken.exp).toBeDefined(); // Expiration time
     });

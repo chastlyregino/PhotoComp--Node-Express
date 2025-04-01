@@ -5,7 +5,7 @@ import { AppError } from './errorHandler';
 
 export interface AuthRequest extends Request {
     user?: {
-        id: string;
+        username: string; // Changed from id to username
         email: string;
         role: UserRole;
     };
@@ -31,7 +31,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
-                id: string;
+                username: string; // Changed from id to username
                 email: string;
                 role: UserRole;
             };
@@ -54,7 +54,6 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
  * Must be used after authenticate middleware
  */
 export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-
     const user = res.locals.user;
     
     if (!user || user.role !== UserRole.ADMIN) {

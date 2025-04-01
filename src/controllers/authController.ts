@@ -13,10 +13,10 @@ export const authRouter = Router();
 authRouter.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate request body
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, username, firstName, lastName } = req.body;
     
-    if (!email || !password || !firstName || !lastName) {
-      throw new AppError('Email, password, first name, and last name are required', 400);
+    if (!email || !password || !username || !firstName || !lastName) {
+      throw new AppError('Email, username, password, first name, and last name are required', 400);
     }
     
     // Validate email format
@@ -33,6 +33,7 @@ authRouter.post('/register', async (req: Request, res: Response, next: NextFunct
     const registerRequest: RegisterRequest = {
       email,
       password,
+      username,
       firstName,
       lastName
     };
