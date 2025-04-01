@@ -94,21 +94,22 @@ export class OrgService {
             );
         }
     }
-
-    async findOrgsByUser(userId: string): Promise<Organization[] | null> {
-        try {
-            //enter findByUser logic here
-            return await this.orgRepository.findOrgsByUser(userId);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(
-                `Finding Organization by User failed! ${(error as Error).message}`,
-                500
-            );
-        }
-    }
+    
+// Code below is for future tickets. use/remove when necessary - SCRUM-53
+    // async findOrgsByUser(userId: string): Promise<Organization[] | null> {
+    //     try {
+    //         //enter findByUser logic here
+    //         return await this.orgRepository.findOrgsByUser(userId);
+    //     } catch (error) {
+    //         if (error instanceof AppError) {
+    //             throw error;
+    //         }
+    //         throw new AppError(
+    //             `Finding Organization by User failed! ${(error as Error).message}`,
+    //             500
+    //         );
+    //     }
+    // }
 
     // Code below is for future tickets. use/remove when necessary
 

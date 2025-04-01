@@ -15,36 +15,38 @@ export const orgRouter = Router();
 
 // throw new AppError('Email, password, first name, and last name are required', 400);
 
-orgRouter.get(`/`, async (req: Request, res: Response) => {
-    try {
-        const user = await userService.getUserByEmail(res.locals.user.email);
+// Code below is for future tickets. use/remove when necessary - SCRUM-53
 
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }
+// orgRouter.get(`/`, async (req: Request, res: Response) => {
+//     try {
+//         const user = await userService.getUserByEmail(res.locals.user.email);
 
-        const org = orgService.findOrgsByUser(user.SK); // change it with getter method
+//         if (!user) {
+//             throw new AppError('User not found', 404);
+//         }
 
-        if (org) {
-            res.status(200).json({ message: `Here are your organizations!`, org: org });
-        } else {
-            // res.status(204).json({ message: `No organizations found!` });
-            throw new AppError(`No organizations found!`, 204);
-        }
-    } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
+//         const org = orgService.findOrgsByUser(user.SK); // change it with getter method
 
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to retrieve organizations',
-        });
-    }
-});
+//         if (org) {
+//             res.status(200).json({ message: `Here are your organizations!`, org: org });
+//         } else {
+//             // res.status(204).json({ message: `No organizations found!` });
+//             throw new AppError(`No organizations found!`, 204);
+//         }
+//     } catch (error) {
+//         if (error instanceof AppError) {
+//             return res.status(error.statusCode).json({
+//                 status: 'error',
+//                 message: error.message,
+//             });
+//         }
+
+//         return res.status(500).json({
+//             status: 'error',
+//             message: 'Failed to retrieve organizations',
+//         });
+//     }
+// });
 
 orgRouter.post(`/`, async (req: Request, res: Response) => {
     try {
