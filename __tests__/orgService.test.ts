@@ -1,92 +1,38 @@
+import { addOrganizationAdmin, createOrganization } from '../src/models/Organizations';
 import {
-    Organization,
-    OrganizationCreateRequest,
-    UserOrganizationRelationship,
-    addOrganizationAdmin,
-    createOrganization,
-    createOrganizationMembershipRequest,
-} from '../src/models/Organizations';
-import { UserRole } from '../src/models/User';
+    nonExistingOrg,
+    userId,
+    org,
+    existingOrg,
+    createdOrg,
+    createdUserAdmin,
+} from './utils/orgService-test-data';
 import { OrgRepository } from '../src/repositories/orgRepository';
 import { OrgService } from '../src/services/orgService';
 
-const orgService = new OrgService();
-
-const nonExistingOrg: null = null;
-
-const userId: string = `81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70`;
-
-const org: OrganizationCreateRequest = {
-    name: `Jollibee`,
-    logoUrl: `https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8`,
-};
-
-const existingOrg: Organization = {
-    joinedAt: '2025-04-01T13:28:12.857Z',
-    logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
-    createdAt: '2025-04-01T13:28:12.857Z',
-    GSI1SK: 'ORG#PIZZA',
-    createdBy: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
-    name: 'Pizza',
-    GSI1PK: 'PIZ',
-    updatedAt: '2025-04-01T13:28:12.857Z',
-    SK: 'ENTITY',
-    isPublic: true,
-    PK: 'ORG#PIZZA',
-    id: '4353a165-adbf-43e8-8922-1da90a62a12a',
-    type: 'ORGANIZATION',
-};
-
-const createdOrg: Organization = {
-    PK: 'ORG#JOLLIBEE',
-    SK: 'ENTITY',
-    id: 'b58bfbd2-7055-4134-aa74-304ae42bf8a8',
-    name: 'Jollibee',
-    description: undefined,
-    createdBy: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
-    createdAt: '2025-04-01T17:26:48.302Z',
-    updatedAt: '2025-04-01T17:26:48.302Z',
-    type: 'ORGANIZATION',
-    joinedAt: '2025-04-01T17:26:48.302Z',
-    isPublic: true,
-    logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
-    website: undefined,
-    contactEmail: undefined,
-    GSI1PK: 'JOL',
-    GSI1SK: 'ORG#JOLLIBEE',
-};
-
-const createdUserAdmin: UserOrganizationRelationship = {
-    PK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
-    SK: 'ORG#JOLLIBEE',
-    userId: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
-    organizationName: 'Jollibee',
-    role: UserRole.ADMIN,
-    joinedAt: '2025-04-01T17:26:48.364Z',
-    type: 'USER_ORG',
-    GSI1PK: 'ORG#JOLLIBEE',
-    GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
-};
-
-jest.mock(`../src/repositories/orgRepository`, () => ({
-    createOrg: jest.fn(),
-    createUserAdmin: jest.fn(),
-    findOrgByName: jest.fn().mockImplementation((mockedOrg) => mockedOrg),
-}));
-
+// Move mocks to the top level
+jest.mock(`../src/repositories/orgRepository`);
 jest.mock(`../src/models/Organizations`, () => ({
     createOrganization: jest.fn(),
     addOrganizationAdmin: jest.fn(),
 }));
 
 describe(`Positive org tests`, () => {
-    let orgRepository: OrgRepository;
-    const spyFindOrg = jest.spyOn(orgRepository, 'findOrgByName');
-    const spyCreateOrg = jest.spyOn(orgRepository, 'createOrg');
+    // Initialize the repository variable before using it
+    let orgRepository: any;
 
     beforeEach(() => {
-        orgRepository = OrgRepository;
-        spyFindOrg.mockResolvedValue(nonExistingOrg);
+        // Create a new instance of OrgRepository
+        orgRepository = new OrgRepository();
+
+        // Set up the spies after repository is initialized
+        jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(nonExistingOrg);
+        jest.spyOn(orgRepository, 'createOrg').mockResolvedValue(createdOrg);
+        jest.spyOn(orgRepository, 'createUserAdmin').mockResolvedValue(createdUserAdmin);
+
+        // Mock models function
+        (createOrganization as jest.Mock).mockReturnValue(createdOrg);
+        (addOrganizationAdmin as jest.Mock).mockReturnValue(createdUserAdmin);
     });
 
     afterEach(() => {
@@ -94,46 +40,51 @@ describe(`Positive org tests`, () => {
     });
 
     test(`Organization created`, async () => {
-        expect(spyFindOrg).toHaveBeenCalled();
-        //expect(spyFindOrg).toBe(nonExistingOrg);
+        const orgServiceWithMock = new OrgService(orgRepository);
+        const result = await orgServiceWithMock.createOrg(org, userId);
 
-        (createOrganization as jest.Mock).mockResolvedValue(createdOrg);
-        expect(createOrganization(org, userId)).toBe(createdOrg);
-
-        spyCreateOrg.mockResolvedValue(createdOrg);
-
-        expect(spyCreateOrg).toHaveBeenCalled();
-        //expect(spyCreateOrg).toBe(createdOrg);
-
-        expect(await orgService.createOrg(org, userId)).toBe(createdOrg);
+        expect(orgRepository.findOrgByName).toHaveBeenCalled();
+        expect(orgRepository.createOrg).toHaveBeenCalled();
+        expect(result).toBe(org);
     });
 
-    // test(`UserAdmin created`, async () => {
-    //     expect(await orgService.createUserAdmin()).toEqual();
-    // });
+    test(`UserAdmin created`, async () => {
+        const orgServiceWithMock = new OrgService(orgRepository);
+        const result = await orgServiceWithMock.createUserAdmin(org.name, userId);
 
-    // test(`Succesful Ticket creation`, async () => {
-    //     const ticket = await ticketService.validateTicketData(truthyTicket)
-    //     expect(ticket).toBeTruthy()
-    //     expect(ticket).toEqual(truthyTicket)
+        expect(orgRepository.createUserAdmin).toHaveBeenCalled();
+        expect(result).toBe(createdUserAdmin);
+    });
+});
 
-    //     ticketDAO.createTicket.mockImplementation(() => Promise.resolve())
-    //     ticketDAO.createTicket.mockResolvedValue(existingTicket)
+describe(`Negative org tests`, () => {
+    // Initialize the repository variable before using it
+    let orgRepository: any;
 
-    //     expect(await ticketService.createTicket(ticket)).toEqual(existingTicket)
-    // })
+    beforeEach(() => {
+        // Create a new instance of OrgRepository
+        orgRepository = new OrgRepository();
+    });
 
-    // test(`Retrieve previous tickets`, async () => {
-    //     ticketDAO.getTicketsByUserID.mockImplementation(() => Promise.resolve())
-    //     ticketDAO.getTicketsByUserID.mockResolvedValue(existingTickets)
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
 
-    //     expect(await ticketService.getTicketsByUserID(truthyTicket.user_id, null)).toEqual(existingTickets)
-    // })
+    test(`Organization with the same name`, async () => {
+        jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(existingOrg);
+        const orgServiceWithMock = new OrgService(orgRepository);
 
-    // test(`Retrieve previous tickets by type`, async () => {
-    //     ticketDAO.getTicketsByUserID.mockImplementation(() => Promise.resolve())
-    //     ticketDAO.getTicketsByUserID.mockResolvedValue(existingTicket)
+        await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
+            `Organization name already in use!`
+        );
+    });
 
-    //     expect(await ticketService.getTicketsByUserID(truthyTicket.user_id, `food`)).toEqual(existingTicket)
-    // })
+    test(`Organization without logo`, async () => {
+        org.logoUrl = ``;
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
+            `Name and logoUrl are required`
+        );
+    });
 });
