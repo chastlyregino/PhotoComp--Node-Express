@@ -92,6 +92,33 @@ export class UserService {
     }
   }
 
+  /**
+ * Delete a user account by ID
+ * @param userId The ID of the user to delete
+ * @returns A promise that resolves when the user is deleted
+ * @throws AppError if the user doesn't exist or deletion fails
+ */
+  async deleteUserAccount(userId: string): Promise<void> {
+    try {
+      // Attempt to delete the user using the repository
+      const deleted = await this.userRepository.deleteUserById(userId);
+
+      // The repository already throws appropriate errors if the user doesn't exist
+      // or if deletion fails, so we just need to check the result
+      if (!deleted) {
+        throw new AppError('Failed to delete user account', 500);
+      }
+    } catch (error) {
+      // Pass through AppErrors from the repository
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      // Otherwise, wrap the error with additional context
+      throw new AppError(`Failed to delete user account: ${(error as Error).message}`, 500);
+    }
+  }
+
   private generateToken(user: User): string {
     return jwt.sign(
       {
