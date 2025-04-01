@@ -64,10 +64,12 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
 
         if (org) {
             try {
-                const userAdmin = await orgService.createUserAdmin(name, user.id)
+                const userAdmin = await orgService.createUserAdmin(name, user.id);
 
                 if (userAdmin) {
-                    res.status(201).json({ message: `Created organization! ${JSON.stringify(req.body)}` });
+                    res.status(201).json({
+                        message: `Created organization! ${JSON.stringify(req.body)}`,
+                    });
                 }
             } catch (error: any) {
                 throw new AppError(`User Organization not created`, 400);

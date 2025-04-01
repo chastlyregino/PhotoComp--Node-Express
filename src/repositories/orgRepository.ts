@@ -3,7 +3,7 @@ import {
     Organization,
     OrganizationCreateRequest,
     UserOrganizationRelationship,
-    addOrganizationAdmin
+    addOrganizationAdmin,
 } from '../models/Organizations';
 import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
@@ -28,7 +28,9 @@ export class OrgRepository {
         }
     }
 
-    async createUserAdmin(userOrg: UserOrganizationRelationship): Promise<UserOrganizationRelationship | null> {
+    async createUserAdmin(
+        userOrg: UserOrganizationRelationship
+    ): Promise<UserOrganizationRelationship | null> {
         try {
             await dynamoDb.send(
                 new PutCommand({
@@ -36,7 +38,7 @@ export class OrgRepository {
                     Item: userOrg,
                 })
             );
-    
+
             return userOrg;
         } catch (error: any) {
             throw new AppError(`Failed to create Organization: ${error.message}`, 500);
@@ -77,7 +79,7 @@ export class OrgRepository {
             };
 
             const result = await dynamoDb.send(new QueryCommand(params));
-            console.log(result)
+            console.log(result);
             if (!result.Items || result.Items.length === 0) {
                 return [];
             }

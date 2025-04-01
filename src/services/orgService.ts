@@ -25,7 +25,7 @@ export class OrgService {
             if (!createOrg.name || !createOrg.logoUrl) {
                 throw new AppError('Name and logoUrl are required', 400);
             }
-            
+
             const existingOrg = await this.findOrgByName(createOrg.name);
 
             if (existingOrg) {
@@ -60,13 +60,16 @@ export class OrgService {
         }
     }
 
-    async createUserAdmin(orgName: string, userId: string): Promise<UserOrganizationRelationship | null> {
-        const userAdmin = addOrganizationAdmin(orgName, userId)
+    async createUserAdmin(
+        orgName: string,
+        userId: string
+    ): Promise<UserOrganizationRelationship | null> {
+        const userAdmin = addOrganizationAdmin(orgName, userId);
 
         try {
-            const createUserAdmin = await this.orgRepository.createUserAdmin(userAdmin)
+            const createUserAdmin = await this.orgRepository.createUserAdmin(userAdmin);
 
-            return createUserAdmin
+            return createUserAdmin;
         } catch (error: any) {
             if (error instanceof AppError) {
                 throw error;
