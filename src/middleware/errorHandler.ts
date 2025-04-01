@@ -28,6 +28,7 @@ export const errorHandler = (
     next: NextFunction
 ): void => {
     // Log error for debugging purposes
+    console.log(`before error`)
     logger.error('Error:', err);
 
     // Handle AppError instances

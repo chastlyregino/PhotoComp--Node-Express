@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import { UserService } from '../services/userService';
 import { OrgService } from '../services/orgService';
 import {
@@ -48,7 +48,7 @@ export const orgRouter = Router();
 //     }
 // });
 
-orgRouter.post(`/`, async (req: Request, res: Response) => {
+orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = await userService.getUserByEmail(res.locals.user.email);
 
@@ -80,17 +80,7 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
             throw new AppError(`Organization not created`, 400);
         }
     } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to create organization',
-        });
+        next(error);
     }
 });
 
