@@ -17,8 +17,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Error handling middleware must be used after all routes
-app.use(errorHandler);
+// Super middleware
 app.use(loggerMethodMiddleware);
 
 // Routes
@@ -35,6 +34,9 @@ app.all(/(.*)/, (req, res, next) => {
     res.status(404);
     next(error);
 });
+
+// Error handling middleware must be used after all routes
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
