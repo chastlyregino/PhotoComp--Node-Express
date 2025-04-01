@@ -21,7 +21,6 @@ export let user: AuthRequest = {
 }
 
 export const existingOrg: Organization = {
-    joinedAt: '2025-04-01T13:28:12.857Z',
     logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
     createdAt: '2025-04-01T13:28:12.857Z',
     GSI1SK: 'ORG#PIZZA',
@@ -46,7 +45,6 @@ export const createdOrg: Organization = {
     createdAt: '2025-04-01T17:26:48.302Z',
     updatedAt: '2025-04-01T17:26:48.302Z',
     type: 'ORGANIZATION',
-    joinedAt: '2025-04-01T17:26:48.302Z',
     isPublic: true,
     logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
     website: undefined,

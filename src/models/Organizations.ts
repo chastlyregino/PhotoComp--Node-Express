@@ -13,7 +13,6 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     type: 'ORGANIZATION';
-    joinedAt: string;
     isPublic: boolean;
     logoUrl: string;
 
@@ -52,7 +51,6 @@ export const createOrganization = (
         createdAt: now,
         updatedAt: now,
         type: 'ORGANIZATION',
-        joinedAt: now,
         isPublic: true,
         logoUrl: request.logoUrl,
         website: request.website,
@@ -87,7 +85,6 @@ export const updateOrganization = (
         createdAt: org.createdAt,
         updatedAt: now,
         type: `ORGANIZATION`,
-        joinedAt: org.joinedAt,
         isPublic: request.isPublic || org.isPublic,
         logoUrl: request.logoUrl || org.logoUrl,
         website: request.website,

@@ -70,7 +70,11 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
 
                 if (userAdmin) {
                     res.status(201).json({
-                        message: `Created organization! ${JSON.stringify(req.body)}`,
+                        status: 'Created organization!',
+                        data: {
+                            user: userAdmin.userId,
+                            org: org.name,
+                        },
                     });
                 }
             } catch (error: any) {

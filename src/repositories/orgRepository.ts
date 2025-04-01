@@ -19,7 +19,6 @@ export class OrgRepository {
                 })
             );
 
-            console.log(org);
             return org;
         } catch (error: any) {
             if (error.name === 'ConditionalCheckFailedException') {
@@ -39,7 +38,7 @@ export class OrgRepository {
                     Item: userOrg,
                 })
             );
-            console.log(userOrg);
+            
             return userOrg;
         } catch (error: any) {
             throw new AppError(`Failed to create Organization: ${error.message}`, 500);
