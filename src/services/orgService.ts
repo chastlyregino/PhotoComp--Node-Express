@@ -22,6 +22,10 @@ export class OrgService {
         userId: string
     ): Promise<OrganizationCreateRequest | null> {
         try {
+            if (!createOrg.name || !createOrg.logoUrl) {
+                throw new AppError('Name and logoUrl are required', 400);
+            }
+            
             const existingOrg = await this.findOrgByName(createOrg.name);
 
             if (existingOrg) {
@@ -51,6 +55,24 @@ export class OrgService {
             }
             throw new AppError(
                 `Organization creation failed: Model! ${(error as Error).message}`,
+                500
+            );
+        }
+    }
+
+    async createUserAdmin(orgName: string, userId: string): Promise<UserOrganizationRelationship | null> {
+        const userAdmin = addOrganizationAdmin(orgName, userId)
+
+        try {
+            const createUserAdmin = await this.orgRepository.createUserAdmin(userAdmin)
+
+            return createUserAdmin
+        } catch (error: any) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `User Organization creation failed: Model! ${(error as Error).message}`,
                 500
             );
         }

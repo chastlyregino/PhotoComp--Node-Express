@@ -2,7 +2,8 @@ import { dynamoDb, TABLE_NAME } from '../config/db';
 import {
     Organization,
     OrganizationCreateRequest,
-    OrganizationUpdateRequest,
+    UserOrganizationRelationship,
+    addOrganizationAdmin
 } from '../models/Organizations';
 import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
@@ -17,6 +18,7 @@ export class OrgRepository {
                     ConditionExpression: 'attribute_not_exists(PK)',
                 })
             );
+
             return org;
         } catch (error: any) {
             if (error.name === 'ConditionalCheckFailedException') {
@@ -26,26 +28,40 @@ export class OrgRepository {
         }
     }
 
+    async createUserAdmin(userOrg: UserOrganizationRelationship): Promise<UserOrganizationRelationship | null> {
+        try {
+            await dynamoDb.send(
+                new PutCommand({
+                    TableName: TABLE_NAME,
+                    Item: userOrg,
+                })
+            );
+    
+            return userOrg;
+        } catch (error: any) {
+            throw new AppError(`Failed to create Organization: ${error.message}`, 500);
+        }
+    }
+
     async findOrgByName(name: string): Promise<Organization | null> {
         try {
             const params = {
                 TableName: TABLE_NAME,
-                KeyConditionExpression: 'PK = :orgName and begins_with(SK, :orgEntity',
-                ExpressionAttributeValues: {
-                    ':orgName': `ORG#${name.toUpperCase()}`,
-                    ':orgEntity': name.substring(0, 3).toUpperCase(),
+                Key: {
+                    PK: `ORG#${name.toUpperCase()}`,
+                    SK: `ENTITY`,
                 },
             };
 
-            const result = await dynamoDb.send(new QueryCommand(params));
+            const result = await dynamoDb.send(new GetCommand(params));
 
-            if (!result.Items || result.Items.length === 0) {
+            if (!result.Item) {
                 return null;
             }
 
-            return result.Items[0] as Organization;
+            return result.Item as Organization;
         } catch (error: any) {
-            throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
+            throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
         }
     }
 
@@ -61,7 +77,7 @@ export class OrgRepository {
             };
 
             const result = await dynamoDb.send(new QueryCommand(params));
-
+            console.log(result)
             if (!result.Items || result.Items.length === 0) {
                 return [];
             }
