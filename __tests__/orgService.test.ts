@@ -79,12 +79,21 @@ describe(`Negative org tests`, () => {
         );
     });
 
-    test(`Organization without logo`, async () => {
-        org.logoUrl = ``;
+    test(`Organization without name`, async () => {
+        org.name = ``;
         const orgServiceWithMock = new OrgService(orgRepository);
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
             `Name and logoUrl are required`
+        );
+    });
+
+    test(`Organization with invalid logo`, async () => {
+        org.logoUrl = `invalid logo`;
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
+            `Invalid URL`
         );
     });
 });

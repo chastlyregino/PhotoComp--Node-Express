@@ -278,6 +278,12 @@ This endpoint allows users to create a new organizations. All new user-organizat
     "message": "Name and logoUrl are required"
 }
 ```
+```json
+{
+    "status": "error",
+    "message": "Invalid URL"
+}
+```
 
 **404 User Not Found**
 ```json

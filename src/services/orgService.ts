@@ -22,6 +22,10 @@ export class OrgService {
         userId: string
     ): Promise<OrganizationCreateRequest | null> {
         try {
+            if (!new URL(createOrg.logoUrl)) {
+                throw new AppError('Invalid URL', 400);
+            }
+
             if (!createOrg.name || !createOrg.logoUrl) {
                 throw new AppError('Name and logoUrl are required', 400);
             }
