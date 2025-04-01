@@ -70,7 +70,7 @@ describe('Auth Integration Tests', () => {
           Items: []
         });
       });
-      
+
       // Mock dynamoDb.send for findUserByUsername (no user found)
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({
@@ -142,7 +142,7 @@ describe('Auth Integration Tests', () => {
           Items: []
         });
       });
-      
+
       // Mock dynamoDb.send for findUserByUsername (user found)
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({
@@ -247,7 +247,7 @@ describe('Auth Integration Tests', () => {
           Items: []
         });
       });
-      
+
       // Mock dynamoDb.send for findUserByUsername (no user found) 
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({
@@ -289,7 +289,7 @@ describe('Auth Integration Tests', () => {
           Items: []
         });
       });
-      
+
       // Mock dynamoDb.send for findUserByUsername (no user found)
       mockDynamoSend.mockImplementationOnce(() => {
         return Promise.resolve({

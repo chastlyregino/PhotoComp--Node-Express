@@ -36,51 +36,49 @@ export class UserService {
   }
 
   async register(registerRequest: RegisterRequest): Promise<{ user: Omit<User, 'password'>, token: string }> {
+    // Validate username format
+    this.validateUsername(registerRequest.username);
+
+    // Check if user with this email already exists
+    const existingUserByEmail = await this.getUserByEmail(registerRequest.email);
+    if (existingUserByEmail) {
+      throw new AppError('Email already in use', 409);
+    }
+
+    // Check if username is already taken (case insensitive)
+    const existingUserByUsername = await this.getUserByUsername(registerRequest.username);
+    if (existingUserByUsername) {
+      throw new AppError('Username already taken', 409);
+    }
+
+    // Create a new user object
+    const user = createUserFromRegister(registerRequest);
+
     try {
-      // Validate username format
-      this.validateUsername(registerRequest.username);
-
-      // Check if username is already taken (case insensitive)
-      const existingUserByUsername = await this.getUserByUsername(registerRequest.username);
-      if (existingUserByUsername) {
-        throw new AppError('Username already taken', 409);
-      }
-
-      // Check if user with this email already exists
-      const existingUserByEmail = await this.getUserByEmail(registerRequest.email);
-      if (existingUserByEmail) {
-        throw new AppError('Email already in use', 409);
-      }
-
-      // Create a new user object
-      const user = createUserFromRegister(registerRequest);
-
       // Hash the password before storing
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(user.password, salt);
 
-      try {
-        // Save the user to the database
-        const createdUser = await this.userRepository.createUser(user);
+      // Save the user to the database
+      const createdUser = await this.userRepository.createUser(user);
 
-        // Generate JWT token
-        const token = this.generateToken(createdUser);
+      // Generate JWT token
+      const token = this.generateToken(createdUser);
 
-        // Return user (without password) and token
-        const { password, ...userWithoutPassword } = createdUser;
+      // Return user (without password) and token
+      const { password, ...userWithoutPassword } = createdUser;
 
-        return {
-          user: userWithoutPassword as Omit<User, 'password'>,
-          token
-        };
-      } catch (error) {
-        // This will specifically catch the database error from createUser
-        throw new AppError(`Registration failed: ${(error as Error).message}`, 500);
-      }
+      return {
+        user: userWithoutPassword as Omit<User, 'password'>,
+        token
+      };
     } catch (error) {
+      // Handle specific error types
       if (error instanceof AppError) {
         throw error;
       }
+      
+      // Handle other errors
       throw new AppError(`Registration failed: ${(error as Error).message}`, 500);
     }
   }
