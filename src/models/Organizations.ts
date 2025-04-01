@@ -57,7 +57,7 @@ export const createOrganization = (
         logoUrl: request.logoUrl,
         website: request.website,
         contactEmail: request.contactEmail,
-        GSI1PK: request.name.substring(0,3).toUpperCase(),
+        GSI1PK: request.name.substring(0, 3).toUpperCase(),
         GSI1SK: `ORG#${request.name.toUpperCase()}`,
     };
 };

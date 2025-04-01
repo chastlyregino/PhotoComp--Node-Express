@@ -38,7 +38,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
             // Store user info in res.locals for consistency
             res.locals.user = decoded;
-            
+
             next();
         } catch (error) {
             // Pass the original JWT error to errorHandler middleware
@@ -54,9 +54,8 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
  * Must be used after authenticate middleware
  */
 export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-
     const user = res.locals.user;
-    
+
     if (!user || user.role !== UserRole.ADMIN) {
         return next(new AppError('Access denied. Admin privileges required.', 403));
     }

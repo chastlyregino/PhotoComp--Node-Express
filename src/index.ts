@@ -31,14 +31,14 @@ app.get('/', (req, res) => {
 });
 
 app.all(/(.*)/, (req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalUrl}`);
-  res.status(404);
-  next(error);
+    const error = new Error(`Not Found - ${req.originalUrl}`);
+    res.status(404);
+    next(error);
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
 
 // powershell

@@ -17,7 +17,7 @@ export const orgRouter = Router();
 
 orgRouter.get(`/`, async (req: Request, res: Response) => {
     try {
-        const user = await userService.findUserByEmail(res.locals.user.email);
+        const user = await userService.getUserByEmail(res.locals.user.email);
 
         if (!user) {
             throw new AppError('User not found', 404);
@@ -50,10 +50,10 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
     try {
         const { name, logoUrl } = req.body;
 
-        if(!name || !logoUrl) {
+        if (!name || !logoUrl) {
             throw new AppError('Name and logoUrl are required', 400);
         }
-        const user = await userService.findUserByEmail(res.locals.user.email);
+        const user = await userService.getUserByEmail(res.locals.user.email);
 
         if (!user) {
             throw new AppError('User not found', 404);
@@ -71,7 +71,6 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
         } else {
             throw new AppError(`Organization not created`, 400);
         }
-
     } catch (error) {
         if (error instanceof AppError) {
             return res.status(error.statusCode).json({
@@ -87,21 +86,23 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
     }
 });
 
-orgRouter.patch(`/`, async (req: Request, res: Response) => {
-    const org = req.body; // update with getOrg()
+// Code below is for future tickets. use/remove when necessary
 
-    if (org) {
-        const updatedOrg = org; // update with updateOrg()
+// orgRouter.patch(`/`, async (req: Request, res: Response) => {
+//     const org = req.body; // update with getOrg()
 
-        if (updatedOrg) {
-            res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
-        } else {
-            res.status(200).json({ message: `Organization not updated!` });
-        }
-    } else {
-        res.status(400).json({ message: `Organization not found!` });
-    }
-}); //update the name and logo of the org
+//     if (org) {
+//         const updatedOrg = org; // update with updateOrg()
+
+//         if (updatedOrg) {
+//             res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
+//         } else {
+//             res.status(200).json({ message: `Organization not updated!` });
+//         }
+//     } else {
+//         res.status(400).json({ message: `Organization not found!` });
+//     }
+// }); //update the name and logo of the org
 
 // members Route
 // orgRouter.get(`/members`, async (req: Request, res: Response) => {

@@ -30,10 +30,10 @@ export class OrgRepository {
         try {
             const params = {
                 TableName: TABLE_NAME,
-                IndexName: 'OrgIdIndex',
-                KeyConditionExpression: 'GSI2SK = :idKey',
+                KeyConditionExpression: 'PK = :orgName and begins_with(SK, :orgEntity',
                 ExpressionAttributeValues: {
-                    ':idKey': `ORG#${name.toUpperCase()}`,
+                    ':orgName': `ORG#${name.toUpperCase()}`,
+                    ':orgEntity': name.substring(0, 3).toUpperCase(),
                 },
             };
 
@@ -53,10 +53,10 @@ export class OrgRepository {
         try {
             const params = {
                 TableName: TABLE_NAME,
-                IndexName: 'UserIdIndex',
-                KeyConditionExpression: 'GSI2PK = :userIdKey',
+                KeyConditionExpression: 'PK = :userIdKey and begins_with(SK, :orgName)',
                 ExpressionAttributeValues: {
-                    ':userIdKey': userId,
+                    ':userIdKey': `USER#${userId}`,
+                    ':orgName': `ORG#`,
                 },
             };
 
@@ -72,27 +72,30 @@ export class OrgRepository {
         }
     }
 
-    async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
-        try {
-            const params = {
-                TableName: TABLE_NAME,
-                IndexName: 'OrgIdIndex',
-                KeyConditionExpression: 'GSI2SK = :idKey',
-                UpdateExpression:
-                    'SET name = :name, description = :desciption, isPublic = :isPublic',
-                ExpressionAttributeValues: {
-                    ':idKey': `ORG#${org.id}`,
-                    ':name': org.name,
-                    ':description': org.description,
-                    ':isPublic': org.isPublic,
-                },
-            };
+    // Code below is for future tickets. use/remove when necessary
 
-            const result = await dynamoDb.send(new QueryCommand(params));
+    //     async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
+    //         try {
+    //             const params = {
+    //                 TableName: TABLE_NAME,
+    //                 IndexName: 'OrgIdIndex',
+    //                 KeyConditionExpression: 'GSI2SK = :idKey',
+    //                 UpdateExpression:
+    //                     'SET name = :name, description = :desciption, isPublic = :isPublic',
+    //                 ExpressionAttributeValues: {
+    //                     ':idKey': `ORG#${org.id}`,
+    //                     ':name': org.name,
+    //                     ':description': org.description,
+    //                     ':isPublic': org.isPublic,
+    //                 },
+    //             };
 
-            return org;
-        } catch (error: any) {
-            throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
-        }
-    }
+    //             const result = await dynamoDb.send(new QueryCommand(params));
+
+    //             return org;
+    //         } catch (error: any) {
+    //             throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
+    //         }
+    //     }
+    // }
 }

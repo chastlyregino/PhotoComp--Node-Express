@@ -46,7 +46,7 @@ export class UserRepository {
                 KeyConditionExpression: 'GSI1PK = :emailKey AND GSI1SK = :entityValue',
                 ExpressionAttributeValues: {
                     ':emailKey': `EMAIL#${email}`,
-                    ':entityValue': 'ENTITY'
+                    ':entityValue': 'ENTITY',
                 },
             };
 

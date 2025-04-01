@@ -7,18 +7,20 @@ import jwt from 'jsonwebtoken';
 export class UserService {
     private userRepository: UserRepository;
 
-  constructor(userRepository: UserRepository = new UserRepository()) {
-    this.userRepository = userRepository;
-  }
+    constructor(userRepository: UserRepository = new UserRepository()) {
+        this.userRepository = userRepository;
+    }
 
-  async getUserByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findUserByEmail(email);
-  }
+    async getUserByEmail(email: string): Promise<User | null> {
+        return await this.userRepository.findUserByEmail(email);
+    }
 
-  async register(registerRequest: RegisterRequest): Promise<{ user: Omit<User, 'password'>, token: string }> {
-    try {
-      // Check if user with this email already exists
-      const existingUser = await this.getUserByEmail(registerRequest.email);
+    async register(
+        registerRequest: RegisterRequest
+    ): Promise<{ user: Omit<User, 'password'>; token: string }> {
+        try {
+            // Check if user with this email already exists
+            const existingUser = await this.getUserByEmail(registerRequest.email);
 
             if (existingUser) {
                 throw new AppError('Email already in use', 409);
