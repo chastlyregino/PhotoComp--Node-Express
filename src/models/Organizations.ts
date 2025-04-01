@@ -4,7 +4,7 @@ import { UserRole } from './User';
 export interface Organization {
     // Primary keys
     PK: string; // ORG#NAME
-    SK: string; // USER#<createdBy> (identifies the admin owner)
+    SK: 'ENTITY'; // ENTITY
 
     // Attributes
     id: string;
@@ -13,7 +13,6 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     type: 'ORGANIZATION';
-    role: UserRole;
     joinedAt: string;
     isPublic: boolean;
     logoUrl: string;
@@ -23,13 +22,9 @@ export interface Organization {
     website?: string;
     contactEmail?: string;
 
-    // Add GSI for querying organizations by owner/creator
-    GSI1PK?: string; // TYPE#ORGANIZATION
-    GSI1SK?: string; // <creation_timestamp>
-
     // GSI for finding organizations by creator
-    GSI2PK?: string; // USER#<createdBy>
-    GSI2SK?: string; // ORG#NAME
+    GSI1PK?: string; // NAME.substring(0,3).toUpperCase()
+    GSI1SK?: string; // ORG#NAME
 }
 
 export interface OrganizationCreateRequest {
@@ -40,6 +35,34 @@ export interface OrganizationCreateRequest {
     contactEmail?: string;
 }
 
+export const createOrganization = (
+    request: OrganizationCreateRequest,
+    userId: string
+): Organization => {
+    const id = uuidv4();
+    const now = new Date().toISOString();
+
+    return {
+        PK: `ORG#${request.name.toUpperCase()}`,
+        SK: `ENTITY`,
+        id,
+        name: request.name,
+        description: request.description,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+        type: 'ORGANIZATION',
+        joinedAt: now,
+        isPublic: true,
+        logoUrl: request.logoUrl,
+        website: request.website,
+        contactEmail: request.contactEmail,
+        GSI1PK: request.name.substring(0,3).toUpperCase(),
+        GSI1SK: `ORG#${request.name.toUpperCase()}`,
+    };
+};
+
+// For updating an organization
 export interface OrganizationUpdateRequest {
     name: string;
     description?: string;
@@ -64,50 +87,31 @@ export const updateOrganization = (
         createdAt: org.createdAt,
         updatedAt: now,
         type: `ORGANIZATION`,
-        role: org.role,
         joinedAt: org.joinedAt,
         isPublic: request.isPublic || org.isPublic,
         logoUrl: request.logoUrl || org.logoUrl,
         website: request.website,
         contactEmail: request.contactEmail,
-        GSI1PK: 'TYPE#ORGANIZATION',
-        GSI1SK: now,
-        GSI2PK: org.GSI2PK,
-        GSI2SK: org.GSI2SK,
-    };
-};
-
-export const createOrganization = (
-    request: OrganizationCreateRequest,
-    userId: string
-): Organization => {
-    const id = uuidv4();
-    const now = new Date().toISOString();
-
-    return {
-        PK: `ORG#${request.name.toUpperCase()}`,
-        SK: `USER#${userId}`,
-        id,
-        name: request.name,
-        description: request.description,
-        createdBy: userId,
-        createdAt: now,
-        updatedAt: now,
-        type: 'ORGANIZATION',
-        role: UserRole.ADMIN,
-        joinedAt: now,
-        isPublic: true,
-        logoUrl: request.logoUrl,
-        website: request.website,
-        contactEmail: request.contactEmail,
-        GSI1PK: 'TYPE#ORGANIZATION',
-        GSI1SK: now,
-        GSI2PK: `USER#${userId}`,
-        GSI2SK: `ORG#${request.name.toUpperCase()}`,
+        GSI1PK: org.GSI1PK,
+        GSI1SK: org.GSI1SK,
     };
 };
 
 // For creating the relationship between an organization and its admin
+export interface UserOrganizationRelationship {
+    PK: string; // ORG#NAME
+    SK: string; // USER#<userId>
+    userId: string;
+    organizationName: string;
+    role: UserRole;
+    joinedAt: string;
+    type: 'USER_ORG';
+
+    // GSI for fetching all organizations a user belongs to
+    GSI1PK?: string; // USER#<userId>
+    GSI1SK?: string; // ORG#NAME
+}
+
 export const addOrganizationAdmin = (
     organizationName: string,
     userId: string
@@ -127,20 +131,6 @@ export const addOrganizationAdmin = (
         GSI1SK: `ORG#${organizationName.toUpperCase()}`,
     };
 };
-
-export interface UserOrganizationRelationship {
-    PK: string; // ORG#NAME
-    SK: string; // USER#<userId>
-    userId: string;
-    organizationName: string;
-    role: UserRole;
-    joinedAt: string;
-    type: 'USER_ORG';
-
-    // GSI for fetching all organizations a user belongs to
-    GSI1PK?: string; // USER#<userId>
-    GSI1SK?: string; // ORG#NAME
-}
 
 // For handling membership applications
 export interface OrganizationMembershipRequest {

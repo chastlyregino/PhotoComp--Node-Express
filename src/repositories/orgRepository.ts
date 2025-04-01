@@ -26,14 +26,14 @@ export class OrgRepository {
         }
     }
 
-    async findOrgById(id: string): Promise<Organization | null> {
+    async findOrgByName(name: string): Promise<Organization | null> {
         try {
             const params = {
                 TableName: TABLE_NAME,
                 IndexName: 'OrgIdIndex',
                 KeyConditionExpression: 'GSI2SK = :idKey',
                 ExpressionAttributeValues: {
-                    ':idKey': `ORG#${id}`,
+                    ':idKey': `ORG#${name.toUpperCase()}`,
                 },
             };
 
