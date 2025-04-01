@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { User, UserRole } from './User';
+import { UserRole } from './User';
 
 export interface Organization {
     // Primary keys
-    PK: string; // ORG#<id>
+    PK: string; // ORG#NAME
     SK: string; // USER#<createdBy> (identifies the admin owner)
 
     // Attributes
@@ -29,7 +29,7 @@ export interface Organization {
 
     // GSI for finding organizations by creator
     GSI2PK?: string; // USER#<createdBy>
-    GSI2SK?: string; // ORG#<id>
+    GSI2SK?: string; // ORG#NAME
 }
 
 export interface OrganizationCreateRequest {
@@ -58,7 +58,7 @@ export const updateOrganization = (
         PK: org.PK,
         SK: org.SK,
         id: org.id,
-        name: request.name || org.name,
+        name: org.name,
         description: org.description,
         createdBy: org.createdBy,
         createdAt: org.createdAt,
@@ -85,7 +85,7 @@ export const createOrganization = (
     const now = new Date().toISOString();
 
     return {
-        PK: `ORG#${id}`,
+        PK: `ORG#${request.name.toUpperCase()}`,
         SK: `USER#${userId}`,
         id,
         name: request.name,
@@ -103,50 +103,50 @@ export const createOrganization = (
         GSI1PK: 'TYPE#ORGANIZATION',
         GSI1SK: now,
         GSI2PK: `USER#${userId}`,
-        GSI2SK: `ORG#${id}`,
+        GSI2SK: `ORG#${request.name.toUpperCase()}`,
     };
 };
 
 // For creating the relationship between an organization and its admin
 export const addOrganizationAdmin = (
-    organizationId: string,
+    organizationName: string,
     userId: string
 ): UserOrganizationRelationship => {
     const now = new Date().toISOString();
 
     return {
-        PK: `ORG#${organizationId}`,
+        PK: `ORG#${organizationName.toUpperCase()}`,
         SK: `USER#${userId}`,
         userId,
-        organizationId,
+        organizationName: organizationName,
         role: UserRole.ADMIN,
         joinedAt: now,
         type: 'USER_ORG',
         // Add GSI for querying all organizations a user belongs to
         GSI1PK: `USER#${userId}`,
-        GSI1SK: `ORG#${organizationId}`,
+        GSI1SK: `ORG#${organizationName.toUpperCase()}`,
     };
 };
 
 export interface UserOrganizationRelationship {
-    PK: string; // ORG#<organizationId>
+    PK: string; // ORG#NAME
     SK: string; // USER#<userId>
     userId: string;
-    organizationId: string;
+    organizationName: string;
     role: UserRole;
     joinedAt: string;
     type: 'USER_ORG';
 
     // GSI for fetching all organizations a user belongs to
     GSI1PK?: string; // USER#<userId>
-    GSI1SK?: string; // ORG#<organizationId>
+    GSI1SK?: string; // ORG#NAME
 }
 
 // For handling membership applications
 export interface OrganizationMembershipRequest {
-    PK: string; // ORG#<organizationId>
+    PK: string; // ORG#NAME
     SK: string; // REQUEST#<userId>
-    organizationId: string;
+    organizationName: string;
     userId: string;
     requestDate: string;
     message?: string;
@@ -155,16 +155,16 @@ export interface OrganizationMembershipRequest {
 }
 
 export const createOrganizationMembershipRequest = (
-    organizationId: string,
+    organizationName: string,
     userId: string,
     message?: string
 ): OrganizationMembershipRequest => {
     const now = new Date().toISOString();
 
     return {
-        PK: `ORG#${organizationId}`,
+        PK: `ORG#${organizationName.toUpperCase()}`,
         SK: `REQUEST#${userId}`,
-        organizationId,
+        organizationName,
         userId,
         requestDate: now,
         message,

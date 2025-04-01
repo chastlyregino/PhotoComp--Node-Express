@@ -62,7 +62,7 @@ export class UserService {
     ): Promise<{ user: Omit<User, 'password'>; token: string }> {
         try {
             // Find user by email
-            const user = await this.findUserByEmail(authRequest.email);
+            const user = await this.getUserByEmail(authRequest.email);
 
             // If user doesn't exist
             if (!user) {
