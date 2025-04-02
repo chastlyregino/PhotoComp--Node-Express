@@ -108,7 +108,8 @@ describe(`Negative org tests`, () => {
     test(`Organization with invalid logo`, async () => {
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(`No Organizations found!`);
+        await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(
+            `No Organizations found!`
+        );
     });
-    
 });

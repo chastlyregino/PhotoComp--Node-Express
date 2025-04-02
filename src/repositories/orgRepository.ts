@@ -3,6 +3,7 @@ import {
     Organization,
     OrganizationCreateRequest,
     UserOrganizationRelationship,
+    OrganizationUpdateRequest,
     addOrganizationAdmin,
 } from '../models/Organizations';
 import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
@@ -61,7 +62,6 @@ export class OrgRepository {
                 return null;
             }
 
-            console.log(result.Item);
             return result.Item as Organization;
         } catch (error: any) {
             throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
@@ -91,30 +91,31 @@ export class OrgRepository {
         }
     }
 
-    // Code below is for future tickets. use/remove when necessary
+    async updateOrgByName(org: Organization): Promise<OrganizationUpdateRequest | null> {
+        try {
+            const params = {
+                TableName: TABLE_NAME,
+                KeyConditionExpression: 'PK = :orgKey and SK = :org',
+                UpdateExpression:
+                    'SET description = :description, logoUrl = :logoUrl, website = :website, contactEmail = :contactEmail',
+                ExpressionAttributeValues: {
+                    ':org': org.SK,
+                    ':orgKey': org.PK,
+                },
+                AttributeUpdates: {
+                    ':description': org.description,
+                    ':logoUrl': org.logoUrl,
+                    ':website': org.website,
+                    ':contactEmail': org.contactEmail,
+                },
+                ReturnValues: `UPDATE_NEW`,
+            };
 
-    //     async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
-    //         try {
-    //             const params = {
-    //                 TableName: TABLE_NAME,
-    //                 IndexName: 'OrgIdIndex',
-    //                 KeyConditionExpression: 'GSI2SK = :idKey',
-    //                 UpdateExpression:
-    //                     'SET name = :name, description = :desciption, isPublic = :isPublic',
-    //                 ExpressionAttributeValues: {
-    //                     ':idKey': `ORG#${org.id}`,
-    //                     ':name': org.name,
-    //                     ':description': org.description,
-    //                     ':isPublic': org.isPublic,
-    //                 },
-    //             };
+            await dynamoDb.send(new QueryCommand(params));
 
-    //             const result = await dynamoDb.send(new QueryCommand(params));
-
-    //             return org;
-    //         } catch (error: any) {
-    //             throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
-    //         }
-    //     }
-    // }
+            return org;
+        } catch (error: any) {
+            throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
+        }
+    }
 }

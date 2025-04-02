@@ -17,14 +17,23 @@ export class OrgService {
         this.orgRepository = orgRepository;
     }
 
+    async validateUrl(url: string | undefined): Promise<void> {
+        if (url !== undefined) {
+            try {
+                new URL(url)
+                console.log(`error`)
+            } catch (error) {
+                throw new AppError(`${(error as Error).message}`, 400);
+            }
+        }
+    }
+
     async createOrg(
         createOrg: OrganizationCreateRequest,
         userId: string
     ): Promise<OrganizationCreateRequest | null> {
         try {
-            if (!new URL(createOrg.logoUrl)) {
-                throw new AppError('Invalid URL', 400);
-            }
+            await this.validateUrl(createOrg.logoUrl)
 
             if (!createOrg.name || !createOrg.logoUrl) {
                 throw new AppError('Name and logoUrl are required', 400);
@@ -36,13 +45,11 @@ export class OrgService {
                 throw new AppError(`Organization name already in use!`, 409);
             }
 
-            //enter create logic here
             const org = createOrganization(createOrg, userId);
 
             try {
                 const creatOrg = await this.orgRepository.createOrg(org);
 
-                //need to think about return value also in repo
                 return createOrg;
             } catch (error) {
                 if (error instanceof AppError) {
@@ -118,19 +125,31 @@ export class OrgService {
         }
     }
 
-    // Code below is for future tickets. use/remove when necessary
+    async updateOrgByName(
+        org: OrganizationUpdateRequest
+    ): Promise<OrganizationUpdateRequest | null> {
+        try {
+            if (!org.name) {
+                throw new AppError(`You need to specify the Organization name.`, 400);
+            }
 
-    //     async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
-    //         try {
-    //             //enter update logic here
-    //             //need to think about return value also in repo
-    //             return await this.orgRepository.updateOrgById(org);
-    //         } catch (error) {
-    //             if (error instanceof AppError) {
-    //                 throw error;
-    //             }
-    //             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
-    //         }
-    //     }
-    // }
+            await this.validateUrl(org.logoUrl)
+            await this.validateUrl(org.website)
+
+            const existingOrg = await this.orgRepository.findOrgByName(org.name);
+
+            if (!existingOrg) {
+                throw new AppError(`No Organizations found!`, 400);
+            }
+
+            const updatedOrg = updateOrganization(org, existingOrg);
+
+            return await this.orgRepository.updateOrgByName(updatedOrg);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
+        }
+    }
 }

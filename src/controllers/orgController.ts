@@ -29,7 +29,7 @@ orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
 
         res.status(200).json({ message: `Here are your organizations!`, org: org });
     } catch (error) {
-        next(error)
+        next(error);
     }
 });
 
@@ -37,9 +37,6 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
 
-        if (!name || !logoUrl) {
-            throw new AppError('Name and logoUrl are required', 400);
-        }
         const user = await userService.getUserByEmail(res.locals.user.email);
 
         if (!user) {
@@ -77,23 +74,34 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-// Code below is for future tickets. use/remove when necessary
+orgRouter.patch(`/`, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { name, logoUrl, description, website, contactEmail } = req.body;
 
-// orgRouter.patch(`/`, async (req: Request, res: Response) => {
-//     const org = req.body; // update with getOrg()
+        const org: OrganizationUpdateRequest = {
+            name,
+            logoUrl,
+            description,
+            website,
+            contactEmail,
+        };
 
-//     if (org) {
-//         const updatedOrg = org; // update with updateOrg()
+        const updatedOrg = await orgService.updateOrgByName(org);
 
-//         if (updatedOrg) {
-//             res.status(200).json({ message: `Organization updated!`, org: updatedOrg });
-//         } else {
-//             res.status(200).json({ message: `Organization not updated!` });
-//         }
-//     } else {
-//         res.status(400).json({ message: `Organization not found!` });
-//     }
-// }); //update the name and logo of the org
+        if (!updatedOrg) {
+            throw new AppError(`Failed to update Organization`, 400);
+        }
+
+        res.status(200).json({
+            status: 'Updated organization!',
+            data: {
+                org: updatedOrg,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+});
 
 // members Route
 // orgRouter.get(`/members`, async (req: Request, res: Response) => {
