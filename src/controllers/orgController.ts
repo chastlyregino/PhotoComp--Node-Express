@@ -16,17 +16,16 @@ export const orgRouter = Router();
 const validateUserID = async (req: Request, res: Response, next: NextFunction) => {
     const user = await userService.getUserByEmail(res.locals.user.email);
 
-    if(!user) {
+    if (!user) {
         throw new AppError('User not found', 404);
-        
     }
 
-    res.locals.user.info = user
-    next() 
-}
+    res.locals.user.info = user;
+    next();
+};
 orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const user = res.locals.user.info
+        const user = res.locals.user.info;
 
         const org = await orgService.findOrgsByUser(user.id);
 
@@ -43,7 +42,7 @@ orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: Nex
 orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
-        const user = res.locals.user.info
+        const user = res.locals.user.info;
 
         const organization: OrganizationCreateRequest = {
             name,
@@ -79,7 +78,7 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
 orgRouter.patch(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl, description, website, contactEmail } = req.body;
-        const user = res.locals.user.info
+        const user = res.locals.user.info;
 
         const org: OrganizationUpdateRequest = {
             name,

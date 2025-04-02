@@ -68,7 +68,10 @@ export class OrgRepository {
         }
     }
 
-    async findSpecificOrgByUser(name: string, userId: string): Promise<UserOrganizationRelationship | null> {
+    async findSpecificOrgByUser(
+        name: string,
+        userId: string
+    ): Promise<UserOrganizationRelationship | null> {
         try {
             const params = {
                 TableName: TABLE_NAME,

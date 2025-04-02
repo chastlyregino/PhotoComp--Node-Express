@@ -22,12 +22,12 @@ export let user: AuthRequest = {
 };
 
 export const updateOrg: OrganizationUpdateRequest = {
-    name: "Jollibee",
-    description: "Butter Burgers",
-    contactEmail: "culvers@culvers.com",
-    website: "https://www.culvers.com/",
-    logoUrl: "https://styleguide.culvers.com/brand-styles/logo-usage"
-}
+    name: 'Jollibee',
+    description: 'Butter Burgers',
+    contactEmail: 'culvers@culvers.com',
+    website: 'https://www.culvers.com/',
+    logoUrl: 'https://styleguide.culvers.com/brand-styles/logo-usage',
+};
 
 export const updatedOrganization: Organization = {
     PK: 'ORG#JOLLIBEE',
@@ -44,8 +44,8 @@ export const updatedOrganization: Organization = {
     website: 'https://www.culvers.com/',
     contactEmail: 'culvers@culvers.com',
     GSI1PK: 'JOL',
-    GSI1SK: 'ORG#JOLLIBEE'
-}
+    GSI1SK: 'ORG#JOLLIBEE',
+};
 
 export const existingOrg: Organization = {
     logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
