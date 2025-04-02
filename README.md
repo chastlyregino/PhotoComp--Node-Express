@@ -408,6 +408,87 @@ This endpoint allows users to get all organizations of the user created and are 
 }
 ```
 
+### 2.3 Update an Organization
+
+`PATCH /organizations`
+
+This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
+
+#### Response
+
+**200 Created**
+```json
+{
+    "message": "Here are your organizations!",
+    "org": [
+        {
+            "GSI1PK": "ORG#CULVERS",
+            "joinedAt": "2025-04-01T21:49:53.238Z",
+            "role": "ADMIN",
+            "userId": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "SK": "ORG#CULVERS",
+            "organizationName": "Culvers",
+            "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "type": "USER_ORG"
+        },
+        {
+            "GSI1PK": "ORG#TACO BELL",
+            "joinedAt": "2025-04-01T21:53:45.566Z",
+            "role": "ADMIN",
+            "userId": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "SK": "ORG#TACO BELL",
+            "organizationName": "Taco Bell",
+            "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "type": "USER_ORG"
+        }
+    ]
+}
+```
+
+**204 No Content**
+```json
+{
+    "status": "error",
+    "message": "No organizations found!"
+}
+```
+
+**400 Bad Request**
+```json
+{
+    "status": "error",
+    "message": "No Organizations found!"
+}
+```
+
+**500 Server Error**
+```json
+{
+    "status": "error",
+    "message": "Finding Organization by User failed! ${error.message}"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Failed to find organization by id: ${error.message}"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "User Organization creation failed: Model!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Finding Organization by ID failed!"
+}
+```
+
 ## JWT Token
 
 The JWT token contains the following payload:
