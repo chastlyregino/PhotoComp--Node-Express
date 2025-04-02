@@ -16,6 +16,7 @@ import {
 } from './utils/orgService-test-data';
 import { OrgRepository } from '../src/repositories/orgRepository';
 import { OrgService } from '../src/services/orgService';
+import { UserRole } from '@/models/User';
 
 // Move mocks to the top level
 jest.mock(`../src/repositories/orgRepository`);
@@ -43,7 +44,9 @@ describe(`Positive org tests`, () => {
         jest.spyOn(orgRepository, 'createUserAdmin').mockResolvedValue(createdUserAdmin);
         jest.spyOn(orgRepository, 'findOrgsByUser').mockResolvedValue(existingOrgsUser);
         jest.spyOn(orgRepository, 'updateOrgByName').mockResolvedValue(updatedOrganization);
+        jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
         jest.spyOn(mockOrgService, 'validateUrl');
+        jest.spyOn(mockOrgService, 'findSpecificOrgByUser');
 
         // Mock models function
         (createOrganization as jest.Mock).mockReturnValue(createdOrg);
@@ -84,13 +87,15 @@ describe(`Positive org tests`, () => {
         mockOrgService.validateUrl(updateOrg.website);
         mockOrgService.validateUrl(updateOrg.logoUrl);
         orgRepository.findOrgByName.mockResolvedValue(existingOrg);
+
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        const result = await orgServiceWithMock.updateOrgByName(updateOrg);
+        const result = await orgServiceWithMock.updateOrgByName(updateOrg, userId);
 
         expect(mockOrgService.validateUrl).toHaveBeenCalledTimes(2);
         expect(mockOrgService.validateUrl).toHaveBeenLastCalledWith(updateOrg.logoUrl);
         expect(orgRepository.findOrgByName).toHaveBeenCalled();
+        expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
         expect(result).toBe(updatedOrganization);
     });
 });
@@ -98,10 +103,12 @@ describe(`Positive org tests`, () => {
 describe(`Negative org tests`, () => {
     // Initialize the repository variable before using it
     let orgRepository: any;
+    let mockOrgService: any;
 
     beforeEach(() => {
         // Create a new instance of OrgRepository
         orgRepository = new OrgRepository();
+        mockOrgService = new OrgService(orgRepository);
     });
 
     afterEach(() => {
@@ -142,12 +149,36 @@ describe(`Negative org tests`, () => {
     });
 
     test(`Updating Organization without name`, async () => {
-        org.name = ``;
+        updateOrg.name = ``;
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        await expect(orgServiceWithMock.updateOrgByName(org)).rejects.toThrow(
+        await expect(orgServiceWithMock.updateOrgByName(updateOrg, userId)).rejects.toThrow(
             `You need to specify the Organization name.`
         );
+    });
+
+    test(`Updating Organization as a non-member`, async () => {
+        jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(null);
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.findSpecificOrgByUser(updateOrg.name, userId)).rejects.toThrow(
+            `You need to be a part of this Organization`
+        );
+        expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
+    });
+
+    test(`Updating Organization as a member`, async () => {
+        createdUserAdmin.role = UserRole.MEMBER
+        jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
+        jest.spyOn(mockOrgService, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
+        orgRepository.findOrgByName.mockResolvedValue(existingOrg);
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.updateOrgByName(updateOrg, userId)).rejects.toThrow(
+            `Only Admin roles can updated Organizations` // "You need to specify the Organization name."
+        );
+        expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
+        expect(mockOrgService.findSpecificOrgByUser).toHaveBeenCalled();
     });
 
     test(`Using invalid URL`, async () => {

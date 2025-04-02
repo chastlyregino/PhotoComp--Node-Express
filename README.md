@@ -335,7 +335,7 @@ This endpoint allows users to get all organizations of the user created and are 
 
 #### Response
 
-**200 Created**
+**200 OK**
 ```json
 {
     "message": "Here are your organizations!",
@@ -414,36 +414,57 @@ This endpoint allows users to get all organizations of the user created and are 
 
 This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
 
-#### Response
+#### Request Headers
 
-**200 Created**
+| Key | Value | Required |
+|-----|-------|----------|
+| Content-Type | application/json | Yes |
+
+#### Request Body
+
 ```json
 {
-    "message": "Here are your organizations!",
-    "org": [
-        {
-            "GSI1PK": "ORG#CULVERS",
-            "joinedAt": "2025-04-01T21:49:53.238Z",
-            "role": "ADMIN",
-            "userId": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "SK": "ORG#CULVERS",
-            "organizationName": "Culvers",
-            "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "type": "USER_ORG"
-        },
-        {
-            "GSI1PK": "ORG#TACO BELL",
-            "joinedAt": "2025-04-01T21:53:45.566Z",
-            "role": "ADMIN",
-            "userId": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "SK": "ORG#TACO BELL",
-            "organizationName": "Taco Bell",
-            "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "type": "USER_ORG"
+    "name": "Culvers",
+    "description": "Butter Burgers",
+    "contactEmail": "culvers@culvers.com",
+    "website": "https://www.culvers.com/",
+    "logoUrl": "https://styleguide.culvers.com/brand-styles/logo-usage"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | Yes | Existing org name |
+| description | string | No | Org description |
+| contactEmail | string | No | Org contact email|
+| website | string | No | Valid URL of website |
+| logoUrl | string | No | Valid URL of logo |
+
+#### Response
+
+**200 OK**
+```json
+{
+    "status": "Updated organization!",
+    "data": {
+        "org": {
+            "PK": "ORG#CULVERS",
+            "SK": "ENTITY",
+            "id": "6a39ef9c-f036-44ad-866c-16f4b7e81622",
+            "name": "Culvers",
+            "description": "Butter Burgers",
+            "createdBy": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "createdAt": "2025-04-01T21:49:53.186Z",
+            "updatedAt": "2025-04-02T22:51:11.640Z",
+            "type": "ORGANIZATION",
+            "isPublic": true,
+            "logoUrl": "https://styleguide.culvers.com/brand-styles/logo-usage",
+            "website": "https://www.culvers.com/",
+            "contactEmail": "culvers@culvers.com",
+            "GSI1PK": "CUL",
+            "GSI1SK": "ORG#CULVERS"
         }
-    ]
+    }
 }
 ```
 
@@ -459,7 +480,33 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 ```json
 {
     "status": "error",
+    "message": "Invalid URL"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "You need to specify the Organization name."
+}
+```
+```json
+{
+    "status": "error",
     "message": "No Organizations found!"
+}
+```
+
+**401 UnAuthorized**
+```json
+{
+    "status": "error",
+    "message": "You need to be a part of this Organization"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Only Admin roles can updated Organizations"
 }
 ```
 
@@ -467,25 +514,13 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 ```json
 {
     "status": "error",
-    "message": "Finding Organization by User failed! ${error.message}"
+    "message": "Updating Organization failed!"
 }
 ```
 ```json
 {
     "status": "error",
-    "message": "Failed to find organization by id: ${error.message}"
-}
-```
-```json
-{
-    "status": "error",
-    "message": "User Organization creation failed: Model!"
-}
-```
-```json
-{
-    "status": "error",
-    "message": "Finding Organization by ID failed!"
+    "message": "Finding User Organization failed!"
 }
 ```
 

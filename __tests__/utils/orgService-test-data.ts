@@ -80,7 +80,7 @@ export const createdOrg: Organization = {
     GSI1SK: 'ORG#JOLLIBEE',
 };
 
-export const createdUserAdmin: UserOrganizationRelationship = {
+export let createdUserAdmin: UserOrganizationRelationship = {
     PK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
     SK: 'ORG#JOLLIBEE',
     userId: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
