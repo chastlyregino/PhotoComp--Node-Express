@@ -52,7 +52,7 @@ describe(`Negative parent method tests`, () => {
         mockOrgService.validateUrl(updateOrg.logoUrl);
         orgRepository.findSpecificOrgByUser(createdUserAdmin);
         mockOrgService.findSpecificOrgByUser(createdUserAdmin);
-        
+
         const orgServiceWithMock = new OrgService(orgRepository);
 
         await expect(orgServiceWithMock.updateOrgByName(updateOrg, userId)).rejects.toThrow(
@@ -199,9 +199,9 @@ describe(`Negative org tests`, () => {
         jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(null);
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        await expect(orgServiceWithMock.findSpecificOrgByUser(updateOrg.name, userId)).rejects.toThrow(
-            `You need to be a part of this Organization`
-        );
+        await expect(
+            orgServiceWithMock.findSpecificOrgByUser(updateOrg.name, userId)
+        ).rejects.toThrow(`You need to be a part of this Organization`);
         expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
     });
 

@@ -105,14 +105,17 @@ export class OrgService {
         }
     }
 
-    async findSpecificOrgByUser(name: string, userId: string): Promise<UserOrganizationRelationship | null> {
+    async findSpecificOrgByUser(
+        name: string,
+        userId: string
+    ): Promise<UserOrganizationRelationship | null> {
         try {
             const userOrg = await this.orgRepository.findSpecificOrgByUser(name, userId);
-            if(!userOrg) {
+            if (!userOrg) {
                 throw new AppError(`You need to be a part of this Organization`, 401);
             }
 
-            return userOrg
+            return userOrg;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
@@ -161,14 +164,17 @@ export class OrgService {
                 throw new AppError(`No Organizations found!`, 400);
             }
 
-            const userOrg = await this.findSpecificOrgByUser(org.name, userId) as UserOrganizationRelationship
+            const userOrg = (await this.findSpecificOrgByUser(
+                org.name,
+                userId
+            )) as UserOrganizationRelationship;
 
-            if(userOrg.role  !== `ADMIN`) {
+            if (userOrg.role !== `ADMIN`) {
                 throw new AppError(`Only Admin roles can updated Organizations`, 401);
             }
 
             const updatedOrg = updateOrganization(org, existingOrg);
-            
+
             return await this.orgRepository.updateOrgByName(updatedOrg);
         } catch (error) {
             if (error instanceof AppError) {
