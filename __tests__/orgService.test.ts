@@ -80,7 +80,7 @@ describe(`Negative org tests`, () => {
         jest.clearAllMocks();
     });
 
-    test(`Organization with the same name`, async () => {
+    test(`Create Organization with the same name`, async () => {
         jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(existingOrg);
         const orgServiceWithMock = new OrgService(orgRepository);
 
@@ -89,7 +89,7 @@ describe(`Negative org tests`, () => {
         );
     });
 
-    test(`Organization without name`, async () => {
+    test(`Create Organization without name`, async () => {
         org.name = ``;
         const orgServiceWithMock = new OrgService(orgRepository);
 
@@ -98,14 +98,14 @@ describe(`Negative org tests`, () => {
         );
     });
 
-    test(`Organization with invalid logo`, async () => {
+    test(`Create Organization with invalid logo`, async () => {
         org.logoUrl = `invalid logo`;
         const orgServiceWithMock = new OrgService(orgRepository);
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(`Invalid URL`);
     });
 
-    test(`Organization with invalid logo`, async () => {
+    test(`Organization with invalid User`, async () => {
         const orgServiceWithMock = new OrgService(orgRepository);
 
         await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(
