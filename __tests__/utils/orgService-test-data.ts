@@ -64,3 +64,28 @@ export const createdUserAdmin: UserOrganizationRelationship = {
     GSI1PK: 'ORG#JOLLIBEE',
     GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
 };
+
+export const existingOrgsUser: UserOrganizationRelationship[] = [
+    {
+        GSI1PK: 'ORG#CULVERS',
+        joinedAt: '2025-04-01T21:49:53.238Z',
+        role: UserRole.ADMIN,
+        userId: '1dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        SK: 'ORG#CULVERS',
+        organizationName: 'Culvers',
+        GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        PK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        type: 'USER_ORG',
+    },
+    {
+        GSI1PK: 'ORG#TACO BELL',
+        joinedAt: '2025-04-01T21:53:45.566Z',
+        role: UserRole.ADMIN,
+        userId: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        SK: 'ORG#TACO BELL',
+        organizationName: 'Taco Bell',
+        GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        PK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        type: 'USER_ORG',
+    },
+];

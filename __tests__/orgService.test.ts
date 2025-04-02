@@ -6,6 +6,7 @@ import {
     existingOrg,
     createdOrg,
     createdUserAdmin,
+    existingOrgsUser,
 } from './utils/orgService-test-data';
 import { OrgRepository } from '../src/repositories/orgRepository';
 import { OrgService } from '../src/services/orgService';
@@ -29,6 +30,7 @@ describe(`Positive org tests`, () => {
         jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(nonExistingOrg);
         jest.spyOn(orgRepository, 'createOrg').mockResolvedValue(createdOrg);
         jest.spyOn(orgRepository, 'createUserAdmin').mockResolvedValue(createdUserAdmin);
+        jest.spyOn(orgRepository, 'findOrgsByUser').mockResolvedValue(existingOrgsUser);
 
         // Mock models function
         (createOrganization as jest.Mock).mockReturnValue(createdOrg);
@@ -54,6 +56,14 @@ describe(`Positive org tests`, () => {
 
         expect(orgRepository.createUserAdmin).toHaveBeenCalled();
         expect(result).toBe(createdUserAdmin);
+    });
+
+    test(`Get all organizations`, async () => {
+        const orgServiceWithMock = new OrgService(orgRepository);
+        const result = await orgServiceWithMock.findOrgsByUser(userId);
+
+        expect(orgRepository.findOrgsByUser).toHaveBeenCalled();
+        expect(result).toBe(existingOrgsUser);
     });
 });
 
@@ -94,4 +104,11 @@ describe(`Negative org tests`, () => {
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(`Invalid URL`);
     });
+
+    test(`Organization with invalid logo`, async () => {
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(`No Organizations found!`);
+    });
+    
 });
