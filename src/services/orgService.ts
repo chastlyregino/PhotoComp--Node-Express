@@ -99,11 +99,17 @@ export class OrgService {
         }
     }
 
-    // Code below is for future tickets. use/remove when necessary - SCRUM-53
     // async findOrgsByUser(userId: string): Promise<Organization[] | null> {
     //     try {
-    //         //enter findByUser logic here
-    //         return await this.orgRepository.findOrgsByUser(userId);
+    //         const results = await this.orgRepository.findOrgsByUser(userId);
+            
+    //         if (!results) {
+    //             throw new AppError(
+    //                 `No Organizations found!`,
+    //                 400
+    //             );
+    //         }
+    //         return results
     //     } catch (error) {
     //         if (error instanceof AppError) {
     //             throw error;

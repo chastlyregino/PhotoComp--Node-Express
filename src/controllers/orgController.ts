@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { Request, Response, Router, NextFunction } from 'express';
 import { UserService } from '../services/userService';
 import { OrgService } from '../services/orgService';
 import {
@@ -13,10 +13,6 @@ const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-// throw new AppError('Email, password, first name, and last name are required', 400);
-
-// Code below is for future tickets. use/remove when necessary - SCRUM-53
-
 // orgRouter.get(`/`, async (req: Request, res: Response) => {
 //     try {
 //         const user = await userService.getUserByEmail(res.locals.user.email);
@@ -25,14 +21,13 @@ export const orgRouter = Router();
 //             throw new AppError('User not found', 404);
 //         }
 
-//         const org = orgService.findOrgsByUser(user.SK); // change it with getter method
+//         const org = await orgService.findOrgsByUser(user.id);
 
-//         if (org) {
-//             res.status(200).json({ message: `Here are your organizations!`, org: org });
-//         } else {
-//             // res.status(204).json({ message: `No organizations found!` });
+//         if (!org) {
 //             throw new AppError(`No organizations found!`, 204);
 //         }
+
+//         res.status(200).json({ message: `Here are your organizations!`, org: org });
 //     } catch (error) {
 //         if (error instanceof AppError) {
 //             return res.status(error.statusCode).json({
@@ -49,37 +44,6 @@ export const orgRouter = Router();
 // });
 
 orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = await userService.getUserByEmail(res.locals.user.email);
-
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }
-
-        const org = orgService.findOrgsByUser(user.SK); // change it with getter method
-
-        if (org) {
-            res.status(200).json({ message: `Here are your organizations!`, org: org });
-        } else {
-            // res.status(204).json({ message: `No organizations found!` });
-            throw new AppError(`No organizations found!`, 204);
-        }
-    } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to retrieve organizations',
-        });
-    }
-});
-
-orgRouter.post(`/`, async (req: Request, res: Response) => {
     try {
         const { name, logoUrl } = req.body;
 
@@ -119,17 +83,7 @@ orgRouter.post(`/`, async (req: Request, res: Response) => {
             throw new AppError(`Organization not created`, 400);
         }
     } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to create organization',
-        });
+        next(error)
     }
 });
 
