@@ -13,7 +13,7 @@ const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-orgRouter.get(`/`, async (req: Request, res: Response) => {
+orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = await userService.getUserByEmail(res.locals.user.email);
 
@@ -29,17 +29,7 @@ orgRouter.get(`/`, async (req: Request, res: Response) => {
 
         res.status(200).json({ message: `Here are your organizations!`, org: org });
     } catch (error) {
-        if (error instanceof AppError) {
-            return res.status(error.statusCode).json({
-                status: 'error',
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            status: 'error',
-            message: 'Failed to retrieve organizations',
-        });
+        next(error)
     }
 });
 
