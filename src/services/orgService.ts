@@ -20,8 +20,7 @@ export class OrgService {
     async validateUrl(url: string | undefined): Promise<void> {
         if (url !== undefined) {
             try {
-                new URL(url)
-                console.log(`error`)
+                new URL(url);
             } catch (error) {
                 throw new AppError(`${(error as Error).message}`, 400);
             }
@@ -33,7 +32,7 @@ export class OrgService {
         userId: string
     ): Promise<OrganizationCreateRequest | null> {
         try {
-            await this.validateUrl(createOrg.logoUrl)
+            await this.validateUrl(createOrg.logoUrl);
 
             if (!createOrg.name || !createOrg.logoUrl) {
                 throw new AppError('Name and logoUrl are required', 400);
@@ -133,8 +132,8 @@ export class OrgService {
                 throw new AppError(`You need to specify the Organization name.`, 400);
             }
 
-            await this.validateUrl(org.logoUrl)
-            await this.validateUrl(org.website)
+            await this.validateUrl(org.logoUrl);
+            await this.validateUrl(org.website);
 
             const existingOrg = await this.orgRepository.findOrgByName(org.name);
 
@@ -143,7 +142,7 @@ export class OrgService {
             }
 
             const updatedOrg = updateOrganization(org, existingOrg);
-
+            console.log(updatedOrg);
             return await this.orgRepository.updateOrgByName(updatedOrg);
         } catch (error) {
             if (error instanceof AppError) {

@@ -1,4 +1,8 @@
-import { addOrganizationAdmin, createOrganization } from '../src/models/Organizations';
+import {
+    addOrganizationAdmin,
+    createOrganization,
+    updateOrganization,
+} from '../src/models/Organizations';
 import {
     nonExistingOrg,
     userId,
@@ -7,6 +11,8 @@ import {
     createdOrg,
     createdUserAdmin,
     existingOrgsUser,
+    updateOrg,
+    updatedOrganization,
 } from './utils/orgService-test-data';
 import { OrgRepository } from '../src/repositories/orgRepository';
 import { OrgService } from '../src/services/orgService';
@@ -16,25 +22,33 @@ jest.mock(`../src/repositories/orgRepository`);
 jest.mock(`../src/models/Organizations`, () => ({
     createOrganization: jest.fn(),
     addOrganizationAdmin: jest.fn(),
+    updateOrganization: jest.fn(),
 }));
+// jest.mock(`../src/services/orgService`, () => ({
+//     validateUrl: jest.fn(),
+// }));
 
 describe(`Positive org tests`, () => {
     // Initialize the repository variable before using it
     let orgRepository: any;
+    let mockOrgService: any;
 
     beforeEach(() => {
         // Create a new instance of OrgRepository
         orgRepository = new OrgRepository();
-
+        mockOrgService = new OrgService(orgRepository);
         // Set up the spies after repository is initialized
         jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(nonExistingOrg);
         jest.spyOn(orgRepository, 'createOrg').mockResolvedValue(createdOrg);
         jest.spyOn(orgRepository, 'createUserAdmin').mockResolvedValue(createdUserAdmin);
         jest.spyOn(orgRepository, 'findOrgsByUser').mockResolvedValue(existingOrgsUser);
+        jest.spyOn(orgRepository, 'updateOrgByName').mockResolvedValue(updatedOrganization);
+        jest.spyOn(mockOrgService, 'validateUrl');
 
         // Mock models function
         (createOrganization as jest.Mock).mockReturnValue(createdOrg);
         (addOrganizationAdmin as jest.Mock).mockReturnValue(createdUserAdmin);
+        (updateOrganization as jest.Mock).mockReturnValue(updatedOrganization);
     });
 
     afterEach(() => {
@@ -64,6 +78,20 @@ describe(`Positive org tests`, () => {
 
         expect(orgRepository.findOrgsByUser).toHaveBeenCalled();
         expect(result).toBe(existingOrgsUser);
+    });
+
+    test(`Updating Organization`, async () => {
+        mockOrgService.validateUrl(updateOrg.website);
+        mockOrgService.validateUrl(updateOrg.logoUrl);
+        orgRepository.findOrgByName.mockResolvedValue(existingOrg);
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        const result = await orgServiceWithMock.updateOrgByName(updateOrg);
+
+        expect(mockOrgService.validateUrl).toHaveBeenCalledTimes(2);
+        expect(mockOrgService.validateUrl).toHaveBeenLastCalledWith(updateOrg.logoUrl);
+        expect(orgRepository.findOrgByName).toHaveBeenCalled();
+        expect(result).toBe(updatedOrganization);
     });
 });
 
@@ -111,5 +139,21 @@ describe(`Negative org tests`, () => {
         await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(
             `No Organizations found!`
         );
+    });
+
+    test(`Updating Organization without name`, async () => {
+        org.name = ``;
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.updateOrgByName(org)).rejects.toThrow(
+            `You need to specify the Organization name.`
+        );
+    });
+
+    test(`Using invalid URL`, async () => {
+        org.logoUrl = `invalid logo`;
+        const orgServiceWithMock = new OrgService(orgRepository);
+
+        await expect(orgServiceWithMock.validateUrl(org.logoUrl)).rejects.toThrow(`Invalid URL`);
     });
 });

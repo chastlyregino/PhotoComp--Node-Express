@@ -3,6 +3,7 @@ import {
     Organization,
     OrganizationCreateRequest,
     UserOrganizationRelationship,
+    OrganizationUpdateRequest,
 } from '../../src/models/Organizations';
 import { AuthRequest } from '../../src/models/User';
 
@@ -19,6 +20,32 @@ export let user: AuthRequest = {
     email: `sample1@example.com`,
     password: `test1234`,
 };
+
+export const updateOrg: OrganizationUpdateRequest = {
+    name: "Jollibee",
+    description: "Butter Burgers",
+    contactEmail: "culvers@culvers.com",
+    website: "https://www.culvers.com/",
+    logoUrl: "https://styleguide.culvers.com/brand-styles/logo-usage"
+}
+
+export const updatedOrganization: Organization = {
+    PK: 'ORG#JOLLIBEE',
+    SK: 'ENTITY',
+    id: '6a39ef9c-f036-44ad-866c-16f4b7e81622',
+    name: 'Jollibee',
+    description: 'Butter Burgers',
+    createdBy: '5e5bdb97-6bfa-44c0-b998-2e64568798ef',
+    createdAt: '2025-04-01T21:49:53.186Z',
+    updatedAt: '2025-04-02T21:36:06.111Z',
+    type: 'ORGANIZATION',
+    isPublic: true,
+    logoUrl: 'https://styleguide.culvers.com/brand-styles/logo-usage',
+    website: 'https://www.culvers.com/',
+    contactEmail: 'culvers@culvers.com',
+    GSI1PK: 'JOL',
+    GSI1SK: 'ORG#JOLLIBEE'
+}
 
 export const existingOrg: Organization = {
     logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
