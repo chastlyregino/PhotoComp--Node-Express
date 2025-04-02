@@ -68,6 +68,28 @@ export class OrgRepository {
         }
     }
 
+    async findSpecificOrgByUser(name: string, userId: string): Promise<UserOrganizationRelationship | null> {
+        try {
+            const params = {
+                TableName: TABLE_NAME,
+                Key: {
+                    PK: `USER#${userId}`,
+                    SK: `ORG#${name.toUpperCase()}`,
+                },
+            };
+
+            const result = await dynamoDb.send(new GetCommand(params));
+
+            if (!result.Item) {
+                return null;
+            }
+
+            return result.Item as UserOrganizationRelationship;
+        } catch (error: any) {
+            throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
+        }
+    }
+
     async findOrgsByUser(userId: string): Promise<Organization[] | null> {
         try {
             const params = {

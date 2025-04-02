@@ -13,13 +13,20 @@ const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const user = await userService.getUserByEmail(res.locals.user.email);
+const validateUserID = async (req: Request, res: Response, next: NextFunction) => {
+    const user = await userService.getUserByEmail(res.locals.user.email);
 
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }
+    if(!user) {
+        throw new AppError('User not found', 404);
+        
+    }
+
+    res.locals.user.info = user
+    next() 
+}
+orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = res.locals.user.info
 
         const org = await orgService.findOrgsByUser(user.id);
 
@@ -33,15 +40,10 @@ orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
+orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
-
-        const user = await userService.getUserByEmail(res.locals.user.email);
-
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }
+        const user = res.locals.user.info
 
         const organization: OrganizationCreateRequest = {
             name,
@@ -74,9 +76,10 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-orgRouter.patch(`/`, async (req: Request, res: Response, next: NextFunction) => {
+orgRouter.patch(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl, description, website, contactEmail } = req.body;
+        const user = res.locals.user.info
 
         const org: OrganizationUpdateRequest = {
             name,
@@ -86,7 +89,7 @@ orgRouter.patch(`/`, async (req: Request, res: Response, next: NextFunction) => 
             contactEmail,
         };
 
-        const updatedOrg = await orgService.updateOrgByName(org);
+        const updatedOrg = await orgService.updateOrgByName(org, user.id);
 
         if (!updatedOrg) {
             throw new AppError(`Failed to update Organization`, 400);
