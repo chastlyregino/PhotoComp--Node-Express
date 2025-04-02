@@ -327,6 +327,87 @@ This endpoint allows users to create a new organizations. All new user-organizat
 }
 ```
 
+### 2.2 Get all Organizations of User
+
+`GET /organizations`
+
+This endpoint allows users to get all organizations of the user created and are a member of.
+
+#### Response
+
+**200 Created**
+```json
+{
+    "message": "Here are your organizations!",
+    "org": [
+        {
+            "GSI1PK": "ORG#CULVERS",
+            "joinedAt": "2025-04-01T21:49:53.238Z",
+            "role": "ADMIN",
+            "userId": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "SK": "ORG#CULVERS",
+            "organizationName": "Culvers",
+            "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "type": "USER_ORG"
+        },
+        {
+            "GSI1PK": "ORG#TACO BELL",
+            "joinedAt": "2025-04-01T21:53:45.566Z",
+            "role": "ADMIN",
+            "userId": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "SK": "ORG#TACO BELL",
+            "organizationName": "Taco Bell",
+            "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+            "type": "USER_ORG"
+        }
+    ]
+}
+```
+
+**204 No Content**
+```json
+{
+    "status": "error",
+    "message": "No organizations found!"
+}
+```
+
+**400 Bad Request**
+```json
+{
+    "status": "error",
+    "message": "No Organizations found!"
+}
+```
+
+**500 Server Error**
+```json
+{
+    "status": "error",
+    "message": "Finding Organization by User failed! ${error.message}"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Failed to find organization by id: ${error.message}"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "User Organization creation failed: Model!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Finding Organization by ID failed!"
+}
+```
+
 ## JWT Token
 
 The JWT token contains the following payload:
@@ -355,6 +436,7 @@ The JWT token contains the following payload:
 |------------|-------------|
 | 200 OK | Request processed successfully |
 | 201 Created | Resource created successfully |
+| 204 No Content | Resource has nothing to show |
 | 400 Bad Request | Invalid request data (missing fields, invalid values, etc.) |
 | 401 Unauthorized | Authentication required or authentication failed |
 | 404 Not Found | Data not available in the database |
