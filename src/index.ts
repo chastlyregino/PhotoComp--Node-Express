@@ -2,7 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { authRouter } from './controllers/authController';
+import { orgRouter } from './controllers/orgController';
+import { authenticate } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
+import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -14,19 +17,22 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Super middleware
+app.use(loggerMethodMiddleware);
+
 // Routes
 app.use('/api/auth', authRouter);
+app.use(`/organizations`, authenticate, orgRouter); // add authenticate middleware
 
 // Default route
 app.get('/', (req, res) => {
-  res.send('PhotoComp API is running');
+    res.send('PhotoComp API is running');
 });
 
-// 404 handler - must be before the error handler
-app.use((req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalUrl}`);
-  res.status(404);
-  next(error);
+app.all(/(.*)/, (req, res, next) => {
+    const error = new Error(`Not Found - ${req.originalUrl}`);
+    res.status(404);
+    next(error);
 });
 
 // Error handling middleware must be used after all routes
@@ -34,7 +40,7 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
 
 // powershell

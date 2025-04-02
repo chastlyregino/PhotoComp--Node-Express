@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "19ebab56-5af3-41cd-9e59-2fb96b90b95f",
+		"_postman_id": "b2145433-6606-48c7-8e10-d9382fd3f16a",
 		"name": "PhotoComp API Auth",
 		"description": "Collection for testing the authentication endpoints of the PhotoComp API.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "42793464"
+		"_exporter_id": "42793923",
+		"_collection_link": "https://photocomp.postman.co/workspace/5d02fc07-cdb4-4db6-a78d-2516f90a9e43/collection/42793923-b2145433-6606-48c7-8e10-d9382fd3f16a?action=share&source=collection_link&creator=42793923"
 	},
 	"item": [
 		{
@@ -309,6 +310,8 @@
 								"exec": [
 									"// Parse the response",
 									"var jsonData = pm.response.json();",
+									"const responseJSON = pm.response.json();",
+									"pm.environment.set(\"active_userToken\", responseJSON.data.token);",
 									"",
 									"// Store token in environment variable for subsequent requests",
 									"if (jsonData.data && jsonData.data.token) {",
@@ -340,7 +343,8 @@
 									"    pm.expect(jsonData.data.user.email).to.eql(requestData.email);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -573,6 +577,284 @@
 				}
 			],
 			"description": "Auth operations for user registration and login."
+		},
+		{
+			"name": "Organizations",
+			"item": [
+				{
+					"name": "Positive Tests",
+					"item": [
+						{
+							"name": "Create new org",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 201\", function () {",
+											"  pm.expect(pm.response.to.have.status(201));",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response has the required fields\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData.message).to.exist;",
+											"});",
+											"",
+											"",
+											"pm.test(\"Message is a non-empty string\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData.message).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Value should not be empty\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"Content-Type header is application/json\", function () {",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response body is not empty\", function () {",
+											"  const responseData = pm.response.json();",
+											"  ",
+											"  pm.expect(responseData).to.not.be.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Riviera\",\n    \"logoUrl\": \"https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/organizations/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"organizations",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Negative Tests",
+					"item": [
+						{
+							"name": "Create duplicate org",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 409\", function () {",
+											"    pm.expect(pm.response.code).to.equal(409);",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response has the required fields - status and message\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData).to.have.property('status');",
+											"    pm.expect(responseData).to.have.property('message');",
+											"});",
+											"",
+											"",
+											"pm.test(\"Status is a non-empty string\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData.status).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Status should not be empty\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"Message is a non-empty string\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData.message).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Value should not be empty\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"Content-Type header is application/json\", function () {",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"KFC\",\n    \"logoUrl\": \"https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/organizations/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"organizations",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create org with incomplete details",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response has the required fields - status and message\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData).to.have.property('status');",
+											"    pm.expect(responseData).to.have.property('message');",
+											"});",
+											"",
+											"",
+											"pm.test(\"Status message is a non-empty string\", function () {",
+											"  const responseData = pm.response.json();",
+											"  ",
+											"  pm.expect(responseData).to.be.an('object');",
+											"  pm.expect(responseData.status).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Status message should not be empty\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"Content-Type header is application/json\", function () {",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response message provides a clear and informative error message\", function () {",
+											"    const responseData = pm.response.json();",
+											"    ",
+											"    pm.expect(responseData).to.be.an('object');",
+											"    pm.expect(responseData.message).to.exist.and.to.be.a('string').and.to.not.be.empty;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Dome\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/organizations/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"organizations",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{authToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		}
 	],
 	"event": [

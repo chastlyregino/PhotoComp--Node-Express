@@ -26,12 +26,35 @@ Authorization: Bearer your-jwt-token
 | createdAt | timestamp | Timestamp when the user was created (ISO 8601). |
 | updatedAt | timestamp | Timestamp when the user was last updated (ISO 8601). |
 
+### Organization Model
+
+| Property | Type | Description |
+|----------|------|-------------|
+| id | string (UUID) | Unique identifier for the org. |
+| name | string | Organization's unique name. |
+| createdBy | string | User's ID (`USER#${user.id}` || user.PK) |
+| createdAt | timestamp | Timestamp when the org was created (ISO 8601). |
+| updatedAt | timestamp | Timestamp when the org was last updated (ISO 8601). |
+| isPublic | boolean | returns if an org is public or not. |
+| logoUrl | string | Photo URL of the org's logo. |
+
+### User-Organization Model
+
+| Property | Type | Description |
+|----------|------|-------------|
+| userId | string | User's ID (`USER#${user.id}` || userOrg.PK)  |
+| organizationName | string | Org's name (`ORG#${org.name}` || userOrg.SK) |
+| role | timestamp | User role: "USER", "MEMBER", or "ADMIN". |
+| joinedAt | string | When user joined the org. |
+
+
 ## API Overview
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | /api/auth/register | Register a new user |
 | POST | /api/auth/login | Login and get authentication token |
+| POST | /organizations | Create a new organization |
 
 ## 1. Authentication Endpoints
 
@@ -39,7 +62,7 @@ Authorization: Bearer your-jwt-token
 
 `POST /api/auth/register`
 
-This endpoint allows users to create a new account. All new users are registered with the "USER" role by default and are given an "ACTIVE" status.
+This endpoint allows users to create a new account. All new users are registered with the "USER" status by default and are given an "ACTIVE" status.
 
 #### Request Headers
 
@@ -195,6 +218,115 @@ This endpoint authenticates a user and returns a JWT token.
 }
 ```
 
+## 2. Organization Endpoints
+
+### 2.1 Create new Organization
+
+`POST /organizations`
+
+This endpoint allows users to create a new organizations. All new user-organizations are registered with the "USER" role by default and are given an "ADMIN" role. All new organizations are registered as a default "PUBLIC".
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Content-Type | application/json | Yes |
+
+#### Request Body
+
+```json
+{
+    "name": "Taco Bell",
+    "logoUrl": "https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | Yes | Unique org name |
+| logoUrl | string | Yes | Valid URL |
+
+#### Response
+
+**201 Created**
+```json
+{
+    "status": "Created organization!",
+    "data": {
+        "user": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
+        "org": "Taco Bell"
+    }
+}
+```
+
+**400 Bad Request**
+```json
+{
+    "status": "error",
+    "message": "Organization not created"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "User Organization not created"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Name and logoUrl are required"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Invalid URL"
+}
+```
+
+**404 User Not Found**
+```json
+{
+    "status": "error",
+    "message": "User not found"
+}
+```
+
+**409 Conflict**
+```json
+{
+    "status": "error",
+    "message": "Organization name already in use!"
+}
+```
+
+**500 Server Error**
+```json
+{
+    "status": "error",
+    "message": "Organization creation failed: DB!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Organization creation failed: Model!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "User Organization creation failed: Model!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Finding Organization by ID failed!"
+}
+```
+
 ## JWT Token
 
 The JWT token contains the following payload:
@@ -225,6 +357,7 @@ The JWT token contains the following payload:
 | 201 Created | Resource created successfully |
 | 400 Bad Request | Invalid request data (missing fields, invalid values, etc.) |
 | 401 Unauthorized | Authentication required or authentication failed |
+| 404 Not Found | Data not available in the database |
 | 403 Forbidden | User doesn't have permission for the requested action |
 | 409 Conflict | Resource already exists |
 | 500 Server Error | Server-side error occurred |
@@ -247,11 +380,11 @@ The system uses a single-table design in DynamoDB with the following structure:
 
 | Component | Description |
 |-----------|-------------|
-| PK | Primary partition key in format USER#{id} |
-| SK | Primary sort key in format PROFILE#{id} |
-| GSI1PK | Global Secondary Index partition key in format EMAIL#{email} |
-| GSI1SK | Global Secondary Index sort key in format USER#{id} |
-| type | Item type identifier used for filtering (e.g., "USER", "USER_ORG") |
+| PK | Primary partition key in format [USER: USER#{id}; ORG: ORG#{NAME}; USER-ORG: USER#{id}]  |
+| SK | Primary sort key in format [USER/ORG: ENTITY; USER-ORG: ORG#{NAME}] |
+| GSI1PK | Global Secondary Index partition key in format [USER: EMAIL#{email}; ORG: USER#{id}] |
+| GSI1SK | Global Secondary Index sort key in format [USER: USER#{id}; ORG: ORG#{NAME}] |
+| type | Item type identifier used for filtering (e.g., "USER", "ORGANIZATION", "USER_ORG") |
 
 ## Security Considerations
 
@@ -260,3 +393,4 @@ The system uses a single-table design in DynamoDB with the following structure:
 - Authentication is required for all endpoints except registration and login
 - Email addresses must be properly formatted
 - Passwords must be at least 8 characters long
+- logoUrl must be a valid URL
