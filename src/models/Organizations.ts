@@ -64,8 +64,7 @@ export const createOrganization = (
 export interface OrganizationUpdateRequest {
     name: string;
     description?: string;
-    logoUrl: string;
-    isPublic: boolean;
+    logoUrl?: string;
     website?: string;
     contactEmail?: string;
 }
@@ -80,15 +79,15 @@ export const updateOrganization = (
         SK: org.SK,
         id: org.id,
         name: org.name,
-        description: org.description,
+        description: request.description || org.description,
         createdBy: org.createdBy,
         createdAt: org.createdAt,
         updatedAt: now,
         type: `ORGANIZATION`,
-        isPublic: request.isPublic || org.isPublic,
+        isPublic: org.isPublic,
         logoUrl: request.logoUrl || org.logoUrl,
-        website: request.website,
-        contactEmail: request.contactEmail,
+        website: request.website || org.website,
+        contactEmail: request.contactEmail || org.website,
         GSI1PK: org.GSI1PK,
         GSI1SK: org.GSI1SK,
     };
