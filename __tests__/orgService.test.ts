@@ -92,8 +92,6 @@ describe(`Negative org tests`, () => {
         org.logoUrl = `invalid logo`;
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
-            `Invalid URL`
-        );
+        await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(`Invalid URL`);
     });
 });
