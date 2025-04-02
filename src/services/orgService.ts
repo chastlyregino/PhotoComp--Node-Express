@@ -99,27 +99,24 @@ export class OrgService {
         }
     }
 
-    // async findOrgsByUser(userId: string): Promise<Organization[] | null> {
-    //     try {
-    //         const results = await this.orgRepository.findOrgsByUser(userId);
-            
-    //         if (!results) {
-    //             throw new AppError(
-    //                 `No Organizations found!`,
-    //                 400
-    //             );
-    //         }
-    //         return results
-    //     } catch (error) {
-    //         if (error instanceof AppError) {
-    //             throw error;
-    //         }
-    //         throw new AppError(
-    //             `Finding Organization by User failed! ${(error as Error).message}`,
-    //             500
-    //         );
-    //     }
-    // }
+    async findOrgsByUser(userId: string): Promise<Organization[] | null> {
+        try {
+            const results = await this.orgRepository.findOrgsByUser(userId);
+
+            if (!results) {
+                throw new AppError(`No Organizations found!`, 400);
+            }
+            return results;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Finding Organization by User failed! ${(error as Error).message}`,
+                500
+            );
+        }
+    }
 
     // Code below is for future tickets. use/remove when necessary
 

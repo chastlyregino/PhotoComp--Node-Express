@@ -38,7 +38,7 @@ export class OrgRepository {
                     Item: userOrg,
                 })
             );
-            
+
             return userOrg;
         } catch (error: any) {
             throw new AppError(`Failed to create Organization: ${error.message}`, 500);
@@ -69,29 +69,28 @@ export class OrgRepository {
     }
 
     // Code below is for future tickets. use/remove when necessary - SCRUM-53
-    // async findOrgsByUser(userId: string): Promise<Organization[] | null> {
-    //     try {
+    async findOrgsByUser(userId: string): Promise<Organization[] | null> {
+        try {
+            const params = {
+                TableName: TABLE_NAME,
+                KeyConditionExpression: 'PK = :userIdKey and begins_with(SK, :orgName)',
+                ExpressionAttributeValues: {
+                    ':userIdKey': `USER#${userId}`,
+                    ':orgName': `ORG#`,
+                },
+            };
 
-    //         const params = {
-    //             TableName: TABLE_NAME,
-    //             KeyConditionExpression: 'PK = :userIdKey and begins_with(SK, :orgName)',
-    //             ExpressionAttributeValues: {
-    //                 ':userIdKey': `USER#${userId}`,
-    //                 ':orgName': `ORG#`,
-    //             },
-    //         };
+            const result = await dynamoDb.send(new QueryCommand(params));
 
-    //         const result = await dynamoDb.send(new QueryCommand(params));
+            if (!result.Items || result.Items.length === 0) {
+                return [];
+            }
 
-    //         if (!result.Items || result.Items.length === 0) {
-    //             return [];
-    //         }
-
-    //         return result.Items as Organization[];
-    //     } catch (error: any) {
-    //         throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
-    //     }
-    // }
+            return result.Items as Organization[];
+        } catch (error: any) {
+            throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
+        }
+    }
 
     // Code below is for future tickets. use/remove when necessary
 

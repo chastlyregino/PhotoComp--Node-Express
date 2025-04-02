@@ -16,9 +16,9 @@ export let org: OrganizationCreateRequest = {
 };
 
 export let user: AuthRequest = {
-        email: `sample1@example.com`,
-        password: `test1234`
-}
+    email: `sample1@example.com`,
+    password: `test1234`,
+};
 
 export const existingOrg: Organization = {
     logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',

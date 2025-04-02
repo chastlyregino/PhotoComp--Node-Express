@@ -13,35 +13,35 @@ const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-// orgRouter.get(`/`, async (req: Request, res: Response) => {
-//     try {
-//         const user = await userService.getUserByEmail(res.locals.user.email);
+orgRouter.get(`/`, async (req: Request, res: Response) => {
+    try {
+        const user = await userService.getUserByEmail(res.locals.user.email);
 
-//         if (!user) {
-//             throw new AppError('User not found', 404);
-//         }
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
 
-//         const org = await orgService.findOrgsByUser(user.id);
+        const org = await orgService.findOrgsByUser(user.id);
 
-//         if (!org) {
-//             throw new AppError(`No organizations found!`, 204);
-//         }
+        if (!org) {
+            throw new AppError(`No organizations found!`, 204);
+        }
 
-//         res.status(200).json({ message: `Here are your organizations!`, org: org });
-//     } catch (error) {
-//         if (error instanceof AppError) {
-//             return res.status(error.statusCode).json({
-//                 status: 'error',
-//                 message: error.message,
-//             });
-//         }
+        res.status(200).json({ message: `Here are your organizations!`, org: org });
+    } catch (error) {
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
 
-//         return res.status(500).json({
-//             status: 'error',
-//             message: 'Failed to retrieve organizations',
-//         });
-//     }
-// });
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to retrieve organizations',
+        });
+    }
+});
 
 orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -83,7 +83,7 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
             throw new AppError(`Organization not created`, 400);
         }
     } catch (error) {
-        next(error)
+        next(error);
     }
 });
 
