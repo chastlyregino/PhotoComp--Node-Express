@@ -1,6 +1,6 @@
 import { EventService } from '../src/services/eventService';
 import { EventRepository } from '../src/repositories/eventRepository';
-import { EventRequest, Event, createEvent, EventVisibility } from '../src/models/Event';
+import { EventRequest, Event, createEvent } from '../src/models/Event';
 import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('../src/repositories/eventRepository');
@@ -41,7 +41,7 @@ describe('EventService', () => {
                 id: 'mock-uuid',
                 title: 'New Event',
                 description: 'Event description',
-                visibility: EventVisibility.PUBLIC,
+                isPublic: true,
                 date: '2025-04-02T21:26:21.561Z',
                 createdAt: '2025-04-02T21:26:21.561Z',
                 updatedAt: '2025-04-02T21:26:21.561Z',
@@ -123,7 +123,7 @@ describe('createEvent', () => {
         // Validate event fields
         expect(event.title).toBe(eventRequest.title);
         expect(event.description).toBe(eventRequest.description);
-        expect(event.visibility).toBe(EventVisibility.PUBLIC);
+        expect(event.isPublic).toBe(true);
         expect(event.date).toBeDefined();
         expect(event.createdAt).toBeDefined();
         expect(event.updatedAt).toBeDefined();

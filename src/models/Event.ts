@@ -1,10 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export enum EventVisibility {
-    PUBLIC = 'PUBLIC', // Default visibility for event
-    PRIVATE = 'PRIVATE',
-}
-
 export interface Event {
     PK: string; // EVENT#<ID>
     SK: 'ENTITY';
@@ -12,7 +7,7 @@ export interface Event {
     id: string;
     title: string;
     description: string;
-    visibility: EventVisibility;
+    isPublic: boolean;
     date: string;
     createdAt: string;
     updatedAt: string;
@@ -53,7 +48,7 @@ export const createEvent = (orgID: string, eventRequest: EventRequest): Event =>
         id: id,
         title: eventRequest.title,
         description: eventRequest.description,
-        visibility: EventVisibility.PUBLIC,
+        isPublic: true,
         date: date,
         createdAt: now,
         updatedAt: now,
