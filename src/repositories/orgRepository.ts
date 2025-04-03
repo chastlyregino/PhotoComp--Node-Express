@@ -143,24 +143,4 @@ export class OrgRepository {
             throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
         }
     }
-
-    async findOrgAdminById(orgid: string, userid: string): Promise<UserOrganizationRelationship> {
-        try {
-            const result = await dynamoDb.send(
-                new QueryCommand({
-                    TableName: TABLE_NAME,
-                    IndexName: 'GSI1PK-GSI1SK-INDEX',
-                    KeyConditionExpression: 'GSI1PK = :orgName and GSI1SK = :userIdKey',
-                    ExpressionAttributeValues: {
-                        ':orgName': `ORG#${orgid.toUpperCase()}`,
-                        ':userIdKey': `USER#${userid}`,
-                    },
-                })
-            );
-            const items = result.Items as UserOrganizationRelationship[];
-            return items[0];
-        } catch (error: any) {
-            throw new AppError(`Failed to find OrgAdmin by id: ${error.message}`, 500);
-        }
-    }
 }
