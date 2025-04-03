@@ -22,7 +22,6 @@ Authorization: Bearer your-jwt-token
 | lastName | string | User's last name. |
 | password | string | Hashed password (not returned in API responses). |
 | role | string | User role: "USER", "MEMBER", or "ADMIN". |
-| status | string | User status: "ACTIVE", "INACTIVE", or "PENDING". |
 | createdAt | timestamp | Timestamp when the user was created (ISO 8601). |
 | updatedAt | timestamp | Timestamp when the user was last updated (ISO 8601). |
 
@@ -32,21 +31,24 @@ Authorization: Bearer your-jwt-token
 |----------|------|-------------|
 | id | string (UUID) | Unique identifier for the org. |
 | name | string | Organization's unique name. |
-| createdBy | string | User's ID (`USER#${user.id}` || user.PK) |
+| createdBy | string | User's ID (`USER#${user.id}` or user.PK) |
 | createdAt | timestamp | Timestamp when the org was created (ISO 8601). |
 | updatedAt | timestamp | Timestamp when the org was last updated (ISO 8601). |
-| isPublic | boolean | returns if an org is public or not. |
-| logoUrl | string | Photo URL of the org's logo. |
+| isPublic | boolean | Returns if an org is public or not. |
+| logoUrl | string | Photo URL of the org's logo (pre-signed URL for access). |
+| logoS3Key | string | S3 key where the logo is stored. |
+| description | string | Optional description of the organization. |
+| website | string | Optional website URL. |
+| contactEmail | string | Optional contact email for the organization. |
 
 ### User-Organization Model
 
 | Property | Type | Description |
 |----------|------|-------------|
-| userId | string | User's ID (`USER#${user.id}` || userOrg.PK)  |
-| organizationName | string | Org's name (`ORG#${org.name}` || userOrg.SK) |
-| role | timestamp | User role: "USER", "MEMBER", or "ADMIN". |
-| joinedAt | string | When user joined the org. |
-
+| userId | string | User's ID (`USER#${user.id}` or userOrg.PK)  |
+| organizationName | string | Org's name (`ORG#${org.name}` or userOrg.SK) |
+| role | string | User role: "USER", "MEMBER", or "ADMIN". |
+| joinedAt | timestamp | When user joined the org (ISO 8601). |
 
 ### **Event Model**
 | Property     | Type    | Description |
@@ -82,6 +84,8 @@ Authorization: Bearer your-jwt-token
 | GET | /organizations/:id/events | Get organizations events|
 | GET | /guests/organizations | Get public organizations |
 | GET | /guests/organizations/:id/events | Get public organizations events|
+| POST | /organization/:id/events | Create a new organization event|
+| GET | /organizations | Get all organizations for the authenticated user |
 
 ## 1. Authentication Endpoints
 
@@ -247,7 +251,7 @@ This endpoint authenticates a user and returns a JWT token.
 
 ## 2. Organization Endpoints
 
-### 2.1 Create new Organization
+### 2.1 Create New Organization
 
 `POST /organizations`
 
@@ -258,20 +262,24 @@ This endpoint allows users to create a new organizations. All new user-organizat
 | Key | Value | Required |
 |-----|-------|----------|
 | Content-Type | application/json | Yes |
+| Authorization | Bearer your-jwt-token | Yes |
 
 #### Request Body
 
 ```json
 {
     "name": "Taco Bell",
-    "logoUrl": "https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8"
+    "logoUrl": "https://example.com/logo.jpg"
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | name | string | Yes | Unique org name |
-| logoUrl | string | Yes | Valid URL |
+| logoUrl | string | Yes | Valid URL to logo image |
+| description | string | No | Optional description of the organization |
+| website | string | No | Optional website URL |
+| contactEmail | string | No | Optional contact email |
 
 #### Response
 
@@ -281,7 +289,9 @@ This endpoint allows users to create a new organizations. All new user-organizat
     "status": "Created organization!",
     "data": {
         "user": "5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-        "org": "Taco Bell"
+        "org": "Taco Bell",
+        "logoUrl": "https://presigned-url.amazonaws.com/logo.jpg",
+        "logoS3Key": "logos/taco-bell/ab123-xyz.jpg"
     }
 }
 ```
@@ -354,11 +364,17 @@ This endpoint allows users to create a new organizations. All new user-organizat
 }
 ```
 
-### 2.2 Get all Organizations of User
+### 2.2 Get All Organizations of User
 
 `GET /organizations`
 
-This endpoint allows users to get all organizations of the user created and are a member of.
+This endpoint allows users to get all organizations they created and are a member of.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
 
 #### Response
 
@@ -376,7 +392,8 @@ This endpoint allows users to get all organizations of the user created and are 
             "organizationName": "Culvers",
             "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
             "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "type": "USER_ORG"
+            "type": "USER_ORG",
+            "logoUrl": "https://presigned-url.amazonaws.com/logo.jpg"
         },
         {
             "GSI1PK": "ORG#TACO BELL",
@@ -387,7 +404,8 @@ This endpoint allows users to get all organizations of the user created and are 
             "organizationName": "Taco Bell",
             "GSI1SK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
             "PK": "USER#5e5bdb97-6bfa-44c0-b998-2e64568798ef",
-            "type": "USER_ORG"
+            "type": "USER_ORG",
+            "logoUrl": "https://presigned-url.amazonaws.com/logo.jpg"
         }
     ]
 }
@@ -435,6 +453,7 @@ This endpoint allows users to get all organizations of the user created and are 
 }
 ```
 
+<<<<<<< HEAD
 ### 2.3 Update an Organization
 
 `PATCH /organizations`
@@ -551,6 +570,17 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
+## File Storage Integration
+
+The API uses AWS S3 for storing organization logos. When creating an organization with a logo URL:
+
+1. The system fetches the image from the provided URL
+2. Uploads it to an S3 bucket with a unique key
+3. Generates a pre-signed URL for accessing the logo
+4. Stores both the S3 key and pre-signed URL in the organization record
+
+Pre-signed URLs have a default expiration of 1 hour, after which they need to be refreshed.
+
 ## JWT Token
 
 The JWT token contains the following payload:
@@ -594,10 +624,6 @@ The JWT token contains the following payload:
 - MEMBER (User who is part of an organization)
 - ADMIN (User with admin privileges in an organization)
 
-### User Status
-- ACTIVE
-- INACTIVE
-- PENDING
 
 ## Database Model
 
@@ -619,6 +645,7 @@ The system uses a single-table design in DynamoDB with the following structure:
 - Email addresses must be properly formatted
 - Passwords must be at least 8 characters long
 - logoUrl must be a valid URL
+<<<<<<< HEAD
 
 ---
 
@@ -739,3 +766,6 @@ The system uses a single-table design in DynamoDB with the following structure:
 ```
 
 
+=======
+- File uploads are securely handled through S3 pre-signed URLs
+>>>>>>> 5d07072 (update doc)
