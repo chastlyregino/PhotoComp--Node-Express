@@ -15,6 +15,7 @@ export interface Organization {
     type: 'ORGANIZATION';
     isPublic: boolean;
     logoUrl: string;
+    logoS3Key?: string;
 
     // Optional attributes
     description?: string;
@@ -32,11 +33,13 @@ export interface OrganizationCreateRequest {
     logoUrl: string;
     website?: string;
     contactEmail?: string;
+    logoS3Key?: string; // Optional S3 key for the logo
 }
 
 export const createOrganization = (
     request: OrganizationCreateRequest,
-    userId: string
+    userId: string,
+    logoS3Key?: string
 ): Organization => {
     const id = uuidv4();
     const now = new Date().toISOString();
@@ -53,6 +56,7 @@ export const createOrganization = (
         type: 'ORGANIZATION',
         isPublic: true,
         logoUrl: request.logoUrl,
+        logoS3Key: logoS3Key,
         website: request.website,
         contactEmail: request.contactEmail,
         GSI1PK: 'ORG',
@@ -71,7 +75,8 @@ export interface OrganizationUpdateRequest {
 
 export const updateOrganization = (
     request: OrganizationUpdateRequest,
-    org: Organization
+    org: Organization,
+    logoS3Key?: string
 ): Organization => {
     const now = new Date().toISOString();
     return {
@@ -86,8 +91,14 @@ export const updateOrganization = (
         type: `ORGANIZATION`,
         isPublic: org.isPublic,
         logoUrl: request.logoUrl || org.logoUrl,
+<<<<<<< HEAD
         website: request.website || org.website,
         contactEmail: request.contactEmail || org.website,
+=======
+        logoS3Key: logoS3Key || org.logoS3Key,
+        website: request.website,
+        contactEmail: request.contactEmail,
+>>>>>>> 9fc97d7 (upload to s3 and pull presigned url)
         GSI1PK: org.GSI1PK,
         GSI1SK: org.GSI1SK,
     };

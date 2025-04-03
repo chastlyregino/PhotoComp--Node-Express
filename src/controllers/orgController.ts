@@ -61,6 +61,8 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
                         data: {
                             user: userAdmin.userId,
                             org: org.name,
+                            logoUrl: org.logoUrl, // Return the pre-signed URL
+                            logoS3Key: org.logoS3Key // Return the S3 key for reference
                         },
                     });
                 }
