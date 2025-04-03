@@ -1,4 +1,5 @@
 import { OrgRepository } from '../repositories/orgRepository';
+import { S3Service } from '../services/s3Service';
 import {
     Organization,
     OrganizationCreateRequest,
@@ -12,9 +13,14 @@ import { AppError } from '../middleware/errorHandler';
 
 export class OrgService {
     private orgRepository: OrgRepository;
+    private s3Service: S3Service;
 
-    constructor(orgRepository: OrgRepository = new OrgRepository()) {
+    constructor(
+        orgRepository: OrgRepository = new OrgRepository(),
+        s3Service: S3Service = new S3Service()
+    ) {
         this.orgRepository = orgRepository;
+        this.s3Service = s3Service;
     }
 
     async validateUrl(url: string | undefined): Promise<void> {
@@ -32,9 +38,22 @@ export class OrgService {
         userId: string
     ): Promise<OrganizationCreateRequest | null> {
         try {
+<<<<<<< HEAD
             await this.validateUrl(createOrg.logoUrl);
+=======
+            // Validate logoUrl is a valid URL
+            if (!createOrg.logoUrl) {
+                throw new AppError('Name and logoUrl are required', 400);
+            }
 
-            if (!createOrg.name || !createOrg.logoUrl) {
+            try {
+                new URL(createOrg.logoUrl);
+            } catch (error) {
+                throw new AppError('Invalid URL', 400);
+            }
+>>>>>>> 9fc97d7 (upload to s3 and pull presigned url)
+
+            if (!createOrg.name) {
                 throw new AppError('Name and logoUrl are required', 400);
             }
 
@@ -44,12 +63,35 @@ export class OrgService {
                 throw new AppError(`Organization name already in use!`, 409);
             }
 
+<<<<<<< HEAD
             const org = createOrganization(createOrg, userId);
 
             try {
                 const creatOrg = await this.orgRepository.createOrg(org);
 
                 return createOrg;
+=======
+            // Upload logo to S3 and get the S3 key
+            const logoS3Key = await this.s3Service.uploadLogoFromUrl(createOrg.logoUrl, createOrg.name);
+            
+            // Get pre-signed URL for the logo
+            const preSignedUrl = await this.s3Service.getLogoPreSignedUrl(logoS3Key);
+            
+            // Update the organization data with S3 key and pre-signed URL
+            const organizationData = {
+                ...createOrg,
+                logoS3Key: logoS3Key,
+                // Store the pre-signed URL in logoUrl (or consider updating your model to have both)
+                logoUrl: preSignedUrl,
+            };
+
+            // Create the organization with the updated data
+            const org = createOrganization(organizationData, userId);
+
+            try {
+                const createdOrg = await this.orgRepository.createOrg(org);
+                return organizationData;
+>>>>>>> 9fc97d7 (upload to s3 and pull presigned url)
             } catch (error) {
                 if (error instanceof AppError) {
                     throw error;
@@ -134,6 +176,19 @@ export class OrgService {
             if (!results) {
                 throw new AppError(`No Organizations found!`, 400);
             }
+            
+            // Generate fresh pre-signed URLs for all organization logos
+            for (const org of results) {
+                if (org.logoS3Key) {
+                    try {
+                        org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                    } catch (error) {
+                        // Log the error but continue processing other organizations
+                        console.error(`Error getting pre-signed URL for ${org.name}:`, error);
+                    }
+                }
+            }
+            
             return results;
         } catch (error) {
             if (error instanceof AppError) {
@@ -155,6 +210,7 @@ export class OrgService {
                 throw new AppError(`You need to specify the Organization name.`, 400);
             }
 
+<<<<<<< HEAD
             await this.validateUrl(org.logoUrl);
             await this.validateUrl(org.website);
 
@@ -197,3 +253,19 @@ export class OrgService {
         }
     }
 }
+=======
+    //     async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
+    //         try {
+    //             //enter update logic here
+    //             //need to think about return value also in repo
+    //             return await this.orgRepository.updateOrgById(org);
+    //         } catch (error) {
+    //             if (error instanceof AppError) {
+    //                 throw error;
+    //             }
+    //             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
+    //         }
+    //     }
+    // }
+}
+>>>>>>> 9fc97d7 (upload to s3 and pull presigned url)
