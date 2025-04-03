@@ -78,7 +78,10 @@ Authorization: Bearer your-jwt-token
 | POST | /api/auth/register | Register a new user |
 | POST | /api/auth/login | Login and get authentication token |
 | POST | /organizations | Create a new organization |
-| POST | /organization/:id/events | Create a new organization event|
+| POST | /organizations/:id/events | Create a new organization event|
+| GET | /organizations/:id/events | Get organizations events|
+| GET | /guests/organizations | Get public organizations |
+| GET | /guests/organizations/:id/events | Get public organizations events|
 
 ## 1. Authentication Endpoints
 
@@ -678,4 +681,61 @@ The system uses a single-table design in DynamoDB with the following structure:
   "message": "Missing required fields: title, description, or date."
 }
 ```
+---
+
+## Guest Router
+
+### Get Public Organizations
+**Endpoint:** `GET /guests`
+
+**Description:** Retrieves a list of public organizations. The response is paginated with a maximum of 9 organizations per request.
+
+**Request Parameters:**
+- `lastEvaluatedKey` (optional, query parameter) – Used for pagination.
+
+**Response:**
+```json
+{
+  "message": "Here are all organizations!",
+  "data": {
+    "organizations": [
+      {
+        "id": "<org_id>",
+        "name": "Organization Name",
+        "description": "Public description of the organization"
+      }
+    ]
+  },
+  "lastEvaluatedKey": "<pagination_key>"
+}
+```
+
+---
+
+### Get Public Events of an Organization
+**Endpoint:** `GET /guests/organizations/:id/events`
+
+**Description:** Retrieves all public events for a specific organization.
+
+**Path Parameters:**
+- `id` (required) – Organization ID.
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "events": [
+      {
+        "eventId": "<event_id>",
+        "name": "Event Name",
+        "date": "YYYY-MM-DD",
+        "description": "Public event description"
+      }
+    ]
+  },
+  "lastEvaluatedKey": "<pagination_key>"
+}
+```
+
 

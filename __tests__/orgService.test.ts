@@ -13,6 +13,7 @@ import {
     existingOrgsUser,
     updateOrg,
     updatedOrganization,
+    publicOrgsArray,
 } from './utils/orgService-test-data';
 import { OrgRepository } from '../src/repositories/orgRepository';
 import { OrgService } from '../src/services/orgService';
@@ -83,6 +84,8 @@ describe(`Positive org tests`, () => {
         jest.spyOn(orgRepository, 'findOrgsByUser').mockResolvedValue(existingOrgsUser);
         jest.spyOn(orgRepository, 'updateOrgByName').mockResolvedValue(updatedOrganization);
         jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
+        jest.spyOn(orgRepository, 'findAllPublicOrgs').mockResolvedValue(publicOrgsArray);
+
         jest.spyOn(mockOrgService, 'validateUrl');
         jest.spyOn(mockOrgService, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
 
@@ -135,6 +138,14 @@ describe(`Positive org tests`, () => {
         expect(orgRepository.findOrgByName).toHaveBeenCalled();
         expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
         expect(result).toBe(updatedOrganization);
+    });
+
+    test(`Get all public organizations`, async () => {
+        const orgServiceWithMock = new OrgService(orgRepository);
+        const result = await orgServiceWithMock.findAllPublicOrgs();
+
+        expect(orgRepository.findAllPublicOrgs).toHaveBeenCalled();
+        expect(result).toBe(publicOrgsArray);
     });
 });
 

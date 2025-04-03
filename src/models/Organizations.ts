@@ -22,7 +22,7 @@ export interface Organization {
     contactEmail?: string;
 
     // GSI for finding organizations by creator
-    GSI1PK?: string; // NAME.substring(0,3).toUpperCase()
+    GSI1PK?: string; // ORG
     GSI1SK?: string; // ORG#NAME
 }
 
@@ -55,7 +55,7 @@ export const createOrganization = (
         logoUrl: request.logoUrl,
         website: request.website,
         contactEmail: request.contactEmail,
-        GSI1PK: request.name.substring(0, 3).toUpperCase(),
+        GSI1PK: 'ORG',
         GSI1SK: `ORG#${request.name.toUpperCase()}`,
     };
 };

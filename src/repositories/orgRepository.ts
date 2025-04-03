@@ -143,4 +143,45 @@ export class OrgRepository {
             throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
         }
     }
+
+    async findAllPublicOrgs(): Promise<{ orgs: Organization[], newLastEvaluatedKey: Record<string, any> | null }> {
+    try {
+        let publicOrgs: Organization[] = [];
+        let lastEvaluatedKey: Record<string, any> | undefined = undefined;
+
+        // Keep querying until we have at least 9 public organizations or no more data
+        while (publicOrgs.length < 9) {
+            const result:any= await dynamoDb.send(new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: 'GSI1PK-GSI1SK-INDEX',
+                KeyConditionExpression: 'GSI1PK = :orgKey and begins_with(GSI1SK, :orgName)',
+                ExpressionAttributeValues: {
+                    ':orgKey': `ORG`,
+                    ':orgName': `ORG#`,
+                },
+                Limit: 15, 
+                ExclusiveStartKey: lastEvaluatedKey || undefined,
+            }));
+
+            // Append only public organizations
+            const fetchedOrgs = result.Items as Organization[];
+            publicOrgs.push(...fetchedOrgs.filter((org) => org.isPublic));
+
+            // no more data to paginate
+            if (!result.LastEvaluatedKey) break;
+
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        }
+
+        // Return exactly 9 public organizations (or less if there aren't enough)
+        return {
+            orgs: publicOrgs.slice(0, 9),
+            newLastEvaluatedKey: lastEvaluatedKey || null,
+        };
+    } catch (error: any) {
+        throw new AppError(`Failed to find organizations: ${error.message}`, 500);
+    }
+}
+
+
 }

@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface Event {
     PK: string; // EVENT#<ID>
-    SK: 'ENTITY';
+    SK: string;
 
     id: string;
     title: string;

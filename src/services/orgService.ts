@@ -183,4 +183,17 @@ export class OrgService {
             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
         }
     }
+
+    async findAllPublicOrgs(
+        lastEvaluatedKey?: Record<string, any>
+    ): Promise<{ orgs: Organization[]; newLastEvaluatedKey: Record<string, any> | null }> {
+        try {
+            return await this.orgRepository.findAllPublicOrgs();
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
+        }
+    }
 }

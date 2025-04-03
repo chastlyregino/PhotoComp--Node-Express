@@ -64,4 +64,36 @@ export class EventService {
             throw new AppError(`Failed to create event: ${error.message}`, 500);
         }
     }
+
+    /**
+     * Retrieves all events for a given organization
+     * @param orgID - The organization ID
+     * @returns A list of events for the organization
+     */
+    async getAllOrganizationEvents(orgID: string): Promise<Event[]> {
+        try {
+            if (!orgID) throw new AppError('Invalid organization ID.', 400);
+
+            return await this.eventRepository.getOrgEvents(orgID);
+        } catch (error: any) {
+            throw new AppError(`Failed to retrieve organization events: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Retrieves all public events for a given organization
+     * @param orgID - The organization ID
+     * @returns A list of events for the organization
+     */
+    async getAllPublicOrganizationEvents(
+        orgID: string
+    ): Promise<{ events: Event[]; newLastEvaluatedKey: Record<string, any> | null }> {
+        try {
+            if (!orgID) throw new AppError('Invalid organization ID.', 400);
+
+            return await this.eventRepository.getPublicOrgEvents(orgID);
+        } catch (error: any) {
+            throw new AppError(`Failed to retrieve organization events: ${error.message}`, 500);
+        }
+    }
 }
