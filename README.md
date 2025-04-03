@@ -546,7 +546,7 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 ```json
 {
     "status": "error",
-    "message": "You need to be a part of this Organization"
+    "message": "You are NOT part of this Organization"
 }
 ```
 ```json
@@ -570,16 +570,157 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
-## File Storage Integration
+# 3. Event Management 
 
-The API uses AWS S3 for storing organization logos. When creating an organization with a logo URL:
+### 3.1. Create an Event
 
-1. The system fetches the image from the provided URL
-2. Uploads it to an S3 bucket with a unique key
-3. Generates a pre-signed URL for accessing the logo
-4. Stores both the S3 key and pre-signed URL in the organization record
+`PATCH /organizations`
 
-Pre-signed URLs have a default expiration of 1 hour, after which they need to be refreshed.
+This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Content-Type | application/json | Yes |
+
+#### **Request Headers**
+| Key           | Value            | Required |
+|--------------|----------------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+| Content-Type  | `application/json` |  Yes  |
+
+#### **Request Body**
+```json
+{
+  "title": "Annual Company Meetup",
+  "description": "A networking event for all employees.",
+  "date": "2025-05-01T18:00:00Z" (ISO 8601 format)
+}
+```
+#### **Response**
+**201 Created**
+```json
+{
+  "status": "success",
+  "data": {
+    "event": {
+      "PK": "EVENT#abcd1234",
+      "SK": "ENTITY",
+      "title": "Annual Company Meetup",
+      "description": "A networking event for all employees.",
+      "visibility": "PUBLIC",
+      "date": "2025-05-01T18:00:00Z",
+      "createdAt": "2025-04-01T15:30:00Z",
+      "updatedAt": "2025-04-01T15:30:00Z",
+      "GSI2PK": "ORG#xyz987",
+      "GSI2SK": "EVENT#abcd1234"
+    }
+  }
+}
+```
+
+**403 Forbidden (User Not Admin)**
+```json
+{
+  "status": "error",
+  "message": "Forbidden: You must be an org admin to create events."
+}
+```
+
+**400 Bad Request (Validation Error)**
+```json
+{
+  "status": "error",
+  "message": "Missing required fields: title, description, or date."
+}
+```
+
+### 3.3. Update Event's Publicity
+
+`PATCH /organizations`
+
+This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+| Content-Type | application/json | Yes |
+
+
+#### **Response**
+
+**200 Created**
+```json
+{
+    "status": "Updating Event's publicity success!",
+    "data": {
+        "updatedEvent": {
+            "GSI2PK": "pizzahut",
+            "date": "2025-04-03T19:38:42.888Z",
+            "updatedAt": "2025-04-03T19:38:42.888Z",
+            "createdAt": "2025-04-03T19:38:42.888Z",
+            "SK": "ENTITY",
+            "isPublic": false,
+            "description": "We're throwing a yet another rager",
+            "PK": "EVENT#29d4e4cf-d070-4341-854c-9b4c0f71bf0b",
+            "id": "29d4e4cf-d070-4341-854c-9b4c0f71bf0b",
+            "GSI2SK": "EVENT#29d4e4cf-d070-4341-854c-9b4c0f71bf0b",
+            "title": "Pizza Party at Pizza Hut, AGAIN"
+        }
+    }
+}
+```
+
+**400 Bad Request**
+```json
+{
+    "status": "error",
+    "message": "No Event found!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "No User-Event found!"
+}
+```
+
+**401 UnAuthorized**
+```json
+{
+    "status": "error",
+    "message": "You are NOT part of this Organization"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Only Admin roles can update Events"
+}
+```
+
+**500 Server Error**
+```json
+{
+    "status": "error",
+    "message": "Updating Event failed!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Finding Event failed!"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Finding User-Event by User failed!"
+}
+```
 
 ## JWT Token
 
