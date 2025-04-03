@@ -23,6 +23,7 @@ export const validateUserID = async (req: Request, res: Response, next: NextFunc
     res.locals.user.info = user;
     next();
 };
+
 orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = res.locals.user.info;

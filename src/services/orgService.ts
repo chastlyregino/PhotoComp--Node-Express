@@ -33,6 +33,13 @@ export class OrgService {
         }
     }
 
+    async validateUserOrgAdmin(userOrg: UserOrganizationRelationship): Promise<boolean> {
+        if (userOrg.role !== `ADMIN`) {
+            return false;
+        }
+        return true;
+    }
+
     async createOrg(
         createOrg: OrganizationCreateRequest,
         userId: string
@@ -136,7 +143,7 @@ export class OrgService {
         try {
             const userOrg = await this.orgRepository.findSpecificOrgByUser(name, userId);
             if (!userOrg) {
-                throw new AppError(`You need to be a part of this Organization`, 401);
+                throw new AppError(`You are NOT part of this Organization`, 401);
             }
 
             return userOrg;
@@ -206,7 +213,7 @@ export class OrgService {
                 userId
             )) as UserOrganizationRelationship;
 
-            if (userOrg.role !== `ADMIN`) {
+            if (!(await this.validateUserOrgAdmin(userOrg))) {
                 throw new AppError(`Only Admin roles can updated Organizations`, 401);
             }
 

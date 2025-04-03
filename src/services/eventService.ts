@@ -1,12 +1,15 @@
 import { EventRepository } from '../repositories/eventRepository';
 import { Event, EventRequest, EventUser, createEvent, createEventUser } from '../models/Event';
 import { AppError } from '../middleware/errorHandler'; // Ensure meaningful errors
+import { OrgService } from '../services/orgService';
+import { UserOrganizationRelationship } from '@/models/Organizations';
 
 /**
  * Service class for handling event-related services.
  */
 export class EventService {
     private eventRepository: EventRepository;
+    private orgService = new OrgService();
 
     /**
      * Initializes the EventService with an optional EventRepository instance.
@@ -94,6 +97,86 @@ export class EventService {
             return await this.eventRepository.getPublicOrgEvents(orgID);
         } catch (error: any) {
             throw new AppError(`Failed to retrieve organization events: ${error.message}`, 500);
+        }
+    }
+
+    async findEventUserbyUser(eventId: string, userId: string): Promise<EventUser | null> {
+        try {
+            const eventUser = await this.eventRepository.findEventUserbyUser(eventId, userId);
+
+            if (!eventUser) {
+                throw new AppError(`No Event-User found!`, 400);
+            }
+
+            return eventUser;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Finding Event-User by User failed! ${(error as Error).message}`,
+                500
+            );
+        }
+    }
+
+    async findEventById(eventId: string): Promise<Event | null> {
+        try {
+            const event = await this.eventRepository.findEventById(eventId);
+
+            if (!event) {
+                throw new AppError(`No Event found!`, 400);
+            }
+
+            console.log(event)
+            return event;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Finding Event by ID failed! ${(error as Error).message}`, 500);
+        }
+    }
+
+    async updateEventPublicity(event: Event, orgId: string, userId: string): Promise<Event | null> {
+        try {
+            const existingEvent = await this.findEventById(event.id);
+
+            if (!existingEvent) {
+                throw new AppError(`No Event found!`, 400);
+            }
+
+            const userOrg = await this.orgService.findSpecificOrgByUser(
+                orgId,
+                userId
+            );
+
+            if (
+                !(await this.orgService.validateUserOrgAdmin(
+                    userOrg as UserOrganizationRelationship
+                ))
+            ) {
+                throw new AppError(`Only Admin roles can updated Event's publicity`, 401);
+            }
+            // console.log(`before ${event}`)
+            event.isPublic = !event.isPublic;
+            // console.log(`after ${event.isPublic}`)
+            
+            const updatedEvent = await this.eventRepository.updateEventPublicity(event);
+
+            if(!updatedEvent) {
+                throw new AppError(`Updating Event's publicity failed!`, 500);
+            }
+            console.log(updatedEvent)
+            return updatedEvent
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Updating Event's publicity failed! ${(error as Error).message}`,
+                500
+            );
         }
     }
 }

@@ -183,4 +183,70 @@ export class EventRepository {
             throw new AppError(`Failed to retrieve events: ${error.message}`, 500);
         }
     }
+    async findEventUserbyUser(eventId: string, userId: string): Promise<EventUser | null> {
+        try {
+            const params = {
+                TableName: TABLE_NAME,
+                Key: {
+                    PK: `USER#${userId}`,
+                    SK: `EVENT#${eventId}`,
+                },
+            };
+
+            const result = await dynamoDb.send(new GetCommand(params));
+
+            if (!result.Item) {
+                return null;
+            }
+
+            return result.Item as EventUser;
+        } catch (error: any) {
+            throw new AppError(`Failed to find Event-User Connection: ${error.message}`, 500);
+        }
+    }
+
+    async findEventById(eventId: string): Promise<Event | null> {
+        try {
+            const params = {
+                TableName: TABLE_NAME,
+                Key: {
+                    PK: `EVENT#${eventId}`,
+                    SK: `ENTITY`,
+                },
+            };
+
+            const result = await dynamoDb.send(new GetCommand(params));
+
+            if (!result.Item) {
+                return null;
+            }
+
+            return result.Item as Event;
+        } catch (error: any) {
+            throw new AppError(`Failed to find Event: ${error.message}`, 500);
+        }
+    }
+
+    async updateEventPublicity(event: Event): Promise<Event | null> {
+        try {
+            const params = {
+                TableName: TABLE_NAME,
+                KeyConditionExpression: 'PK = :eventKey and SK = :event',
+                UpdateExpression: 'SET isPublic = :isPublic',
+                ExpressionAttributeValues: {
+                    ':eventKey': event.PK,
+                    ':event': event.SK,
+                },
+                AttributeUpdates: {
+                    ':isPublic': event.isPublic,
+                },
+                ReturnValues: `UPDATE_NEW`,
+            };
+
+            const udpatedEvent = await dynamoDb.send(new QueryCommand(params));
+            return event as Event;
+        } catch (error: any) {
+            throw new AppError(`Failed to update Event's Publicity: ${error.message}`, 500);
+        }
+    }
 }

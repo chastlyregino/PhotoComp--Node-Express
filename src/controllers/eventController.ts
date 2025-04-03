@@ -6,6 +6,7 @@ import { EventRequest, Event, EventUser } from '../models/Event';
 import { UserRole } from '../models/User';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { validateUserID } from './orgController';
+import { validateUserID } from './orgController';
 
 const eventService = new EventService();
 export const eventRouter = Router();
@@ -46,16 +47,67 @@ eventRouter.post('/:id/events', validateUserID, checkOrgAdmin, async (req: Reque
 eventRouter.get('/:id/events', validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     const orgID: string = req.params.id;
 
-    try {
-        const events: Event[] = await eventService.getAllOrganizationEvents(orgID);
-        return res.status(200).json({
-            status: 'success',
-            data: {
-                event: events,
-            },
-        });
-    } catch (error) {
-        next(error);
-    }
-});
+//     try {
+//         const events: Event[] = await eventService.getAllOrganizationEvents(orgID);
+//         return res.status(200).json({
+//             status: 'success',
+//             data: {
+//                 event: events,
+//             },
+//         });
+//     } catch (error) {
+//         next(error);
+//     }
+// });
 
+// These should be protected via the user's role in org || Add middleware somewhere around here
+// Only admins should be able to edit the events information
+// Should have access to the token user, which gives me the admin role
+// CURRENT function FOUND @ `orgService.ts` - `validateUserOrgAdmin(): boolean`
+
+// CURRENT PATCH: Changing event.isPublic attribute ONLY - CHANGE LOGIC WHEN UPDATING OTHER attributes
+eventRouter.patch(
+    '/:id/events/:eid',
+    validateUserID,
+    async (req: Request, res: Response, next: NextFunction) => {
+        const orgId: string =  req.params.id
+        const eventId: string = req.params.eid;
+        const user = res.locals.user.info;
+
+        try {
+            const event = await eventService.findEventById(eventId);
+            await eventService.findEventUserbyUser(eventId, user.id);
+
+            const updatedEvent = await eventService.updateEventPublicity(event as Event, orgId, user.id);
+
+            return res.status(200).json({
+                status: `Updating Event's publicity success!`,
+                data: {
+                    updatedEvent,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// This should create the attending event record
+// Users should be able to attend an event
+// Should have access to the token user, which gives me the member role
+//
+// eventRouter.post("/:id/events/:eid", async (req: Request, res: Response, next: NextFunction) => {
+//
+//   const orgId = req.params.id;
+//   const eventId = req.params.eid;
+//   const token = req.headers.authorization;
+//
+//   // Add event body validation
+//
+//   try {
+//     const { } = req.body;
+//
+//   } catch (error) {
+//     next(error);
+//   }
+// })
