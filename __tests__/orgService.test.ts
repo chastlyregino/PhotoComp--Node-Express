@@ -101,7 +101,6 @@ describe(`Positive org tests`, () => {
         jest.spyOn(s3Service, 'uploadLogoFromUrl').mockResolvedValue(`mocked-s3-key`);
         jest.spyOn(s3Service, 'getLogoPreSignedUrl').mockResolvedValue(`https://presigned-url.example.com`);
 
-
         // Mock models function
         (createOrganization as jest.Mock).mockReturnValue(createdOrg);
         (addOrganizationAdmin as jest.Mock).mockReturnValue(createdUserAdmin);
@@ -111,8 +110,6 @@ describe(`Positive org tests`, () => {
     afterEach(() => {
         jest.clearAllMocks();
     });
-
-
     test(`Organization created`, async () => {
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
         const result = await orgServiceWithMock.createOrg(org, userId);
@@ -171,7 +168,6 @@ describe(`Positive org tests`, () => {
     });
 });
 
-
 describe(`Negative org tests`, () => {
     // Initialize the repository and service variables
     let orgRepository: any;
@@ -196,14 +192,13 @@ describe(`Negative org tests`, () => {
         org.logoUrl = `https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8`;
     });
 
-    
-    test(`Organization with the same name`, async () => {
 
+    test(`Organization with the same name`, async () => {
         jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(existingOrg);
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
-            'Organization name already in use!'
+            `Organization name already in use!`
         );
 
         // S3 upload should never be called since we fail the name check first
@@ -215,7 +210,7 @@ describe(`Negative org tests`, () => {
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
-            'Name and logoUrl are required'
+            `Name and logoUrl are required`
         );
 
         // S3 upload should never be called since we fail the name validation first
@@ -229,7 +224,6 @@ describe(`Negative org tests`, () => {
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(`Invalid URL`);
         
-
         // S3 upload should never be called since we fail the URL validation first
         expect(s3Service.uploadLogoFromUrl).not.toHaveBeenCalled();
     });
@@ -275,3 +269,4 @@ describe(`Negative org tests`, () => {
         await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(`No Organizations found!`);
     });
 });
+
