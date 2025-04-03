@@ -91,14 +91,9 @@ export const updateOrganization = (
         type: `ORGANIZATION`,
         isPublic: org.isPublic,
         logoUrl: request.logoUrl || org.logoUrl,
-<<<<<<< HEAD
         website: request.website || org.website,
         contactEmail: request.contactEmail || org.website,
-=======
         logoS3Key: logoS3Key || org.logoS3Key,
-        website: request.website,
-        contactEmail: request.contactEmail,
->>>>>>> 9fc97d7 (upload to s3 and pull presigned url)
         GSI1PK: org.GSI1PK,
         GSI1SK: org.GSI1SK,
     };
