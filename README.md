@@ -48,6 +48,29 @@ Authorization: Bearer your-jwt-token
 | joinedAt | string | When user joined the org. |
 
 
+### **Event Model**
+| Property     | Type    | Description |
+|-------------|--------|-------------|
+| PK          | string | Primary key: `EVENT#<ID>` |
+| SK          | string | Static value: `"ENTITY"` |
+| title       | string | Event title |
+| description | string | Event description |
+| visibility  | string | `"PUBLIC"` or `"PRIVATE"` (default: `"PUBLIC"`) |
+| date        | string | Event date (ISO 8601 format) |
+| createdAt   | string | Timestamp when the event was created (ISO 8601) |
+| updatedAt   | string | Timestamp when the event was last updated (ISO 8601) |
+| GSI2PK      | string | Organization ID (`ORG#<ID>`) |
+| GSI2SK      | string | Event ID (`EVENT#<ID>`) |
+
+### **EventUser Model**
+| Property     | Type    | Description |
+|-------------|--------|-------------|
+| PK          | string | User ID: `USER#<ID>` |
+| SK          | string | Event ID: `EVENT#<ID>` |
+| GSI2PK      | string | Event ID (`EVENT#<ID>`) |
+| GSI2SK      | string | User ID (`USER#<ID>`) |
+
+
 ## API Overview
 
 | Method | Endpoint | Description |
@@ -55,6 +78,7 @@ Authorization: Bearer your-jwt-token
 | POST | /api/auth/register | Register a new user |
 | POST | /api/auth/login | Login and get authentication token |
 | POST | /organizations | Create a new organization |
+| POST | /organization/:id/events | Create a new organization event|
 
 ## 1. Authentication Endpoints
 
@@ -592,3 +616,66 @@ The system uses a single-table design in DynamoDB with the following structure:
 - Email addresses must be properly formatted
 - Passwords must be at least 8 characters long
 - logoUrl must be a valid URL
+
+---
+
+# 3. Event Management 
+
+### 3.1. Create an Event
+ **Only Admins** can create events for an organization.
+
+#### **Endpoint**
+`POST /api/organization/:id/events`
+
+#### **Request Headers**
+| Key           | Value            | Required |
+|--------------|----------------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+| Content-Type  | `application/json` |  Yes  |
+
+#### **Request Body**
+```json
+{
+  "title": "Annual Company Meetup",
+  "description": "A networking event for all employees.",
+  "date": "2025-05-01T18:00:00Z" (ISO 8601 format)
+}
+```
+#### **Response**
+**201 Created**
+```json
+{
+  "status": "success",
+  "data": {
+    "event": {
+      "PK": "EVENT#abcd1234",
+      "SK": "ENTITY",
+      "title": "Annual Company Meetup",
+      "description": "A networking event for all employees.",
+      "visibility": "PUBLIC",
+      "date": "2025-05-01T18:00:00Z",
+      "createdAt": "2025-04-01T15:30:00Z",
+      "updatedAt": "2025-04-01T15:30:00Z",
+      "GSI2PK": "ORG#xyz987",
+      "GSI2SK": "EVENT#abcd1234"
+    }
+  }
+}
+```
+
+**403 Forbidden (User Not Admin)**
+```json
+{
+  "status": "error",
+  "message": "Forbidden: You must be an org admin to create events."
+}
+```
+
+**400 Bad Request (Validation Error)**
+```json
+{
+  "status": "error",
+  "message": "Missing required fields: title, description, or date."
+}
+```
+
