@@ -70,7 +70,7 @@ eventRouter.patch(
     '/:id/events/:eid',
     validateUserID,
     async (req: Request, res: Response, next: NextFunction) => {
-        const orgId: string =  req.params.id
+        const orgId: string = req.params.id;
         const eventId: string = req.params.eid;
         const user = res.locals.user.info;
 
@@ -78,7 +78,11 @@ eventRouter.patch(
             const event = await eventService.findEventById(eventId);
             await eventService.findEventUserbyUser(eventId, user.id);
 
-            const updatedEvent = await eventService.updateEventPublicity(event as Event, orgId, user.id);
+            const updatedEvent = await eventService.updateEventPublicity(
+                event as Event,
+                orgId,
+                user.id
+            );
 
             return res.status(200).json({
                 status: `Updating Event's publicity success!`,
