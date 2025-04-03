@@ -251,7 +251,7 @@ describe(`Negative org tests`, () => {
 
         await expect(
             orgServiceWithMock.findSpecificOrgByUser(updateOrg.name, userId)
-        ).rejects.toThrow(`You need to be a part of this Organization`);
+        ).rejects.toThrow(`You are NOT part of this Organization`);
         expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
     });
 

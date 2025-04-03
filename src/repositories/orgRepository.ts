@@ -140,7 +140,7 @@ export class OrgRepository {
 
             return org;
         } catch (error: any) {
-            throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
+            throw new AppError(`Failed to update organization: ${error.message}`, 500);
         }
     }
 
