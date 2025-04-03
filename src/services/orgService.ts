@@ -183,21 +183,4 @@ export class OrgService {
             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
         }
     }
-
-    async findOrgAdminById(orgid: string, userid: string): Promise<UserOrganizationRelationship> {
-        try {
-            const results = await this.orgRepository.findOrgAdminById(orgid, userid);
-
-            if (!results) {
-                throw new AppError(`No Users found!`, 400);
-            }
-
-            return results;
-        } catch (error: any) {
-            throw new AppError(
-                `Finding Organization Admin By Id Failed! ${(error as Error).message}`,
-                500
-            );
-        }
-    }
 }
