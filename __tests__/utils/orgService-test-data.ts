@@ -43,7 +43,7 @@ export const updatedOrganization: Organization = {
     logoUrl: 'https://styleguide.culvers.com/brand-styles/logo-usage',
     website: 'https://www.culvers.com/',
     contactEmail: 'culvers@culvers.com',
-    GSI1PK: 'JOL',
+    GSI1PK: 'ORG',
     GSI1SK: 'ORG#JOLLIBEE',
 };
 
@@ -53,7 +53,7 @@ export const existingOrg: Organization = {
     GSI1SK: 'ORG#PIZZA',
     createdBy: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
     name: 'Pizza',
-    GSI1PK: 'PIZ',
+    GSI1PK: 'ORG',
     updatedAt: '2025-04-01T13:28:12.857Z',
     SK: 'ENTITY',
     isPublic: true,
@@ -76,7 +76,7 @@ export const createdOrg: Organization = {
     logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
     website: undefined,
     contactEmail: undefined,
-    GSI1PK: 'JOL',
+    GSI1PK: 'ORG',
     GSI1SK: 'ORG#JOLLIBEE',
 };
 
@@ -116,3 +116,40 @@ export const existingOrgsUser: UserOrganizationRelationship[] = [
         type: 'USER_ORG',
     },
 ];
+
+export const publicOrgsArray: Organization[] = [
+    {
+        PK: 'ORG#JOLLIBEE',
+        SK: 'ENTITY',
+        id: 'b58bfbd2-7055-4134-aa74-304ae42bf8a8',
+        name: 'Jollibee',
+        description: undefined,
+        createdBy: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        createdAt: '2025-04-01T17:26:48.302Z',
+        updatedAt: '2025-04-01T17:26:48.302Z',
+        type: 'ORGANIZATION',
+        isPublic: true,
+        logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
+        website: undefined,
+        contactEmail: undefined,
+        GSI1PK: 'ORG',
+        GSI1SK: 'ORG#JOLLIBEE',
+    },
+    {
+        PK: 'ORG#PIZZAHUT',
+        SK: 'ENTITY',
+        id: 'b58bfbd2-7055-4134-aa74-304ae42bf8a8',
+        name: 'Pizza Hut',
+        description: undefined,
+        createdBy: '81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
+        createdAt: '2025-04-01T17:26:48.302Z',
+        updatedAt: '2025-04-01T17:26:48.302Z',
+        type: 'ORGANIZATION',
+        isPublic: true,
+        logoUrl: 'https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8',
+        website: undefined,
+        contactEmail: undefined,
+        GSI1PK: 'ORG',
+        GSI1SK: 'ORG#PIZZAHUT',
+    },
+]

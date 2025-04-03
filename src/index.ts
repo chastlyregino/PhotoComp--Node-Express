@@ -3,10 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { authRouter } from './controllers/authController';
 import { orgRouter } from './controllers/orgController';
-import { authenticate } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
 import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 import { eventRouter } from './controllers/eventController';
+import { guestRouter } from './controllers/guestController';
+import { authenticate } from './middleware/authMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -23,8 +24,8 @@ app.use(loggerMethodMiddleware);
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use(`/organization`, authenticate, eventRouter);
-app.use(`/organizations`, authenticate, orgRouter); // add authenticate middleware
+app.use(`/guests`, guestRouter);
+app.use(`/organizations`, authenticate, orgRouter, eventRouter); // add authenticate middleware
 
 // Default route
 app.get('/', (req, res) => {
