@@ -183,18 +183,6 @@ export class OrgService {
             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
         }
     }
-    //     async updateOrgById(org: Organization): Promise<OrganizationUpdateRequest | null> {
-    //         try {
-    //             //enter update logic here
-    //             //need to think about return value also in repo
-    //             return await this.orgRepository.updateOrgById(org);
-    //         } catch (error) {
-    //             if (error instanceof AppError) {
-    //                 throw error;
-    //             }
-    //             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
-    //         }
-    //     }
 
     async findOrgAdminById(orgid: string, userid: string): Promise<UserOrganizationRelationship> {
         try {
