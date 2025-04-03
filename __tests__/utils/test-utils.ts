@@ -6,6 +6,7 @@ import { authRouter } from '../../src/controllers/authController';
 export function setupTestEnvironment() {
     process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key';
     process.env.TABLE_NAME = process.env.TABLE_NAME || 'test-table';
+    process.env.BUCKET_NAME = process.env.BUCKET_NAME || 'test-bucket';
 }
 
 // Create a test express app with the auth router
