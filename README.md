@@ -710,6 +710,7 @@ The system uses a single-table design in DynamoDB with the following structure:
 ```
 ---
 
+<<<<<<< HEAD
 ## Guest Router
 
 ### Get Public Organizations
@@ -766,6 +767,8 @@ The system uses a single-table design in DynamoDB with the following structure:
 ```
 
 
+=======
+>>>>>>> 9358caa (update doc)
 =======
 - File uploads are securely handled through S3 pre-signed URLs
 >>>>>>> 5d07072 (update doc)
