@@ -94,3 +94,17 @@ describe('createEvent', () => {
     });
 
 });
+
+describe('Update event', () => {
+    beforeAll(() => {});
+
+    afterAll(() => {});
+
+    it('Successfully update an event', () => {});
+
+    it('Event does not exist', () => {});
+
+    it('User is not tied to the org', () => {});
+
+    it('User is not and Admin of org', () => {});
+});

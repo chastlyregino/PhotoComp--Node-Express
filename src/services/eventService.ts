@@ -128,7 +128,7 @@ export class EventService {
                 throw new AppError(`No Event found!`, 400);
             }
 
-            console.log(event)
+            console.log(event);
             return event;
         } catch (error) {
             if (error instanceof AppError) {
@@ -146,10 +146,7 @@ export class EventService {
                 throw new AppError(`No Event found!`, 400);
             }
 
-            const userOrg = await this.orgService.findSpecificOrgByUser(
-                orgId,
-                userId
-            );
+            const userOrg = await this.orgService.findSpecificOrgByUser(orgId, userId);
 
             if (
                 !(await this.orgService.validateUserOrgAdmin(
@@ -161,14 +158,14 @@ export class EventService {
             // console.log(`before ${event}`)
             event.isPublic = !event.isPublic;
             // console.log(`after ${event.isPublic}`)
-            
+
             const updatedEvent = await this.eventRepository.updateEventPublicity(event);
 
-            if(!updatedEvent) {
+            if (!updatedEvent) {
                 throw new AppError(`Updating Event's publicity failed!`, 500);
             }
-            console.log(updatedEvent)
-            return updatedEvent
+            console.log(updatedEvent);
+            return updatedEvent;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
