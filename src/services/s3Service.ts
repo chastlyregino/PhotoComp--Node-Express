@@ -1,7 +1,7 @@
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../util/logger';
-import { S3Repository } from '@/repositories/s3Repository';
+import { S3Repository } from '../repositories/s3Repository';
 
 export class S3Service {
     private s3Repository: S3Repository;
