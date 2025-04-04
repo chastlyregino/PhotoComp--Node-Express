@@ -1,15 +1,8 @@
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../util/logger';
-<<<<<<< HEAD
-<<<<<<< HEAD
 import { S3Repository } from '../repositories/s3Repository';
-=======
-import { S3Repository } from '@/repositories/s3Repository';
->>>>>>> fecb292 (upload to s3 and pull presigned url)
-=======
-import { S3Repository } from '../repositories/s3Repository';
->>>>>>> 2d99ec6 (fix faulty import)
+
 
 export class S3Service {
     private s3Repository: S3Repository;
