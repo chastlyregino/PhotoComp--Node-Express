@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { OrgService } from '../services/orgService';
-import { AppError } from '../middleware/errorHandler';
+import { AppError } from './errorHandler';
 import { UserRole } from '../models/User';
 import { UserOrganizationRelationship } from '../models/Organizations';
 
