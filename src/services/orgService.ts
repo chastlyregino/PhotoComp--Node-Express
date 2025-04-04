@@ -231,4 +231,25 @@ export class OrgService {
             throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
         }
     }
+
+    /**
+     * Creates a user-organization relationship
+     * @param userOrg The user-organization relationship to create
+     * @returns The created relationship
+     */
+    async createUserOrganizationRelationship(
+        userOrg: UserOrganizationRelationship
+    ): Promise<UserOrganizationRelationship | null> {
+        try {
+            return await this.orgRepository.createUserAdmin(userOrg);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Failed to create user-organization relationship: ${(error as Error).message}`,
+                500
+            );
+        }
+    }
 }

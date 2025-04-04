@@ -2,8 +2,8 @@ import { title } from "process";
 import { Event, EventRequest } from "../../src/models/Event";
 
 
-export const ORGID = 'ORG#123';
-export const INVALID_ORGID = 'org##/invalid';
+export const ORGID = '123';
+export const INVALID_ORGID = 'invalid';
 
 export let validEventRequest: EventRequest= {
     title: 'New Event',
