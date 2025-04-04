@@ -33,7 +33,7 @@ export class OrgService {
         }
     }
 
-    async validateUserOrgAdmin(userOrg: UserOrganizationRelationship): Promise<boolean> {
+    validateUserOrgAdmin(userOrg: UserOrganizationRelationship): boolean {
         if (userOrg.role !== `ADMIN`) {
             return false;
         }
@@ -206,15 +206,6 @@ export class OrgService {
 
             if (!existingOrg) {
                 throw new AppError(`No Organizations found!`, 400);
-            }
-
-            const userOrg = (await this.findSpecificOrgByUser(
-                org.name,
-                userId
-            )) as UserOrganizationRelationship;
-
-            if (!(await this.validateUserOrgAdmin(userOrg))) {
-                throw new AppError(`Only Admin roles can updated Organizations`, 401);
             }
 
             const updatedOrg = updateOrganization(org, existingOrg);

@@ -30,7 +30,7 @@ jest.mock(`../src/models/Organizations`, () => ({
     updateOrganization: jest.fn(),
 }));
 
-describe(`Positive org tests`, () => {
+describe(`User roles tests`, () => {
     // Initialize the repository and service variables
     let orgRepository: any;
     let mockOrgService: any;
@@ -42,9 +42,7 @@ describe(`Positive org tests`, () => {
         mockOrgService = new OrgService(orgRepository);
         // Set up the spies after repository is initialized
         createdUserAdmin.role = UserRole.MEMBER;
-        jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(existingOrg);
         jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
-        jest.spyOn(mockOrgService, 'validateUrl');
         jest.spyOn(mockOrgService, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
     });
 
@@ -52,22 +50,10 @@ describe(`Positive org tests`, () => {
         jest.clearAllMocks();
     });
 
-    test(`Updating Organization as a member`, async () => {
-        mockOrgService.validateUrl(updateOrg.website);
-        mockOrgService.validateUrl(updateOrg.logoUrl);
-        orgRepository.findSpecificOrgByUser(createdUserAdmin);
-        mockOrgService.findSpecificOrgByUser(createdUserAdmin);
-
+    test(`User is not an admin`, async () => {
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        await expect(orgServiceWithMock.updateOrgByName(updateOrg, userId)).rejects.toThrow(
-            `Only Admin roles can updated Organizations` // "You need to specify the Organization name."
-        );
-        expect(mockOrgService.validateUrl).toHaveBeenCalledTimes(2);
-        expect(mockOrgService.validateUrl).toHaveBeenLastCalledWith(updateOrg.logoUrl);
-        expect(orgRepository.findOrgByName).toHaveBeenCalled();
-        expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
-        expect(mockOrgService.findSpecificOrgByUser).toHaveBeenCalled();
+        expect(orgServiceWithMock.validateUserOrgAdmin(createdUserAdmin)).toBe(false)
     });
 });
 
@@ -155,7 +141,6 @@ describe(`Positive org tests`, () => {
         expect(mockOrgService.validateUrl).toHaveBeenCalledTimes(2);
         expect(mockOrgService.validateUrl).toHaveBeenLastCalledWith(updateOrg.logoUrl);
         expect(orgRepository.findOrgByName).toHaveBeenCalled();
-        expect(orgRepository.findSpecificOrgByUser).toHaveBeenCalled();
         expect(result).toBe(updatedOrganization);
     });
 

@@ -8,6 +8,7 @@ import {
     UserOrganizationRelationship,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
+import { checkOrgAdmin } from '../middleware/orgMiddleware';
 
 const userService = new UserService();
 const orgService = new OrgService();
@@ -78,7 +79,7 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
     }
 });
 
-orgRouter.patch(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
+orgRouter.patch(`/`, validateUserID, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl, description, website, contactEmail } = req.body;
         const user = res.locals.user.info;
