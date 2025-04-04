@@ -453,7 +453,6 @@ This endpoint allows users to get all organizations they created and are a membe
 }
 ```
 
-<<<<<<< HEAD
 ### 2.3 Update an Organization
 
 `PATCH /organizations`
@@ -636,6 +635,8 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
+### 3.2. Get Org Events (User? Admin?)
+
 ### 3.3. Update Event's Publicity
 
 `PATCH /organizations`
@@ -719,6 +720,59 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 {
     "status": "error",
     "message": "Finding User-Event by User failed!"
+}
+```
+
+## Guest Router
+
+### Get Public Organizations
+**Endpoint:** `GET /guests`
+
+**Description:** Retrieves a list of public organizations. The response is paginated with a maximum of 9 organizations per request.
+
+**Request Parameters:**
+- `lastEvaluatedKey` (optional, query parameter) – Used for pagination.
+
+**Response:**
+```json
+{
+  "message": "Here are all organizations!",
+  "data": {
+    "organizations": [
+      {
+        "id": "<org_id>",
+        "name": "Organization Name",
+        "description": "Public description of the organization"
+      }
+    ]
+  },
+  "lastEvaluatedKey": "<pagination_key>"
+}
+```
+
+### Get Public Events of an Organization
+**Endpoint:** `GET /guests/organizations/:id/events`
+
+**Description:** Retrieves all public events for a specific organization.
+
+**Path Parameters:**
+- `id` (required) – Organization ID.
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "events": [
+      {
+        "eventId": "<event_id>",
+        "name": "Event Name",
+        "date": "YYYY-MM-DD",
+        "description": "Public event description"
+      }
+    ]
+  },
+  "lastEvaluatedKey": "<pagination_key>"
 }
 ```
 
@@ -851,65 +905,4 @@ The system uses a single-table design in DynamoDB with the following structure:
 ```
 ---
 
-<<<<<<< HEAD
-## Guest Router
 
-### Get Public Organizations
-**Endpoint:** `GET /guests`
-
-**Description:** Retrieves a list of public organizations. The response is paginated with a maximum of 9 organizations per request.
-
-**Request Parameters:**
-- `lastEvaluatedKey` (optional, query parameter) – Used for pagination.
-
-**Response:**
-```json
-{
-  "message": "Here are all organizations!",
-  "data": {
-    "organizations": [
-      {
-        "id": "<org_id>",
-        "name": "Organization Name",
-        "description": "Public description of the organization"
-      }
-    ]
-  },
-  "lastEvaluatedKey": "<pagination_key>"
-}
-```
-
----
-
-### Get Public Events of an Organization
-**Endpoint:** `GET /guests/organizations/:id/events`
-
-**Description:** Retrieves all public events for a specific organization.
-
-**Path Parameters:**
-- `id` (required) – Organization ID.
-
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "events": [
-      {
-        "eventId": "<event_id>",
-        "name": "Event Name",
-        "date": "YYYY-MM-DD",
-        "description": "Public event description"
-      }
-    ]
-  },
-  "lastEvaluatedKey": "<pagination_key>"
-}
-```
-
-
-=======
->>>>>>> 9358caa (update doc)
-=======
-- File uploads are securely handled through S3 pre-signed URLs
->>>>>>> 5d07072 (update doc)
