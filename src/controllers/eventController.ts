@@ -43,8 +43,8 @@ eventRouter.post('/:id/events', validateUserID, checkOrgAdmin, async (req: Reque
   * Get the organizations events 
   * GET /:id/events
   * */
-eventRouter.get('/:id/events', validateUserID, async (req: Request, res: Response, next: NextFunction) => {
-    const orgID: string = req.params.id;
+// eventRouter.get('/:id/events', validateUserID, async (req: Request, res: Response, next: NextFunction) => {
+//     const orgID: string = req.params.id;
 
 //     try {
 //         const events: Event[] = await eventService.getAllOrganizationEvents(orgID);
@@ -65,11 +65,7 @@ eventRouter.get('/:id/events', validateUserID, async (req: Request, res: Respons
 // CURRENT function FOUND @ `orgService.ts` - `validateUserOrgAdmin(): boolean`
 
 // CURRENT PATCH: Changing event.isPublic attribute ONLY - CHANGE LOGIC WHEN UPDATING OTHER attributes
-eventRouter.patch(
-    '/:id/events/:eid',
-    validateUserID,
-    async (req: Request, res: Response, next: NextFunction) => {
-        const orgId: string = req.params.id;
+eventRouter.patch('/:id/events/:eid', validateUserID, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
         const eventId: string = req.params.eid;
         const user = res.locals.user.info;
 
@@ -77,11 +73,7 @@ eventRouter.patch(
             const event = await eventService.findEventById(eventId);
             await eventService.findEventUserbyUser(eventId, user.id);
 
-            const updatedEvent = await eventService.updateEventPublicity(
-                event as Event,
-                orgId,
-                user.id
-            );
+            const updatedEvent = await eventService.updateEventPublicity(event as Event);
 
             return res.status(200).json({
                 status: `Updating Event's publicity success!`,
@@ -93,7 +85,6 @@ eventRouter.patch(
             next(error);
         }
     });
-});
 // This should create the attending event record
 // Users should be able to attend an event
 // Should have access to the token user, which gives me the member role

@@ -34,7 +34,6 @@ describe(`User roles tests`, () => {
     // Initialize the repository and service variables
     let orgRepository: any;
     let mockOrgService: any;
-    let s3Service: any;
 
     beforeEach(() => {
         // Create new instances
@@ -44,10 +43,6 @@ describe(`User roles tests`, () => {
         createdUserAdmin.role = UserRole.MEMBER;
         jest.spyOn(orgRepository, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
         jest.spyOn(mockOrgService, 'findSpecificOrgByUser').mockResolvedValue(createdUserAdmin);
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
     });
 
     test(`User is not an admin`, async () => {
