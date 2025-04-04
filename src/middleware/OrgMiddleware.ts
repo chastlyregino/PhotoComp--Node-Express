@@ -11,10 +11,10 @@ export const checkOrgAdmin = async (req: Request, res: Response, next: NextFunct
         const orgName: string = req.params.id;
         const user = res.locals.user as { id: string; email: string; role: UserRole };
 
-        const isAdminOrg: UserOrganizationRelationship | null =
+        const userAdminOrg: UserOrganizationRelationship | null =
             await orgService.findSpecificOrgByUser(orgName, user.id);
 
-        if (!isAdminOrg || isAdminOrg.role !== UserRole.ADMIN) {
+        if (!orgService.validateUserOrgAdmin(userAdminOrg as UserOrganizationRelationship)) {
             return next(new AppError('Only an Org Admin can perform this action. Please talk to your Admin for more information', 403));
         }
 
