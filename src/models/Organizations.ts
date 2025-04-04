@@ -144,6 +144,8 @@ export interface OrganizationMembershipRequest {
     message?: string;
     status: 'PENDING' | 'APPROVED' | 'DENIED';
     type: 'ORG_REQUEST';
+    GSI1PK: string; // REQUEST#<userId>
+    GSI1SK: string; // ORG#NAME
 }
 
 export const createOrganizationMembershipRequest = (
@@ -162,5 +164,7 @@ export const createOrganizationMembershipRequest = (
         message,
         status: 'PENDING',
         type: 'ORG_REQUEST',
+        GSI1PK: `REQUEST#${userId}` ,
+        GSI1SK: `ORG#${organizationName.toUpperCase()}`,
     };
 };

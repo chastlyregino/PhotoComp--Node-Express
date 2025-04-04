@@ -8,6 +8,7 @@ import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 import { eventRouter } from './controllers/eventController';
 import { guestRouter } from './controllers/guestController';
 import { authenticate } from './middleware/authMiddleware';
+import { orgMembershipRouter } from './controllers/orgMemberShipController';
 
 // Load environment variables
 dotenv.config();
@@ -25,7 +26,7 @@ app.use(loggerMethodMiddleware);
 // Routes
 app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
-app.use(`/organizations`, authenticate, orgRouter, eventRouter); // add authenticate middleware
+app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMembershipRouter); // add authenticate middleware
 
 // Default route
 app.get('/', (req, res) => {
