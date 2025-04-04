@@ -4,8 +4,7 @@ import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { EventRequest, Event, EventUser } from '../models/Event';
 import { UserRole } from '../models/User';
-import { checkOrgAdmin } from '../middleware/OrgMiddleware';
-import { validateUserID } from './orgController';
+import { checkOrgAdmin } from '../middleware/orgMiddleware';
 import { validateUserID } from './orgController';
 
 const eventService = new EventService();
@@ -93,9 +92,8 @@ eventRouter.patch(
         } catch (error) {
             next(error);
         }
-    }
-);
-
+    });
+});
 // This should create the attending event record
 // Users should be able to attend an event
 // Should have access to the token user, which gives me the member role
