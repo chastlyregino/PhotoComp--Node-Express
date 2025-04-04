@@ -13,7 +13,7 @@ const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-const validateUserID = async (req: Request, res: Response, next: NextFunction) => {
+export const validateUserID = async (req: Request, res: Response, next: NextFunction) => {
     const user = await userService.getUserByEmail(res.locals.user.email);
 
     if (!user) {
