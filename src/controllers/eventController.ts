@@ -5,6 +5,7 @@ import { EventService } from '../services/eventService';
 import { EventRequest, Event, EventUser } from '../models/Event';
 import { UserRole } from '../models/User';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
+import { validateUserID } from './orgController';
 
 const eventService = new EventService();
 export const eventRouter = Router();
@@ -12,7 +13,7 @@ export const eventRouter = Router();
   * Create an organization's event
   * POST /:id/events
   * */
-eventRouter.post('/:id/events', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
+eventRouter.post('/:id/events', validateUserID, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const orgName: string = req.params.id;
         const user = res.locals.user as { id: string; email: string; role: string };
@@ -42,13 +43,8 @@ eventRouter.post('/:id/events', checkOrgAdmin, async (req: Request, res: Respons
   * Get the organizations events 
   * GET /:id/events
   * */
-eventRouter.get('/:id/events', async (req: Request, res: Response, next: NextFunction) => {
+eventRouter.get('/:id/events', validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     const orgID: string = req.params.id;
-    const user = res.locals.user as {
-        id: string;
-        email: string;
-        role: UserRole;
-    };
 
     try {
         const events: Event[] = await eventService.getAllOrganizationEvents(orgID);
