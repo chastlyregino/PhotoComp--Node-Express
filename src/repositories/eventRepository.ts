@@ -183,6 +183,7 @@ export class EventRepository {
             throw new AppError(`Failed to retrieve events: ${error.message}`, 500);
         }
     }
+
     async findEventUserbyUser(eventId: string, userId: string): Promise<EventUser | null> {
         try {
             const params = {
@@ -217,6 +218,7 @@ export class EventRepository {
 
             const result = await dynamoDb.send(new GetCommand(params));
 
+            console.log(result.Item)
             if (!result.Item) {
                 return null;
             }

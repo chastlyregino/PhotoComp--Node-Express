@@ -1,7 +1,7 @@
 import { EventService } from '../src/services/eventService';
 import { EventRepository } from '../src/repositories/eventRepository';
 import { EventRequest, Event, createEvent } from '../src/models/Event';
-import { createdEventRequest, INVALID_ORGID, invalidEvent, ORGID, validEventRequest } from './utils/eventService-test-data';
+import { createdEventRequest, INVALID_ORGID, invalidEvent, ORGID, validEventRequest, createdEvent } from './utils/eventService-test-data';
 import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('../src/repositories/eventRepository');
@@ -96,15 +96,37 @@ describe('createEvent', () => {
 });
 
 describe('Update event', () => {
-    beforeAll(() => {});
+    let eventService: any;
+    let mockEventRepository: any;
+    let mockEventService: any;
 
-    afterAll(() => {});
+    beforeEach(() => {
+        mockEventRepository = new EventRepository()
+        eventService = new EventService(mockEventRepository);
+        mockEventService = new EventService(mockEventRepository)
+    });
 
-    it('Successfully update an event', () => {});
+    // it(`Successfully update event's publicity`, async () => {
+    //     jest.spyOn(mockEventRepository, 'findEventById').mockResolvedValue(createdEvent)
+    //     jest.spyOn(mockEventService, 'findEventById').mockResolvedValueOnce(createdEvent)
+    //     //mockEventService.findEventById.mockResolvedValue(createdEvent);
 
-    it('Event does not exist', () => {});
+        
+    //     const updatedEvent = await eventService.updateEventPublicity(createdEvent)
+    //     createdEvent.isPublic = false
 
-    it('User is not tied to the org', () => {});
+    //     console.log(updatedEvent)
+    //     expect(updatedEvent).toBe(createdEvent)
+    // });
 
-    it('User is not and Admin of org', () => {});
+    // it('Event does not exist', async () => {
+    //     jest.spyOn(mockEventRepository, 'findEventById').mockRejectedValue(null)
+    //     //mockEventRepository.findEventById.mockResolvedValue(null)
+
+    //     expect(await eventService.findEventById(`1111`))
+    // });
+
+    // it('User is not tied to the org', async () => {
+    //     mockEventRepository.findEventUserbyUser.mockResolvedValue(null)
+    // });
 });

@@ -129,7 +129,7 @@ export class EventService {
             }
 
             console.log(event);
-            return event;
+            return event as Event;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
@@ -138,7 +138,7 @@ export class EventService {
         }
     }
 
-    async updateEventPublicity(event: Event, orgId: string, userId: string): Promise<Event | null> {
+    async updateEventPublicity(event: Event): Promise<Event | null> {
         try {
             const existingEvent = await this.findEventById(event.id);
 
@@ -146,26 +146,17 @@ export class EventService {
                 throw new AppError(`No Event found!`, 400);
             }
 
-            const userOrg = await this.orgService.findSpecificOrgByUser(orgId, userId);
-
-            if (
-                !(await this.orgService.validateUserOrgAdmin(
-                    userOrg as UserOrganizationRelationship
-                ))
-            ) {
-                throw new AppError(`Only Admin roles can updated Event's publicity`, 401);
-            }
             // console.log(`before ${event}`)
-            event.isPublic = !event.isPublic;
+            existingEvent.isPublic = !existingEvent.isPublic;
             // console.log(`after ${event.isPublic}`)
 
-            const updatedEvent = await this.eventRepository.updateEventPublicity(event);
+            const updatedEvent = await this.eventRepository.updateEventPublicity(existingEvent);
 
-            if (!updatedEvent) {
+            if (updatedEvent === null) {
                 throw new AppError(`Updating Event's publicity failed!`, 500);
             }
             console.log(updatedEvent);
-            return updatedEvent;
+            return updatedEvent as Event;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
