@@ -52,7 +52,7 @@ export const createEvent = (orgID: string, eventRequest: EventRequest): Event =>
         date: date,
         createdAt: now,
         updatedAt: now,
-        GSI2PK: orgID,
+        GSI2PK: `ORG#${orgID.toUpperCase()}`,
         GSI2SK: eventId,
     };
 };

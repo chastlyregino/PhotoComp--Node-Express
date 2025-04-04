@@ -107,4 +107,20 @@ export class UserService {
             { expiresIn: '24h' }
         );
     }
+
+    /**
+     * Get a user by ID
+     * @param userId The ID of the user to retrieve
+     * @returns The user or null if not found
+     */
+    async getUserById(userId: string): Promise<User | null> {
+        try {
+            return await this.userRepository.getUserById(userId);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to get user by ID: ${(error as Error).message}`, 500);
+        }
+    }
 }

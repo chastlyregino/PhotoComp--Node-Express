@@ -79,13 +79,14 @@ Authorization: Bearer your-jwt-token
 |--------|----------|-------------|
 | POST | /api/auth/register | Register a new user |
 | POST | /api/auth/login | Login and get authentication token |
-| POST | /organizations | Create a new organization |
-| POST | /organizations/:id/events | Create a new organization event|
-| GET | /organizations/:id/events | Get organizations events|
-| GET | /guests/organizations | Get public organizations |
+| GET | /guests | Get public organizations |
 | GET | /guests/organizations/:id/events | Get public organizations events|
-| POST | /organization/:id/events | Create a new organization event|
 | GET | /organizations | Get all organizations for the authenticated user |
+| POST | /organizations | Create a new organization |
+| GET | /organizations/:id/events | Get organizations events|
+| POST | /organizations/:id/events | Create a new organization event|
+| POST | /organizations/:id | Apply to join an organization with events |
+
 
 ## 1. Authentication Endpoints
 
@@ -843,3 +844,92 @@ The system uses a single-table design in DynamoDB with the following structure:
 
 ---
 
+## Organization Membership 
+
+### Apply to an Organization
+Apply to join an organization. The organization must have at least one event.
+
+**Endpoint:** `POST /organizations/:id`
+
+#### Request Headers
+| Header | Value | Required | Description |
+|--------|-------|----------|-------------|
+| Authorization | Bearer [token] | Yes | JWT authentication token |
+
+#### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| message | string | No | Optional message to the organization admins explaining why you want to join |
+```json
+{
+  "message": "I would like to join this organization",
+}
+```
+
+#### Response
+**Status Codes:**
+- 201: Created - Application submitted successfully
+- 400: Bad Request - Cannot apply to an organization without any events
+- 401: Unauthorized - Missing or invalid token
+- 404: Not Found - Organization not found
+- 409: Conflict - User has already applied or is already a member
+- 500: Internal Server Error - Server error
+
+**Success Response (201):**
+```json
+{
+  "status": "success",
+  "message": "Application submitted successfully",
+  "data": {
+    "request": {
+      "PK": "ORG#ORGNAME",
+      "SK": "REQUEST#userId",
+      "organizationName": "OrgName",
+      "userId": "userId",
+      "requestDate": "2023-04-04T12:34:56.789Z",
+      "message": "I would like to join this organization",
+      "status": "PENDING",
+      "type": "ORG_REQUEST"
+    }
+  }
+}
+```
+**Error Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Cannot apply to an organization without any events"
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "status": "error",
+  "message": "Authentication required"
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "status": "error",
+  "message": "Organization not found"
+}
+```
+
+**Error Response (409):**
+```json
+{
+  "status": "error",
+  "message": "You are already a member of this organization"
+}
+```
+
+**Error Response (500):**
+```json
+{
+  "status": "error",
+  "message": "Internal server error"
+}
+```
