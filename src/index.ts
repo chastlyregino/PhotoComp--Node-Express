@@ -8,7 +8,7 @@ import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 import { eventRouter } from './controllers/eventController';
 import { guestRouter } from './controllers/guestController';
 import { authenticate } from './middleware/authMiddleware';
-import { orgMembershipRouter } from './controllers/orgMemberShipController';
+import { orgMembershipRouter } from './controllers/orgMembershipController';
 
 // Load environment variables
 dotenv.config();
