@@ -1,6 +1,6 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { Photo } from '../models/Photo';
-import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 export class PhotoRepository {
@@ -78,24 +78,26 @@ export class PhotoRepository {
         }
     }
 
-    /**
+        /**
      * Deletes a photo from the database
      * @param photoId The ID of the photo to delete
      * @throws AppError if the operation fails
      */
-    async deletePhoto(photoId: string): Promise<void> {
-        try {
-            await dynamoDb.send(
-                new PutCommand({
-                    TableName: TABLE_NAME,
-                    Key: {
-                        PK: `PHOTO#${photoId}`,
-                        SK: 'ENTITY',
-                    },
-                })
-            );
-        } catch (error: any) {
-            throw new AppError(`Failed to delete photo: ${error.message}`, 500);
+        async deletePhoto(photoId: string): Promise<void> {
+            try {
+                await dynamoDb.send(
+                    new DeleteCommand({
+                        TableName: TABLE_NAME,
+                        Key: {
+                            PK: `PHOTO#${photoId}`,
+                            SK: 'ENTITY',
+                        },
+                    })
+                );
+            } catch (error: any) {
+                throw new AppError(`Failed to delete photo: ${error.message}`, 500);
+            }
         }
     }
+
 }
