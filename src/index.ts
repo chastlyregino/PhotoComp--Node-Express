@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 import { eventRouter } from './controllers/eventController';
 import { guestRouter } from './controllers/guestController';
+import { photoRouter } from './controllers/photoController';
 import { authenticate } from './middleware/authMiddleware';
 import { orgMembershipRouter } from './controllers/orgMembershipController';
 
@@ -18,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for photo uploads
 
 // Super middleware
 app.use(loggerMethodMiddleware);
@@ -26,7 +27,11 @@ app.use(loggerMethodMiddleware);
 // Routes
 app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
+<<<<<<< HEAD
 app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMembershipRouter); // add authenticate middleware
+=======
+app.use(`/organizations`, authenticate, orgRouter, eventRouter, photoRouter); // Added photoRouter 
+>>>>>>> 060e1d5 (add event model, change CF template to add new GSI, repo/service/s3 service updated)
 
 // Default route
 app.get('/', (req, res) => {
