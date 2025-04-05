@@ -1,5 +1,5 @@
-import { s3Client, getSignedUrl, BUCKET_NAME } from '../config/s3';
-import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client, getSignedUrl, S3_BUCKET_NAME } from '../config/s3';
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../util/logger';
 
@@ -14,7 +14,7 @@ export class S3Repository {
     async uploadFile(fileBuffer: Buffer, key: string, contentType: string): Promise<string> {
         try {
             const command = new PutObjectCommand({
-                Bucket: BUCKET_NAME,
+                Bucket: S3_BUCKET_NAME,
                 Key: key,
                 Body: fileBuffer,
                 ContentType: contentType,
@@ -39,7 +39,7 @@ export class S3Repository {
     async getPreSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
         try {
             const command = new GetObjectCommand({
-                Bucket: BUCKET_NAME,
+                Bucket: S3_BUCKET_NAME,
                 Key: key,
             });
             
@@ -48,6 +48,25 @@ export class S3Repository {
         } catch (error) {
             logger.error('Error generating pre-signed URL:', error);
             throw new AppError(`Failed to generate pre-signed URL: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
+     * Deletes a file from S3
+     * @param key The S3 key of the object to delete
+     */
+    async deleteFile(key: string): Promise<void> {
+        try {
+            const command = new DeleteObjectCommand({
+                Bucket: S3_BUCKET_NAME,
+                Key: key,
+            });
+            
+            await s3Client.send(command);
+            logger.info(`Deleted file from S3: ${key}`);
+        } catch (error) {
+            logger.error('Error deleting file from S3:', error);
+            throw new AppError(`Failed to delete file from S3: ${(error as Error).message}`, 500);
         }
     }
 }
