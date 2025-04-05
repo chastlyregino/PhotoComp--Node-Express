@@ -6,6 +6,6 @@ dotenv.config();
 
 const s3Client = new S3Client({ region: process.env.REGION as string });
 
-export const BUCKET_NAME = process.env.S3_BUCKET_NAME as string;
+export const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME as string;
 
 export { s3Client, getSignedUrl };
