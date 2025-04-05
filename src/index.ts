@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 import { eventRouter } from './controllers/eventController';
 import { guestRouter } from './controllers/guestController';
+import { photoRouter } from './controllers/photoController';
 import { authenticate } from './middleware/authMiddleware';
 
 // Load environment variables
@@ -17,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for photo uploads
 
 // Super middleware
 app.use(loggerMethodMiddleware);
@@ -25,7 +26,7 @@ app.use(loggerMethodMiddleware);
 // Routes
 app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
-app.use(`/organizations`, authenticate, orgRouter, eventRouter); // add authenticate middleware
+app.use(`/organizations`, authenticate, orgRouter, eventRouter, photoRouter); // Added photoRouter 
 
 // Default route
 app.get('/', (req, res) => {

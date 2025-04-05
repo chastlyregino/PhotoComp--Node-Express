@@ -58,6 +58,22 @@ export class S3Service {
     }
     
     /**
+     * Uploads a file buffer directly to S3
+     * @param fileBuffer The buffer containing file data
+     * @param key The S3 key where the file will be stored
+     * @param contentType The content type of the file
+     * @returns The S3 key where the file was uploaded
+     */
+    async uploadFileBuffer(fileBuffer: Buffer, key: string, contentType: string): Promise<string> {
+        try {
+            return await this.s3Repository.uploadFile(fileBuffer, key, contentType);
+        } catch (error) {
+            logger.error('Error uploading file to S3:', error);
+            throw new AppError(`Failed to upload file to S3: ${(error as Error).message}`, 500);
+        }
+    }
+    
+    /**
      * Gets a pre-signed URL for accessing a file in S3
      * @param s3Key The S3 key of the file
      * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
