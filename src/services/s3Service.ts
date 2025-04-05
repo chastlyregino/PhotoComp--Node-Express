@@ -82,4 +82,12 @@ export class S3Service {
     async getLogoPreSignedUrl(s3Key: string, expiresIn: number = 3600): Promise<string> {
         return this.s3Repository.getPreSignedUrl(s3Key, expiresIn);
     }
+
+    /**
+     * Deletes a file from S3
+     * @param s3Key The S3 key of the file to delete
+     */
+    async deleteFile(s3Key: string): Promise<void> {
+        return this.s3Repository.deleteFile(s3Key);
+    }
 }
