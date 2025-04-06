@@ -3,7 +3,7 @@
 
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { OrganizationMembershipRequest } from '../models/Organizations';
-import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 export class OrgMembershipRepository {
@@ -35,60 +35,46 @@ export class OrgMembershipRepository {
      * @param organizationName The name of the organization
      * @returns List of pending membership requests
      */
-    // async getPendingRequestsByOrganization(organizationName: string): Promise<OrganizationMembershipRequest[]> {
-    //     try {
-    //         const result = await dynamoDb.send(
-    //             new QueryCommand({
-    //                 TableName: TABLE_NAME,
-    //                 KeyConditionExpression: 'PK = :orgKey AND begins_with(SK, :requestPrefix)',
-    //                 ExpressionAttributeValues: {
-    //                     ':orgKey': `ORG#${organizationName.toUpperCase()}`,
-    //                     ':requestPrefix': 'REQUEST#',
-    //                 }
-    //             })
-    //         );
-    //
-    //         return (result.Items || []) as OrganizationMembershipRequest[];
-    //     } catch (error: any) {
-    //         throw new AppError(`Failed to fetch membership requests: ${error.message}`, 500);
-    //     }
-    // }
+    async getPendingRequestsByOrganization(organizationName: string): Promise<OrganizationMembershipRequest[]> {
+        try {
+            const result = await dynamoDb.send(
+                new QueryCommand({
+                    TableName: TABLE_NAME,
+                    KeyConditionExpression: 'PK = :orgKey AND begins_with(SK, :requestPrefix)',
+                    ExpressionAttributeValues: {
+                        ':orgKey': `ORG#${organizationName.toUpperCase()}`,
+                        ':requestPrefix': 'REQUEST#',
+                    }
+                })
+            );
+
+            return (result.Items || []) as OrganizationMembershipRequest[];
+        } catch (error: any) {
+            throw new AppError(`Failed to fetch membership requests: ${error.message}`, 500);
+        }
+    }
 
     /**
-     * Updates the status of a membership request
+     * Deletes a membership request from the database
      * @param organizationName The name of the organization
-     * @param userId The ID of the user whose request is being updated
-     * @param status The new status (APPROVED or DENIED)
-     * @returns The updated membership request
+     * @param userId The ID of the user whose request is being deleted
+     * @returns True if successful, false otherwise
      */
-    // async updateRequestStatus(
-    //     organizationName: string,
-    //     userId: string,
-    //     status: 'APPROVED' | 'DENIED'
-    // ): Promise<OrganizationMembershipRequest> {
-    //     try {
-    //         const result = await dynamoDb.send(
-    //             new UpdateCommand({
-    //                 TableName: TABLE_NAME,
-    //                 Key: {
-    //                     PK: `ORG#${organizationName.toUpperCase()}`,
-    //                     SK: `REQUEST#${userId}`,
-    //                 },
-    //                 UpdateExpression: 'SET #status = :status, updatedAt = :updatedAt',
-    //                 ExpressionAttributeNames: {
-    //                     '#status': 'status',
-    //                 },
-    //                 ExpressionAttributeValues: {
-    //                     ':status': status,
-    //                     ':updatedAt': new Date().toISOString(),
-    //                 },
-    //                 ReturnValues: 'ALL_NEW',
-    //             })
-    //         );
-    //
-    //         return result.Attributes as OrganizationMembershipRequest;
-    //     } catch (error: any) {
-    //         throw new AppError(`Failed to update membership request: ${error.message}`, 500);
-    //     }
-    // }
+    async deleteMembershipRequest(organizationName: string, userId: string): Promise<boolean> {
+        try {
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `ORG#${organizationName.toUpperCase()}`,
+                        SK: `REQUEST#${userId}`,
+                    }
+                })
+            );
+            return true;
+        } catch (error: any) {
+            throw new AppError(`Failed to delete membership request: ${error.message}`, 500);
+        }
+    }
+
 }

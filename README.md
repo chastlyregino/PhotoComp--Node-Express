@@ -72,6 +72,21 @@ Authorization: Bearer your-jwt-token
 | GSI2PK      | string | Event ID (`EVENT#<ID>`) |
 | GSI2SK      | string | User ID (`USER#<ID>`) |
 
+### Organization Membership Request Model
+
+| Property       | Type                                  | Description |
+|----------------|---------------------------------------|-------------|
+| PK           | string                              | Primary partition key: `ORG#<NAME>` |
+| SK           | string                              | Primary sort key: `REQUEST#` |
+| organizationName | string                         | Name of the organization |
+| userId       | string                              | ID of the user making the request |
+| requestDate  | string                              | ISO timestamp of when the request was made |
+| message      | string *(optional)*                 | Optional message from the user |
+| status       | 'PENDING' \| 'APPROVED' \| 'DENIED' | Status of the request |
+| type         | 'ORG_REQUEST'                       | Entity type identifier |
+| GSI1PK       | string                              | GSI partition key for user lookups: `REQUEST#` |
+| GSI1SK       | string                              | GSI sort key for user lookups: `ORG#<NAME>` |
+
 
 ## API Overview
 
@@ -86,6 +101,9 @@ Authorization: Bearer your-jwt-token
 | GET | /organizations/:id/events | Get organizations events|
 | POST | /organizations/:id/events | Create a new organization event|
 | POST | /organizations/:id | Apply to join an organization with events |
+| GET | /organizations/:id/requests | Get all pending membership requests |
+| PUT | /organizations/:id/requests/:userId | Approve a membership request |
+| DELETE | /organizations/:id/requests/:userId | Deny a membership request |
 
 
 ## 1. Authentication Endpoints
@@ -931,5 +949,177 @@ Apply to join an organization. The organization must have at least one event.
 {
   "status": "error",
   "message": "Internal server error"
+}
+```
+
+### Get Pending Membership Requests
+Get all pending membership requests for an organization (admin only).
+
+**Endpoint:** `GET /organizations/:id/requests`
+
+#### Request Headers
+| Header | Value | Required | Description |
+|--------|-------|----------|-------------|
+| Authorization | Bearer [token] | Yes | JWT authentication token |
+
+#### Response
+**Status Codes:**
+- 200: OK - Requests retrieved successfully
+- 401: Unauthorized - Missing or invalid token
+- 403: Forbidden - User is not an admin of the organization
+- 404: Not Found - Organization not found
+- 500: Internal Server Error - Server error
+
+**Success Response (200):**
+```json
+{
+  "status": "success",
+  "data": {
+    "requests": [
+      {
+        "PK": "ORG#ORGNAME",
+        "SK": "REQUEST#userId",
+        "organizationName": "OrgName",
+        "userId": "userId",
+        "requestDate": "2023-04-04T12:34:56.789Z",
+        "message": "I would like to join this organization",
+        "status": "PENDING",
+        "type": "ORG_REQUEST",
+        "GSI1PK": "REQUEST#userId",
+        "GSI1SK": "ORG#ORGNAME",
+        "userDetails": {
+          "id": "userId",
+          "email": "user@example.com",
+          "firstName": "John",
+          "lastName": "Doe"
+        }
+      }
+    ]
+  }
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+### Approve a Membership Request
+Approve a user's request to join an organization (admin only).
+
+**Endpoint:** `PUT /organizations/:id/requests/:userId`
+
+#### Request Headers
+| Header | Value | Required | Description |
+|--------|-------|----------|-------------|
+| Authorization | Bearer [token] | Yes | JWT authentication token |
+
+#### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| status | string | Yes | Must be "approved" |
+
+```json
+{
+  "status": "approved"
+}
+```
+
+#### Response
+**Status Codes:**
+- 200: OK - Request approved successfully
+- 400: Bad Request - Invalid status or organization has no events
+- 401: Unauthorized - Missing or invalid token
+- 403: Forbidden - User is not an admin of the organization
+- 404: Not Found - Organization, user, or request not found
+- 500: Internal Server Error - Server error
+
+**Success Response (200):**
+```json
+{
+  "status": "success",
+  "message": "Membership request approved",
+  "data": {
+    "membership": {
+      "PK": "USER#userId",
+      "SK": "ORG#ORGNAME",
+      "userId": "userId",
+      "organizationName": "OrgName",
+      "role": "MEMBER",
+      "joinedAt": "2023-04-04T12:34:56.789Z",
+      "type": "USER_ORG",
+      "GSI1PK": "ORG#ORGNAME",
+      "GSI1SK": "USER#userId"
+    }
+  }
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Cannot approve new members for an organization without events"
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "status": "error",
+  "message": "You must be an admin to approve membership requests"
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "status": "error",
+  "message": "Membership request not found"
+}
+```
+
+### Deny a Membership Request
+Deny a user's request to join an organization (admin only).
+
+**Endpoint:** `DELETE /organizations/:id/requests/:userId`
+
+#### Request Headers
+| Header | Value | Required | Description |
+|--------|-------|----------|-------------|
+| Authorization | Bearer [token] | Yes | JWT authentication token |
+
+#### Response
+**Status Codes:**
+- 200: OK - Request denied successfully
+- 401: Unauthorized - Missing or invalid token
+- 403: Forbidden - User is not an admin of the organization
+- 404: Not Found - Organization or request not found
+- 500: Internal Server Error - Server error
+
+**Success Response (200):**
+```json
+{
+  "status": "success",
+  "message": "Membership request denied"
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "status": "error",
+  "message": "You must be an admin to deny membership requests"
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "status": "error",
+  "message": "Membership request not found"
 }
 ```
