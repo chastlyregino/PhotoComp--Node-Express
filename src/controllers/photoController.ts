@@ -3,7 +3,7 @@ import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
 import { checkOrgAdmin } from '../middleware/orgMiddleware';
 import { validateUserID } from './orgController';
-import { uploadMiddleware } from '../config/multer';
+import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,7 +18,7 @@ photoRouter.post(
     '/:id/events/:eventId/photos',
     validateUserID,
     checkOrgAdmin,
-    uploadMiddleware.single('photo'),
+    handleUpload('photo'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;
