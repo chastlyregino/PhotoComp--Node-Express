@@ -57,7 +57,7 @@ export class PhotoService {
 
             // Upload the file to S3
             await this.s3Service.uploadFileBuffer(fileBuffer, s3Key, mimeType);
-            
+
             // Add S3 key to metadata
             const updatedMetadata = metadata || {};
             updatedMetadata.s3Key = s3Key;
@@ -94,6 +94,12 @@ export class PhotoService {
 
             // Get all photos for the event
             const photos = await this.photoRepository.getPhotosByEvent(eventId);
+
+            // Ensure photos is an array
+            if (!Array.isArray(photos)) {
+                logger.warn(`Expected photos to be an array, but got: ${typeof photos}`);
+                return [];
+            }
 
             // Refresh pre-signed URLs for all photos
             for (const photo of photos) {
@@ -136,18 +142,18 @@ export class PhotoService {
         try {
             // Get the photo to verify it exists and belongs to the right event
             const photo = await this.photoRepository.getPhotoById(photoId);
-            
+
             if (!photo) {
                 throw new AppError(`Photo not found: ${photoId}`, 404);
             }
-            
+
             if (photo.eventId !== eventId) {
                 throw new AppError('Photo does not belong to the specified event', 400);
             }
-            
+
             // Delete the photo from the database
             await this.photoRepository.deletePhoto(photoId);
-            
+
             // If we have the S3 key stored directly, use it
             // Otherwise, extract it from the URL
             const s3Key = photo.metadata?.s3Key || (() => {
@@ -159,7 +165,7 @@ export class PhotoService {
                     return null;
                 }
             })();
-            
+
             if (s3Key) {
                 // Delete the file from S3
                 try {
@@ -172,7 +178,7 @@ export class PhotoService {
             } else {
                 logger.warn(`Could not determine S3 key for photo: ${photoId}`);
             }
-            
+
         } catch (error) {
             logger.error('Error deleting photo:', error);
             if (error instanceof AppError) {
