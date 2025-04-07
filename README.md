@@ -50,29 +50,6 @@ Authorization: Bearer your-jwt-token
 | role | string | User role: "USER", "MEMBER", or "ADMIN". |
 | joinedAt | timestamp | When user joined the org (ISO 8601). |
 
-### **Event Model**
-| Property     | Type    | Description |
-|-------------|--------|-------------|
-| PK          | string | Primary key: `EVENT#<ID>` |
-| SK          | string | Static value: `"ENTITY"` |
-| title       | string | Event title |
-| description | string | Event description |
-| visibility  | string | `"PUBLIC"` or `"PRIVATE"` (default: `"PUBLIC"`) |
-| date        | string | Event date (ISO 8601 format) |
-| createdAt   | string | Timestamp when the event was created (ISO 8601) |
-| updatedAt   | string | Timestamp when the event was last updated (ISO 8601) |
-| GSI2PK      | string | Organization ID (`ORG#<ID>`) |
-| GSI2SK      | string | Event ID (`EVENT#<ID>`) |
-
-### **EventUser Model**
-| Property     | Type    | Description |
-|-------------|--------|-------------|
-| PK          | string | User ID: `USER#<ID>` |
-| SK          | string | Event ID: `EVENT#<ID>` |
-| GSI2PK      | string | Event ID (`EVENT#<ID>`) |
-| GSI2SK      | string | User ID (`USER#<ID>`) |
-
-<<<<<<< HEAD
 ### Organization Membership Request Model
 
 | Property       | Type                                  | Description |
@@ -88,8 +65,29 @@ Authorization: Bearer your-jwt-token
 | GSI1PK       | string                              | GSI partition key for user lookups: `REQUEST#` |
 | GSI1SK       | string                              | GSI sort key for user lookups: `ORG#<NAME>` |
 
-=======
-### **Photo Model**
+### Event Model
+| Property     | Type    | Description |
+|-------------|--------|-------------|
+| PK          | string | Primary key: `EVENT#<ID>` |
+| SK          | string | Static value: `"ENTITY"` |
+| title       | string | Event title |
+| description | string | Event description |
+| visibility  | string | `"PUBLIC"` or `"PRIVATE"` (default: `"PUBLIC"`) |
+| date        | string | Event date (ISO 8601 format) |
+| createdAt   | string | Timestamp when the event was created (ISO 8601) |
+| updatedAt   | string | Timestamp when the event was last updated (ISO 8601) |
+| GSI2PK      | string | Organization ID (`ORG#<ID>`) |
+| GSI2SK      | string | Event ID (`EVENT#<ID>`) |
+
+### EventUser Model
+| Property     | Type    | Description |
+|-------------|--------|-------------|
+| PK          | string | User ID: `USER#<ID>` |
+| SK          | string | Event ID: `EVENT#<ID>` |
+| GSI2PK      | string | Event ID (`EVENT#<ID>`) |
+| GSI2SK      | string | User ID (`USER#<ID>`) |
+
+### Photo Model
 | Property     | Type    | Description |
 |-------------|--------|-------------|
 | PK          | string | Primary key: `PHOTO#<ID>` |
@@ -103,7 +101,20 @@ Authorization: Bearer your-jwt-token
 | metadata    | object | Optional metadata (title, description, size, etc.) |
 | GSI2PK      | string | Event ID (`EVENT#<ID>`) |
 | GSI2SK      | string | Photo ID (`PHOTO#<ID>`) |
->>>>>>> f97e747 (readme)
+
+## Database Model
+
+The system uses a single-table design in DynamoDB with the following structure:
+
+| Component | Description |
+|-----------|-------------|
+| PK | Primary partition key in format [USER: USER#{id}; ORG: ORG#{NAME}; EVENT: EVENT#{id}; PHOTO: PHOTO#{id}] |
+| SK | Primary sort key in format [USER/ORG/EVENT/PHOTO: ENTITY; USER-ORG: ORG#{NAME}; USER-EVENT: EVENT#{id}] |
+| GSI1PK | Global Secondary Index partition key in format [USER: EMAIL#{email}; ORG: USER#{id}] |
+| GSI1SK | Global Secondary Index sort key in format [USER: USER#{id}; ORG: ORG#{NAME}] |
+| GSI2PK | Second Global Secondary Index partition key in format [EVENT: ORG#{name}; PHOTO: EVENT#{id}] |
+| GSI2SK | Second Global Secondary Index sort key in format [EVENT: EVENT#{id}; PHOTO: PHOTO#{id}] |
+| type | Item type identifier used for filtering (e.g., "USER", "ORGANIZATION", "USER_ORG", "EVENT", "PHOTO") |
 
 ## API Overview
 
@@ -114,7 +125,6 @@ Authorization: Bearer your-jwt-token
 | GET | /guests | Get public organizations |
 | GET | /guests/organizations/:id/events | Get public organizations events|
 | GET | /organizations | Get all organizations for the authenticated user |
-<<<<<<< HEAD
 | POST | /organizations | Create a new organization |
 | GET | /organizations/:id/events | Get organizations events|
 | POST | /organizations/:id/events | Create a new organization event|
@@ -122,12 +132,9 @@ Authorization: Bearer your-jwt-token
 | GET | /organizations/:id/requests | Get all pending membership requests |
 | PUT | /organizations/:id/requests/:userId | Approve a membership request |
 | DELETE | /organizations/:id/requests/:userId | Deny a membership request |
-
-=======
 | POST | /organizations/:id/events/:eventId/photos | Upload a photo to an event |
 | GET | /organizations/:id/events/:eventId/photos | Get all photos for an event |
 | DELETE | /organizations/:id/events/:eventId/photos/:photoId | Delete a photo |
->>>>>>> f97e747 (readme)
 
 ## 1. Authentication Endpoints
 
@@ -611,27 +618,22 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
-# 3. Event Management 
+## 3. Event Management 
 
 ### 3.1. Create an Event
 
-`PATCH /organizations`
+`POST /organizations/:id/events`
 
-This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
+This endpoint allows users with "ADMIN" role to create a new event for an organization.
 
 #### Request Headers
 
 | Key | Value | Required |
 |-----|-------|----------|
-| Content-Type | application/json | Yes |
-
-#### **Request Headers**
-| Key           | Value            | Required |
-|--------------|----------------|----------|
 | Authorization | `Bearer <token>` |  Yes  |
-| Content-Type  | `application/json` |  Yes  |
+| Content-Type | `application/json` |  Yes  |
 
-#### **Request Body**
+#### Request Body
 ```json
 {
   "title": "Annual Company Meetup",
@@ -639,7 +641,7 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
   "date": "2025-05-01T18:00:00Z" (ISO 8601 format)
 }
 ```
-#### **Response**
+#### Response
 **201 Created**
 ```json
 {
@@ -677,13 +679,55 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
-### 3.2. Get Org Events (User? Admin?)
+### 3.2. Get Organization Events
+
+`GET /organizations/:id/events`
+
+This endpoint retrieves all events for a specific organization that the user is a member of.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+
+#### Response
+**200 OK**
+```json
+{
+  "status": "success",
+  "data": {
+    "events": [
+      {
+        "PK": "EVENT#abcd1234",
+        "SK": "ENTITY",
+        "title": "Annual Company Meetup",
+        "description": "A networking event for all employees.",
+        "visibility": "PUBLIC",
+        "date": "2025-05-01T18:00:00Z",
+        "createdAt": "2025-04-01T15:30:00Z",
+        "updatedAt": "2025-04-01T15:30:00Z",
+        "GSI2PK": "ORG#xyz987",
+        "GSI2SK": "EVENT#abcd1234"
+      }
+    ]
+  }
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Organization not found"
+}
+```
 
 ### 3.3. Update Event's Publicity
 
-`PATCH /organizations`
+`PATCH /organizations/:id/events/:eventId`
 
-This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
+This endpoint allows users with "ADMIN" role to update an event's publicity status.
 
 #### Request Headers
 
@@ -692,10 +736,16 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 | Authorization | `Bearer <token>` |  Yes  |
 | Content-Type | application/json | Yes |
 
+#### Request Body
+```json
+{
+  "isPublic": false
+}
+```
 
-#### **Response**
+#### Response
 
-**200 Created**
+**200 OK**
 ```json
 {
     "status": "Updating Event's publicity success!",
@@ -765,7 +815,7 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
-# 4. Photo Management
+## 4. Photo Management
 
 ### 4.1. Upload a Photo
 
@@ -773,20 +823,20 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 
 This endpoint allows organization admins to upload photos to an event.
 
-#### **Request Headers**
+#### Request Headers
 | Key           | Value            | Required |
 |--------------|----------------|----------|
 | Authorization | `Bearer <token>` |  Yes  |
 | Content-Type  | `multipart/form-data` |  Yes  |
 
-#### **Request Body**
+#### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | photo | file | Yes | The photo file to upload (image files only) |
 | title | string | No | Title for the photo |
 | description | string | No | Description of the photo |
 
-#### **Response**
+#### Response
 **201 Created**
 ```json
 {
@@ -849,115 +899,6 @@ This endpoint allows organization admins to upload photos to an event.
 ```json
 {
   "status": "error",
-  "message": "Event not found: event-id"
-}
-```
-
-**500 Server Error**
-```json
-{
-  "status": "error",
-  "message": "Failed to upload photo: S3 upload failed"
-}
-```
-
-### 4.2. Get Event Photos
-
-`GET /organizations/:id/events/:eventId/photos`
-
-This endpoint retrieves all photos for a specific event.
-
-#### **Request Headers**
-| Key           | Value            | Required |
-|--------------|----------------|----------|
-| Authorization | `Bearer <token>` |  Yes  |
-
-#### **Response**
-**200 OK**
-```json
-{
-  "status": "success",
-  "data": {
-    "photos": [
-      {
-        "PK": "PHOTO#12345",
-        "SK": "ENTITY",
-        "id": "12345",
-        "eventId": "event-id",
-        "url": "https://presigned-url.amazonaws.com/photos/event-id/12345.jpg",
-        "createdAt": "2025-04-05T14:30:00Z",
-        "updatedAt": "2025-04-05T14:30:00Z",
-        "uploadedBy": "user-id",
-        "metadata": {
-          "title": "Company Picnic",
-          "description": "Team building activities",
-          "s3Key": "photos/event-id/12345.jpg"
-        },
-        "GSI2PK": "EVENT#event-id",
-        "GSI2SK": "PHOTO#12345"
-      },
-      {
-        "PK": "PHOTO#67890",
-        "SK": "ENTITY",
-        "id": "67890",
-        "eventId": "event-id",
-        "url": "https://presigned-url.amazonaws.com/photos/event-id/67890.jpg",
-        "createdAt": "2025-04-05T15:15:00Z",
-        "updatedAt": "2025-04-05T15:15:00Z",
-        "uploadedBy": "user-id",
-        "metadata": {
-          "title": "Award Ceremony",
-          "description": "Annual awards presentation",
-          "s3Key": "photos/event-id/67890.jpg"
-        },
-        "GSI2PK": "EVENT#event-id",
-        "GSI2SK": "PHOTO#67890"
-      }
-    ]
-  }
-}
-```
-
-**404 Not Found**
-```json
-{
-  "status": "error",
-  "message": "Event not found: event-id"
-}
-```
-
-### 4.3. Delete a Photo
-
-`DELETE /organizations/:id/events/:eventId/photos/:photoId`
-
-This endpoint allows organization admins to delete a photo from an event.
-
-#### **Request Headers**
-| Key           | Value            | Required |
-|--------------|----------------|----------|
-| Authorization | `Bearer <token>` |  Yes  |
-
-#### **Response**
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Photo deleted successfully"
-}
-```
-
-**403 Forbidden**
-```json
-{
-  "status": "error",
-  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
-}
-```
-
-**404 Not Found**
-```json
-{
-  "status": "error",
   "message": "Photo not found: photo-id"
 }
 ```
@@ -977,133 +918,12 @@ This endpoint allows organization admins to delete a photo from an event.
 }
 ```
 
-## Guest Router
+## 5. Organization Membership
 
-### Get Public Organizations
-**Endpoint:** `GET /guests`
+### 5.1 Apply to an Organization
+`POST /organizations/:id`
 
-**Description:** Retrieves a list of public organizations. The response is paginated with a maximum of 9 organizations per request.
-
-**Request Parameters:**
-- `lastEvaluatedKey` (optional, query parameter) – Used for pagination.
-
-**Response:**
-```json
-{
-  "message": "Here are all organizations!",
-  "data": {
-    "organizations": [
-      {
-        "id": "<org_id>",
-        "name": "Organization Name",
-        "description": "Public description of the organization"
-      }
-    ]
-  },
-  "lastEvaluatedKey": "<pagination_key>"
-}
-```
-
-### Get Public Events of an Organization
-**Endpoint:** `GET /guests/organizations/:id/events`
-
-**Description:** Retrieves all public events for a specific organization.
-
-**Path Parameters:**
-- `id` (required) – Organization ID.
-
-**Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    "events": [
-      {
-        "eventId": "<event_id>",
-        "name": "Event Name",
-        "date": "YYYY-MM-DD",
-        "description": "Public event description"
-      }
-    ]
-  },
-  "lastEvaluatedKey": "<pagination_key>"
-}
-```
-
-## JWT Token
-
-The JWT token contains the following payload:
-
-```json
-{
-    "id": "user-uuid",
-    "email": "user@example.com",
-    "role": "USER",
-    "iat": 1616923664,
-    "exp": 1616923664
-}
-```
-
-| Field | Description |
-|-------|-------------|
-| id | User's unique identifier |
-| email | User's email address |
-| role | User's role in the system |
-| iat | Issued at timestamp |
-| exp | Expiration timestamp (24 hours after issuance) |
-
-## Status Code Summary
-
-| Status Code | Description |
-|------------|-------------|
-| 200 OK | Request processed successfully |
-| 201 Created | Resource created successfully |
-| 204 No Content | Resource has nothing to show |
-| 400 Bad Request | Invalid request data (missing fields, invalid values, etc.) |
-| 401 Unauthorized | Authentication required or authentication failed |
-| 404 Not Found | Data not available in the database |
-| 403 Forbidden | User doesn't have permission for the requested action |
-| 409 Conflict | Resource already exists |
-| 500 Server Error | Server-side error occurred |
-
-## Constants
-
-### User Roles
-- USER (Default role for new users)
-- MEMBER (User who is part of an organization)
-- ADMIN (User with admin privileges in an organization)
-
-
-## Database Model
-
-The system uses a single-table design in DynamoDB with the following structure:
-
-| Component | Description |
-|-----------|-------------|
-| PK | Primary partition key in format [USER: USER#{id}; ORG: ORG#{NAME}; EVENT: EVENT#{id}; PHOTO: PHOTO#{id}] |
-| SK | Primary sort key in format [USER/ORG/EVENT/PHOTO: ENTITY; USER-ORG: ORG#{NAME}; USER-EVENT: EVENT#{id}] |
-| GSI1PK | Global Secondary Index partition key in format [USER: EMAIL#{email}; ORG: USER#{id}] |
-| GSI1SK | Global Secondary Index sort key in format [USER: USER#{id}; ORG: ORG#{NAME}] |
-<<<<<<< HEAD
-| type | Item type identifier used for filtering (e.g., "USER", "ORGANIZATION", "USER_ORG") |
-
-## Security Considerations
-
-- Passwords are hashed using bcrypt before storage
-- JWT tokens expire after 24 hours
-- Authentication is required for all endpoints except registration and login
-- Email addresses must be properly formatted
-- Passwords must be at least 8 characters long
-- logoUrl must be a valid URL
-
----
-
-## Organization Membership 
-
-### Apply to an Organization
 Apply to join an organization. The organization must have at least one event.
-
-**Endpoint:** `POST /organizations/:id`
 
 #### Request Headers
 | Header | Value | Required | Description |
@@ -1116,7 +936,7 @@ Apply to join an organization. The organization must have at least one event.
 | message | string | No | Optional message to the organization admins explaining why you want to join |
 ```json
 {
-  "message": "I would like to join this organization",
+  "message": "I would like to join this organization"
 }
 ```
 
@@ -1188,10 +1008,10 @@ Apply to join an organization. The organization must have at least one event.
 }
 ```
 
-### Get Pending Membership Requests
-Get all pending membership requests for an organization (admin only).
+### 5.2 Get Pending Membership Requests
+`GET /organizations/:id/requests`
 
-**Endpoint:** `GET /organizations/:id/requests`
+Get all pending membership requests for an organization (admin only).
 
 #### Request Headers
 | Header | Value | Required | Description |
@@ -1243,10 +1063,10 @@ Get all pending membership requests for an organization (admin only).
 }
 ```
 
-### Approve a Membership Request
-Approve a user's request to join an organization (admin only).
+### 5.3 Approve a Membership Request
+`PUT /organizations/:id/requests/:userId`
 
-**Endpoint:** `PUT /organizations/:id/requests/:userId`
+Approve a user's request to join an organization (admin only).
 
 #### Request Headers
 | Header | Value | Required | Description |
@@ -1318,10 +1138,10 @@ Approve a user's request to join an organization (admin only).
 }
 ```
 
-### Deny a Membership Request
-Deny a user's request to join an organization (admin only).
+### 5.4 Deny a Membership Request
+`DELETE /organizations/:id/requests/:userId`
 
-**Endpoint:** `DELETE /organizations/:id/requests/:userId`
+Deny a user's request to join an organization (admin only).
 
 #### Request Headers
 | Header | Value | Required | Description |
@@ -1359,8 +1179,109 @@ Deny a user's request to join an organization (admin only).
   "message": "Membership request not found"
 }
 ```
-=======
-| GSI2PK | Second Global Secondary Index partition key in format [EVENT: ORG#{name}; PHOTO: EVENT#{id}] |
-| GSI2SK | Second Global Secondary Index sort key in format [EVENT: EVENT#{id}; PHOTO: PHOTO#{id}] |
-| type | Item type identifier used for filtering (e.g., "USER", "ORGANIZATION", "USER_ORG", "EVENT", "PHOTO")
->>>>>>> f97e747 (readme)
+
+## 6. Guest Router
+
+### 6.1 Get Public Organizations
+`GET /guests`
+
+Retrieves a list of public organizations. The response is paginated with a maximum of 9 organizations per request.
+
+#### Request Parameters:
+- `lastEvaluatedKey` (optional, query parameter) – Used for pagination.
+
+#### Response:
+```json
+{
+  "message": "Here are all organizations!",
+  "data": {
+    "organizations": [
+      {
+        "id": "<org_id>",
+        "name": "Organization Name",
+        "description": "Public description of the organization"
+      }
+    ]
+  },
+  "lastEvaluatedKey": "<pagination_key>"
+}
+```
+
+### 6.2 Get Public Events of an Organization
+`GET /guests/organizations/:id/events`
+
+Retrieves all public events for a specific organization.
+
+#### Path Parameters:
+- `id` (required) – Organization ID.
+
+#### Response:
+```json
+{
+  "status": "success",
+  "data": {
+    "events": [
+      {
+        "eventId": "<event_id>",
+        "name": "Event Name",
+        "date": "YYYY-MM-DD",
+        "description": "Public event description"
+      }
+    ]
+  },
+  "lastEvaluatedKey": "<pagination_key>"
+}
+```
+
+## JWT Token
+
+The JWT token contains the following payload:
+
+```json
+{
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "role": "USER",
+    "iat": 1616923664,
+    "exp": 1616923664
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| id | User's unique identifier |
+| email | User's email address |
+| role | User's role in the system |
+| iat | Issued at timestamp |
+| exp | Expiration timestamp (24 hours after issuance) |
+
+## Status Code Summary
+
+| Status Code | Description |
+|------------|-------------|
+| 200 OK | Request processed successfully |
+| 201 Created | Resource created successfully |
+| 204 No Content | Resource has nothing to show |
+| 400 Bad Request | Invalid request data (missing fields, invalid values, etc.) |
+| 401 Unauthorized | Authentication required or authentication failed |
+| 404 Not Found | Data not available in the database |
+| 403 Forbidden | User doesn't have permission for the requested action |
+| 409 Conflict | Resource already exists |
+| 500 Server Error | Server-side error occurred |
+
+## Constants
+
+### User Roles
+- USER (Default role for new users)
+- MEMBER (User who is part of an organization)
+- ADMIN (User with admin privileges in an organization)
+
+## Security Considerations
+
+- Passwords are hashed using bcrypt before storage
+- JWT tokens expire after 24 hours
+- Authentication is required for all endpoints except registration and login
+- Email addresses must be properly formatted
+- Passwords must be at least 8 characters long
+- logoUrl must be a valid URL can perform this action. Please talk to your Admin for more information"
+`
