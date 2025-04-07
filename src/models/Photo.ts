@@ -11,7 +11,7 @@ export interface Photo {
     url: string;
     createdAt: string;
     updatedAt: string;
-    uploadedBy: string; // User ID of the admin who uploaded the photo
+    uploadedBy: string;
     
     // Optional metadata
     metadata?: {
@@ -19,6 +19,7 @@ export interface Photo {
         description?: string;
         size?: number;
         mimeType?: string;
+        s3Key?: string;
     };
 
     // GSI for querying photos by event
@@ -42,6 +43,7 @@ export const createPhoto = (
         description?: string;
         size?: number;
         mimeType?: string;
+        s3Key?: string;
     }
 ): Photo => {
     const now = new Date().toISOString();
