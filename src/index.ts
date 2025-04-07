@@ -27,11 +27,9 @@ app.use(loggerMethodMiddleware);
 // Routes
 app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
-<<<<<<< HEAD
-app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMembershipRouter); // add authenticate middleware
-=======
-app.use(`/organizations`, authenticate, orgRouter, eventRouter, photoRouter); // Added photoRouter 
->>>>>>> 060e1d5 (add event model, change CF template to add new GSI, repo/service/s3 service updated)
+
+app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMembershipRouter, photoRouter); // Added photoRouter 
+
 
 // Default route
 app.get('/', (req, res) => {

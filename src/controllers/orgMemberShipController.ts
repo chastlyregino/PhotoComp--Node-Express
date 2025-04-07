@@ -3,7 +3,7 @@ import { OrgMembershipService } from '../services/orgMembershipService';
 import { validateUserID } from './orgController';
 import { checkOrgAdmin } from '../middleware/orgMiddleware';
 import { OrganizationMembershipRequest } from '../models/Organizations';
-import { UserService } from '@/services/userService';
+import { UserService } from '../services/userService';
 
 const orgMembershipService = new OrgMembershipService();
 const userService = new UserService();
