@@ -131,7 +131,7 @@ jest.mock('../src/services/eventService', () => {
     return {
         EventService: jest.fn().mockImplementation(() => {
             return {
-                findEventById: (...args : any) => mockFindEventById(...args)
+                findEventById: (...args: any) => mockFindEventById(...args)
             };
         })
     };
@@ -167,7 +167,7 @@ describe('Photo Controller Integration Tests', () => {
     const testOrgId = 'test-org';
     const testEventId = 'test-event-id';
     const testUserId = 'test-user-id';
-    
+
     // Mock photo for tests
     const mockPhoto: Partial<Photo> = {
         id: 'test-photo-uuid',
@@ -220,7 +220,7 @@ describe('Photo Controller Integration Tests', () => {
 
         // Add the photoRouter
         app.use('/organizations', photoRouter);
-        
+
         // Add error handler at the end
         app.use(errorHandler);
     });
@@ -242,7 +242,7 @@ describe('Photo Controller Integration Tests', () => {
                     SK: 'ENTITY'
                 }
             });
-            
+
             // 2. Then for createPhoto
             mockDynamoSend.mockResolvedValueOnce({});
 
@@ -285,7 +285,7 @@ describe('Photo Controller Integration Tests', () => {
         it('should retrieve photos for an event successfully', async () => {
             // Reset mocks to ensure a clean state
             mockDynamoSend.mockReset();
-            
+
             // First call - findEventById
             mockDynamoSend.mockResolvedValueOnce({
                 Item: {
@@ -297,32 +297,50 @@ describe('Photo Controller Integration Tests', () => {
                     SK: 'ENTITY'
                 }
             });
-            
+
             // Second call - getPhotosByEvent (QueryCommand)
+            // Important: Ensure Items is an array
             mockDynamoSend.mockResolvedValueOnce({
                 Items: [
-                    { 
-                        ...mockPhoto, 
+                    {
                         id: 'photo-1',
                         PK: 'PHOTO#photo-1',
                         SK: 'ENTITY',
+                        eventId: testEventId,
+                        url: 'https://presigned-url.example.com/photo1.jpg',
+                        uploadedBy: testUserId,
+                        createdAt: '2023-01-01T00:00:00.000Z',
+                        updatedAt: '2023-01-01T00:00:00.000Z',
                         GSI2PK: `EVENT#${testEventId}`,
                         GSI2SK: 'PHOTO#photo-1',
-                        createdAt: '2023-01-01T00:00:00.000Z',
-                        updatedAt: '2023-01-01T00:00:00.000Z'
+                        metadata: {
+                            title: 'Test Photo 1',
+                            description: 'Test Photo Description 1',
+                            s3Key: `photos/${testEventId}/photo-1.jpg`
+                        }
                     },
-                    { 
-                        ...mockPhoto, 
+                    {
                         id: 'photo-2',
                         PK: 'PHOTO#photo-2',
                         SK: 'ENTITY',
+                        eventId: testEventId,
+                        url: 'https://presigned-url.example.com/photo2.jpg',
+                        uploadedBy: testUserId,
+                        createdAt: '2023-01-01T00:00:00.000Z',
+                        updatedAt: '2023-01-01T00:00:00.000Z',
                         GSI2PK: `EVENT#${testEventId}`,
                         GSI2SK: 'PHOTO#photo-2',
-                        createdAt: '2023-01-01T00:00:00.000Z',
-                        updatedAt: '2023-01-01T00:00:00.000Z'
+                        metadata: {
+                            title: 'Test Photo 2',
+                            description: 'Test Photo Description 2',
+                            s3Key: `photos/${testEventId}/photo-2.jpg`
+                        }
                     }
                 ]
             });
+
+            // Mock getSignedUrl for each photo
+            (getSignedUrl as jest.Mock).mockResolvedValue('https://presigned-url.example.com/updated.jpg');
 
             const response = await request(app)
                 .get(`/organizations/${testOrgId}/events/${testEventId}/photos`);
@@ -341,7 +359,7 @@ describe('Photo Controller Integration Tests', () => {
         it('should delete a photo successfully', async () => {
             // Reset mocks to ensure a clean state
             mockDynamoSend.mockReset();
-            
+
             // Create a complete photo object that matches what the service expects
             const completePhoto = {
                 PK: `PHOTO#${testPhotoId}`,
@@ -367,10 +385,10 @@ describe('Photo Controller Integration Tests', () => {
             mockDynamoSend.mockResolvedValueOnce({
                 Item: completePhoto
             });
-            
+
             // Second call - deletePhoto (DeleteCommand)
             mockDynamoSend.mockResolvedValueOnce({});
-            
+
             const response = await request(app)
                 .delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`);
 
