@@ -89,12 +89,14 @@ jest.mock('../src/controllers/orgController', () => {
         ...originalModule,
         validateUserID: jest.fn().mockImplementation((req, res, next) => {
             // Mock user data without making actual service call
-            res.locals.user.info = {
-                id: 'test-user-id',
-                email: 'test@example.com',
-                firstName: 'Test',
-                lastName: 'User',
-                role: 'ADMIN'
+            res.locals.user = {
+                info: {
+                    id: 'test-user-id',
+                    email: 'test@example.com',
+                    firstName: 'Test',
+                    lastName: 'User',
+                    role: 'ADMIN'
+                }
             };
             next();
         }),
@@ -113,21 +115,23 @@ jest.mock('../src/middleware/orgMiddleware', () => ({
     checkOrgAdmin: (req: any, res: any, next: any) => next()
 }));
 
-// Mock the EventService
+// Mock the EventService - with more control over the test-specific behavior
+let mockFindEventById = jest.fn().mockImplementation((eventId) => {
+    return Promise.resolve({
+        id: eventId,
+        title: 'Test Event',
+        description: 'Test Event Description',
+        isPublic: true,
+        PK: `EVENT#${eventId}`,
+        SK: 'ENTITY'
+    });
+});
+
 jest.mock('../src/services/eventService', () => {
     return {
         EventService: jest.fn().mockImplementation(() => {
             return {
-                findEventById: jest.fn().mockImplementation((eventId) => {
-                    return Promise.resolve({
-                        id: eventId,
-                        title: 'Test Event',
-                        description: 'Test Event Description',
-                        isPublic: true,
-                        PK: `EVENT#${eventId}`,
-                        SK: 'ENTITY'
-                    });
-                })
+                findEventById: (...args) => mockFindEventById(...args)
             };
         })
     };
@@ -201,7 +205,14 @@ describe('Photo Controller Integration Tests', () => {
                 user: {
                     id: testUserId,
                     email: 'test@example.com',
-                    role: 'ADMIN'
+                    role: 'ADMIN',
+                    info: {
+                        id: testUserId,
+                        email: 'test@example.com',
+                        firstName: 'Test',
+                        lastName: 'User',
+                        role: 'ADMIN'
+                    }
                 }
             };
             next();
@@ -248,17 +259,12 @@ describe('Photo Controller Integration Tests', () => {
         });
 
         it('should return 404 when event does not exist', async () => {
-            // Override the mockImplementation for this test only
-            const eventService = require('../src/services/eventService');
-            const originalFindEventById = eventService.EventService.mock.results[0].value.findEventById;
-            
-            // Mock to return null for this test
-            eventService.EventService.mock.results[0].value.findEventById.mockResolvedValueOnce(null);
-            
-            // Mock DynamoDB to return null for getEvent
-            mockDynamoSend.mockResolvedValueOnce({
-                Item: null
-            });
+            // Override the mock to return null for this test only
+            const originalMock = mockFindEventById;
+            mockFindEventById = jest.fn().mockResolvedValue(null);
+
+            // Mock DynamoDB to return 404 error for getEvent
+            mockDynamoSend.mockRejectedValueOnce(new Error('Event not found'));
 
             const response = await request(app)
                 .post(`/organizations/${testOrgId}/events/nonexistent/photos`)
@@ -266,8 +272,8 @@ describe('Photo Controller Integration Tests', () => {
                 .field('description', 'Test Photo Description')
                 .attach('photo', Buffer.from('mock file content'), 'test-photo.jpg');
 
-            // Restore the original implementation
-            eventService.EventService.mock.results[0].value.findEventById = originalFindEventById;
+            // Restore the original mock after test
+            mockFindEventById = originalMock;
 
             // Verify error response
             expect(response.body.status).toBe('error');
@@ -277,24 +283,36 @@ describe('Photo Controller Integration Tests', () => {
 
     describe('GET /:id/events/:eventId/photos', () => {
         it('should retrieve photos for an event successfully', async () => {
-            // Mock for findEventById
-            mockDynamoSend.mockResolvedValueOnce({
-                Item: {
-                    id: testEventId,
-                    title: 'Test Event',
-                    description: 'Test Event Description',
-                    isPublic: true,
-                    PK: `EVENT#${testEventId}`,
-                    SK: 'ENTITY'
-                }
-            });
+            // Reset mocks to ensure a clean state
+            mockDynamoSend.mockReset();
             
-            // Mock for getPhotosByEvent
-            mockDynamoSend.mockResolvedValueOnce({
-                Items: [
-                    { ...mockPhoto, id: 'photo-1' },
-                    { ...mockPhoto, id: 'photo-2' }
-                ]
+            // Mock for GET request to return event data
+            mockDynamoSend.mockImplementation(command => {
+                // For GetCommand (finding an event)
+                if (command.constructor.name === 'GetCommand') {
+                    return Promise.resolve({
+                        Item: {
+                            id: testEventId,
+                            title: 'Test Event',
+                            description: 'Test Event Description',
+                            isPublic: true,
+                            PK: `EVENT#${testEventId}`,
+                            SK: 'ENTITY'
+                        }
+                    });
+                }
+                
+                // For QueryCommand (getting photos)
+                if (command.constructor.name === 'QueryCommand') {
+                    return Promise.resolve({
+                        Items: [
+                            { ...mockPhoto, id: 'photo-1' },
+                            { ...mockPhoto, id: 'photo-2' }
+                        ]
+                    });
+                }
+                
+                return Promise.resolve({});
             });
 
             const response = await request(app)
@@ -312,24 +330,46 @@ describe('Photo Controller Integration Tests', () => {
         const testPhotoId = 'test-photo-id';
 
         it('should delete a photo successfully', async () => {
-            // Mock for getPhotoById
-            mockDynamoSend.mockResolvedValueOnce({
-                Item: {
-                    ...mockPhoto,
-                    id: testPhotoId,
-                    eventId: testEventId,
-                    metadata: {
-                        ...mockPhoto.metadata,
-                        s3Key: `photos/${testEventId}/${testPhotoId}.jpg`
-                    }
+            // Reset mocks to ensure a clean state
+            mockDynamoSend.mockReset();
+            
+            // Create a complete photo object that matches what the service expects
+            const completePhoto = {
+                PK: `PHOTO#${testPhotoId}`,
+                SK: 'ENTITY',
+                id: testPhotoId,
+                eventId: testEventId,
+                url: 'https://presigned-url.example.com/photo.jpg',
+                uploadedBy: testUserId,
+                createdAt: '2023-01-01T00:00:00.000Z',
+                updatedAt: '2023-01-01T00:00:00.000Z',
+                metadata: {
+                    title: 'Test Photo',
+                    description: 'Test Photo Description',
+                    size: 10240,
+                    mimeType: 'image/jpeg',
+                    s3Key: `photos/${testEventId}/${testPhotoId}.jpg`
+                },
+                GSI2PK: `EVENT#${testEventId}`,
+                GSI2SK: `PHOTO#${testPhotoId}`
+            };
+
+            // Mock implementations for different DynamoDB commands
+            mockDynamoSend.mockImplementation(command => {
+                // For GetCommand (getting a photo)
+                if (command.constructor.name === 'GetCommand') {
+                    return Promise.resolve({
+                        Item: completePhoto
+                    });
                 }
+                
+                // For DeleteCommand (deleting a photo)
+                if (command.constructor.name === 'DeleteCommand') {
+                    return Promise.resolve({});
+                }
+                
+                return Promise.resolve({});
             });
-            
-            // Mock for deletePhoto from DB
-            mockDynamoSend.mockResolvedValueOnce({});
-            
-            // Mock for S3 delete
-            mockDynamoSend.mockResolvedValueOnce({});
 
             const response = await request(app)
                 .delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`);
