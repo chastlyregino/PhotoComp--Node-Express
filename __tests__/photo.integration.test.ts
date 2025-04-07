@@ -131,7 +131,7 @@ jest.mock('../src/services/eventService', () => {
     return {
         EventService: jest.fn().mockImplementation(() => {
             return {
-                findEventById: (...args) => mockFindEventById(...args)
+                findEventById: (...args : any) => mockFindEventById(...args)
             };
         })
     };
@@ -286,33 +286,42 @@ describe('Photo Controller Integration Tests', () => {
             // Reset mocks to ensure a clean state
             mockDynamoSend.mockReset();
             
-            // Mock for GET request to return event data
-            mockDynamoSend.mockImplementation(command => {
-                // For GetCommand (finding an event)
-                if (command.constructor.name === 'GetCommand') {
-                    return Promise.resolve({
-                        Item: {
-                            id: testEventId,
-                            title: 'Test Event',
-                            description: 'Test Event Description',
-                            isPublic: true,
-                            PK: `EVENT#${testEventId}`,
-                            SK: 'ENTITY'
-                        }
-                    });
+            // First call - findEventById
+            mockDynamoSend.mockResolvedValueOnce({
+                Item: {
+                    id: testEventId,
+                    title: 'Test Event',
+                    description: 'Test Event Description',
+                    isPublic: true,
+                    PK: `EVENT#${testEventId}`,
+                    SK: 'ENTITY'
                 }
-                
-                // For QueryCommand (getting photos)
-                if (command.constructor.name === 'QueryCommand') {
-                    return Promise.resolve({
-                        Items: [
-                            { ...mockPhoto, id: 'photo-1' },
-                            { ...mockPhoto, id: 'photo-2' }
-                        ]
-                    });
-                }
-                
-                return Promise.resolve({});
+            });
+            
+            // Second call - getPhotosByEvent (QueryCommand)
+            mockDynamoSend.mockResolvedValueOnce({
+                Items: [
+                    { 
+                        ...mockPhoto, 
+                        id: 'photo-1',
+                        PK: 'PHOTO#photo-1',
+                        SK: 'ENTITY',
+                        GSI2PK: `EVENT#${testEventId}`,
+                        GSI2SK: 'PHOTO#photo-1',
+                        createdAt: '2023-01-01T00:00:00.000Z',
+                        updatedAt: '2023-01-01T00:00:00.000Z'
+                    },
+                    { 
+                        ...mockPhoto, 
+                        id: 'photo-2',
+                        PK: 'PHOTO#photo-2',
+                        SK: 'ENTITY',
+                        GSI2PK: `EVENT#${testEventId}`,
+                        GSI2SK: 'PHOTO#photo-2',
+                        createdAt: '2023-01-01T00:00:00.000Z',
+                        updatedAt: '2023-01-01T00:00:00.000Z'
+                    }
+                ]
             });
 
             const response = await request(app)
@@ -354,23 +363,14 @@ describe('Photo Controller Integration Tests', () => {
                 GSI2SK: `PHOTO#${testPhotoId}`
             };
 
-            // Mock implementations for different DynamoDB commands
-            mockDynamoSend.mockImplementation(command => {
-                // For GetCommand (getting a photo)
-                if (command.constructor.name === 'GetCommand') {
-                    return Promise.resolve({
-                        Item: completePhoto
-                    });
-                }
-                
-                // For DeleteCommand (deleting a photo)
-                if (command.constructor.name === 'DeleteCommand') {
-                    return Promise.resolve({});
-                }
-                
-                return Promise.resolve({});
+            // First call - getPhotoById (GetCommand)
+            mockDynamoSend.mockResolvedValueOnce({
+                Item: completePhoto
             });
-
+            
+            // Second call - deletePhoto (DeleteCommand)
+            mockDynamoSend.mockResolvedValueOnce({});
+            
             const response = await request(app)
                 .delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`);
 
