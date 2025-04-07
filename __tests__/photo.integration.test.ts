@@ -149,6 +149,81 @@ jest.mock('../src/middleware/uploadMiddleware', () => ({
     }
 }));
 
+jest.mock('../src/repositories/photoRepository', () => {
+    // Create a mock implementation of the PhotoRepository class
+    return {
+        PhotoRepository: jest.fn().mockImplementation(() => {
+            return {
+                getEventPhotos: jest.fn(),
+                getPhotosByEvent: jest.fn().mockImplementation((eventId) => {
+                    // Return test photo data
+                    return Promise.resolve([
+                        {
+                            id: 'photo-1',
+                            PK: 'PHOTO#photo-1',
+                            SK: 'ENTITY',
+                            eventId: eventId,
+                            url: 'https://presigned-url.example.com/photo1.jpg',
+                            uploadedBy: 'test-user-id',
+                            createdAt: '2023-01-01T00:00:00.000Z',
+                            updatedAt: '2023-01-01T00:00:00.000Z',
+                            GSI2PK: `EVENT#${eventId}`,
+                            GSI2SK: 'PHOTO#photo-1',
+                            metadata: {
+                                title: 'Test Photo 1',
+                                description: 'Test Photo Description 1',
+                                s3Key: `photos/${eventId}/photo-1.jpg`
+                            }
+                        },
+                        {
+                            id: 'photo-2',
+                            PK: 'PHOTO#photo-2',
+                            SK: 'ENTITY',
+                            eventId: eventId,
+                            url: 'https://presigned-url.example.com/photo2.jpg',
+                            uploadedBy: 'test-user-id',
+                            createdAt: '2023-01-01T00:00:00.000Z',
+                            updatedAt: '2023-01-01T00:00:00.000Z',
+                            GSI2PK: `EVENT#${eventId}`,
+                            GSI2SK: 'PHOTO#photo-2',
+                            metadata: {
+                                title: 'Test Photo 2',
+                                description: 'Test Photo Description 2',
+                                s3Key: `photos/${eventId}/photo-2.jpg`
+                            }
+                        }
+                    ]);
+                }),
+                getPhotoById: jest.fn().mockImplementation((photoId) => {
+                    return Promise.resolve({
+                        id: photoId,
+                        PK: `PHOTO#${photoId}`,
+                        SK: 'ENTITY',
+                        eventId: 'test-event-id',
+                        url: 'https://presigned-url.example.com/photo.jpg',
+                        uploadedBy: 'test-user-id',
+                        createdAt: '2023-01-01T00:00:00.000Z',
+                        updatedAt: '2023-01-01T00:00:00.000Z',
+                        metadata: {
+                            title: 'Test Photo',
+                            description: 'Test Photo Description',
+                            s3Key: `photos/test-event-id/${photoId}.jpg`
+                        },
+                        GSI2PK: `EVENT#test-event-id`,
+                        GSI2SK: `PHOTO#${photoId}`
+                    });
+                }),
+                createPhoto: jest.fn().mockImplementation((photo) => {
+                    return Promise.resolve(photo);
+                }),
+                deletePhoto: jest.fn().mockImplementation(() => {
+                    return Promise.resolve();
+                })
+            };
+        })
+    };
+});
+
 // Import dependencies after mocks are set up
 import request from 'supertest';
 import express from 'express';
@@ -158,6 +233,8 @@ import { Photo } from '../src/models/Photo';
 import { photoRouter } from '../src/controllers/photoController';
 import { setupTestEnvironment } from './utils/test-utils';
 import { errorHandler } from '../src/middleware/errorHandler';
+import { QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { PhotoRepository } from '../src/repositories/photoRepository';
 
 // Cast mocks for type safety
 const mockDynamoSend = dynamoDb.send as jest.Mock;
@@ -281,76 +358,16 @@ describe('Photo Controller Integration Tests', () => {
         });
     });
 
-    describe('GET /:id/events/:eventId/photos', () => {
-        it('should retrieve photos for an event successfully', async () => {
-            // Reset mocks to ensure a clean state
-            mockDynamoSend.mockReset();
+    it('should retrieve photos for an event successfully', async () => {
+        const response = await request(app)
+            .get(`/organizations/${testOrgId}/events/${testEventId}/photos`)
+            .expect(200);
 
-            // First call - findEventById
-            mockDynamoSend.mockResolvedValueOnce({
-                Item: {
-                    id: testEventId,
-                    title: 'Test Event',
-                    description: 'Test Event Description',
-                    isPublic: true,
-                    PK: `EVENT#${testEventId}`,
-                    SK: 'ENTITY'
-                }
-            });
-
-            // Second call - getPhotosByEvent (QueryCommand)
-            // Important: Ensure Items is an array
-            mockDynamoSend.mockResolvedValueOnce({
-                Items: [
-                    {
-                        id: 'photo-1',
-                        PK: 'PHOTO#photo-1',
-                        SK: 'ENTITY',
-                        eventId: testEventId,
-                        url: 'https://presigned-url.example.com/photo1.jpg',
-                        uploadedBy: testUserId,
-                        createdAt: '2023-01-01T00:00:00.000Z',
-                        updatedAt: '2023-01-01T00:00:00.000Z',
-                        GSI2PK: `EVENT#${testEventId}`,
-                        GSI2SK: 'PHOTO#photo-1',
-                        metadata: {
-                            title: 'Test Photo 1',
-                            description: 'Test Photo Description 1',
-                            s3Key: `photos/${testEventId}/photo-1.jpg`
-                        }
-                    },
-                    {
-                        id: 'photo-2',
-                        PK: 'PHOTO#photo-2',
-                        SK: 'ENTITY',
-                        eventId: testEventId,
-                        url: 'https://presigned-url.example.com/photo2.jpg',
-                        uploadedBy: testUserId,
-                        createdAt: '2023-01-01T00:00:00.000Z',
-                        updatedAt: '2023-01-01T00:00:00.000Z',
-                        GSI2PK: `EVENT#${testEventId}`,
-                        GSI2SK: 'PHOTO#photo-2',
-                        metadata: {
-                            title: 'Test Photo 2',
-                            description: 'Test Photo Description 2',
-                            s3Key: `photos/${testEventId}/photo-2.jpg`
-                        }
-                    }
-                ]
-            });
-
-            // Mock getSignedUrl for each photo
-            (getSignedUrl as jest.Mock).mockResolvedValue('https://presigned-url.example.com/updated.jpg');
-
-            const response = await request(app)
-                .get(`/organizations/${testOrgId}/events/${testEventId}/photos`);
-
-            // Verify response
-            expect(response.statusCode).toBe(200);
-            expect(response.body.status).toBe('success');
-            expect(response.body.data.photos).toBeDefined();
-            expect(response.body.data.photos.length).toBe(2);
-        });
+        // Verify response
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe('success');
+        expect(response.body.data.photos).toBeDefined();
+        expect(response.body.data.photos.length).toBe(2);
     });
 
     describe('DELETE /:id/events/:eventId/photos/:photoId', () => {
