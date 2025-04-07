@@ -140,6 +140,7 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /organizations/:id/events/:eventId/photos | Get all photos for an event |
 | POST | /organizations/:id/events/:eventId/photos | Upload a photo to an event |
 | DELETE | /organizations/:id/events/:eventId/photos/:photoId | Delete a photo |
+| GET | /organizations/:id/events/:eventId/photos/:photoId/download | Get a download URL for a specific photo |
 
 
 ## 1. Authentication Endpoints
