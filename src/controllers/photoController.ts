@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-import { checkOrgAdmin, checkOrgMember } from '../middleware/orgMiddleware';
+import { checkOrgAdmin, checkOrgMember } from '../middleware/OrgMiddleware';
 import { validateUserID } from './orgController';
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';

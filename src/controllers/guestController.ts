@@ -2,7 +2,6 @@ import { Request, Response, Router, NextFunction } from 'express';
 import { OrgService } from '../services/orgService';
 import { AppError } from '../middleware/errorHandler';
 import { EventService } from '../services/eventService';
-import { Event } from '../models/Event';
 
 const orgService = new OrgService();
 const eventService = new EventService();

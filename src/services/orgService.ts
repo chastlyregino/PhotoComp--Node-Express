@@ -10,6 +10,7 @@ import {
     addOrganizationAdmin,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
+import { UserRole } from '../models/User';
 
 export class OrgService {
     private orgRepository: OrgRepository;
@@ -227,7 +228,7 @@ export class OrgService {
         lastEvaluatedKey?: Record<string, any>
     ): Promise<{ orgs: Organization[]; newLastEvaluatedKey: Record<string, any> | null }> {
         try {
-            return await this.orgRepository.findAllPublicOrgs();
+            return await this.orgRepository.findAllPublicOrgs(lastEvaluatedKey);
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
@@ -254,6 +255,91 @@ export class OrgService {
                 `Failed to create user-organization relationship: ${(error as Error).message}`,
                 500
             );
+        }
+    }
+
+    /**
+     * Get all members of an organization
+     * @param orgName The name of the organization
+     * @returns Array of user-organization relationships
+     */
+    async getOrgMembers(orgName: string): Promise<UserOrganizationRelationship[]> {
+        try {
+            const members = await this.orgRepository.getOrgMembers(orgName);
+            
+            if (!members || members.length === 0) {
+                throw new AppError('No members found for this organization', 404);
+            }
+            
+            return members;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to get organization members: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
+     * Remove a member from an organization
+     * @param orgName The name of the organization
+     * @param userId The ID of the user to remove
+     * @returns True if successful
+     */
+    async removeMember(orgName: string, userId: string): Promise<boolean> {
+        try {
+            // Check if the member exists in the organization
+            const member = await this.orgRepository.findSpecificOrgByUser(orgName, userId);
+            
+            if (!member) {
+                throw new AppError('Member not found in this organization', 404);
+            }
+            
+            // Remove the member
+            const result = await this.orgRepository.removeMember(orgName, userId);
+            
+            if (!result) {
+                throw new AppError('Failed to remove member', 500);
+            }
+            
+            return result;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to remove member: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
+     * Update a member's role in an organization
+     * @param orgName The name of the organization
+     * @param userId The ID of the user to update
+     * @param role The new role for the user
+     * @returns The updated user-organization relationship
+     */
+    async updateMemberRole(orgName: string, userId: string, role: UserRole): Promise<UserOrganizationRelationship> {
+        try {
+            // Check if the member exists in the organization
+            const member = await this.orgRepository.findSpecificOrgByUser(orgName, userId);
+            
+            if (!member) {
+                throw new AppError('Member not found in this organization', 404);
+            }
+            
+            // Update the member's role
+            const updatedMember = await this.orgRepository.updateMemberRole(orgName, userId, role);
+            
+            if (!updatedMember) {
+                throw new AppError('Failed to update member role', 500);
+            }
+            
+            return updatedMember;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to update member role: ${(error as Error).message}`, 500);
         }
     }
 }

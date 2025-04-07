@@ -9,7 +9,8 @@ import { eventRouter } from './controllers/eventController';
 import { guestRouter } from './controllers/guestController';
 import { photoRouter } from './controllers/photoController';
 import { authenticate } from './middleware/authMiddleware';
-import { orgMembershipRouter } from './controllers/orgMembershipController';
+import { orgMemberRouter } from './controllers/orgMemberController';
+import { orgMembershipRouter } from './controllers/orgMemberShipController';
 
 // Load environment variables
 dotenv.config();
@@ -28,7 +29,7 @@ app.use(loggerMethodMiddleware);
 app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
 
-app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMembershipRouter, photoRouter); // Added photoRouter 
+app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMemberRouter, orgMembershipRouter, photoRouter); // Added photoRouter 
 
 
 // Default route

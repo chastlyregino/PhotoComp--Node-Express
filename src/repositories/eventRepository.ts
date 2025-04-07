@@ -1,6 +1,6 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { Event, EventUser } from '../models/Event';
-import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 /**
@@ -45,6 +45,31 @@ export class EventRepository {
             );
 
             return eventUser;
+        } catch (error: any) {
+            throw new AppError(`Failed to add event attendance record: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Removes a record for a user attending an event.
+     *
+     * @param eventUser - The event attendance record to be stored.
+     * @returns True if successfull
+     * @throws {AppError} If the database operation fails.
+     */
+    async removeAttendingEventRecord(userID: string, eventID: string): Promise<Boolean> {
+        try {
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                      PK: `USER#${userID}`,
+                      SK: `EVENT#${eventID}`
+                    }
+                })
+            );
+
+            return true;
         } catch (error: any) {
             throw new AppError(`Failed to add event attendance record: ${error.message}`, 500);
         }
@@ -218,7 +243,7 @@ export class EventRepository {
 
             const result = await dynamoDb.send(new GetCommand(params));
 
-            console.log(result.Item)
+            // console.log(result.Item)
             if (!result.Item) {
                 return null;
             }

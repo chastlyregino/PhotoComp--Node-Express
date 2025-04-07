@@ -6,8 +6,10 @@ import {
     OrganizationUpdateRequest,
     addOrganizationAdmin,
 } from '../models/Organizations';
-import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+
+import { PutCommand, QueryCommand, GetCommand, DeleteCommand,UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
+import { UserRole } from '../models/User';
 
 export class OrgRepository {
     async createOrg(org: Organization): Promise<OrganizationCreateRequest> {
@@ -144,10 +146,10 @@ export class OrgRepository {
         }
     }
 
-    async findAllPublicOrgs(): Promise<{ orgs: Organization[], newLastEvaluatedKey: Record<string, any> | null }> {
+    async findAllPublicOrgs(lastEvaluatedKey: Record<string, any> | undefined): Promise<{ orgs: Organization[], newLastEvaluatedKey: Record<string, any> | null }> {
     try {
         let publicOrgs: Organization[] = [];
-        let lastEvaluatedKey: Record<string, any> | undefined = undefined;
+        let newlastEvaluatedKey: Record<string, any> | undefined = lastEvaluatedKey;
 
         // Keep querying until we have at least 9 public organizations or no more data
         while (publicOrgs.length < 9) {
@@ -160,7 +162,7 @@ export class OrgRepository {
                     ':orgName': `ORG#`,
                 },
                 Limit: 15, 
-                ExclusiveStartKey: lastEvaluatedKey || undefined,
+                ExclusiveStartKey: newlastEvaluatedKey || undefined,
             }));
 
             // Append only public organizations
@@ -170,18 +172,107 @@ export class OrgRepository {
             // no more data to paginate
             if (!result.LastEvaluatedKey) break;
 
-            lastEvaluatedKey = result.LastEvaluatedKey;
+            newlastEvaluatedKey = result.LastEvaluatedKey;
         }
 
         // Return exactly 9 public organizations (or less if there aren't enough)
         return {
             orgs: publicOrgs.slice(0, 9),
-            newLastEvaluatedKey: lastEvaluatedKey || null,
+            newLastEvaluatedKey: newlastEvaluatedKey || null,
         };
     } catch (error: any) {
         throw new AppError(`Failed to find organizations: ${error.message}`, 500);
     }
-}
+    }
+
+    /**
+     * Get all members of an organization
+     * @param orgName The name of the organization
+     * @returns Array of user-organization relationships
+     */
+    async getOrgMembers(orgName: string): Promise<UserOrganizationRelationship[]> {
+        try {
+
+            const result = await dynamoDb.send(new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: 'GSI1PK-GSI1SK-INDEX',
+                KeyConditionExpression: 'GSI1PK = :orgKey AND begins_with(GSI1SK, :userPrefix)',
+                ExpressionAttributeValues: {
+                    ':orgKey': `ORG#${orgName.toUpperCase()}`,
+                    ':userPrefix': 'USER#',
+                }
+            }));
+            
+            if (!result.Items || result.Items.length === 0) {
+                return [];
+            }
+            
+            return result.Items as UserOrganizationRelationship[];
+        } catch (error: any) {
+            throw new AppError(`Failed to get organization members: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Remove a member from an organization
+     * @param orgName The name of the organization
+     * @param userId The ID of the user to remove
+     * @returns True if successful
+     */
+    async removeMember(orgName: string, userId: string): Promise<boolean> {
+        try {
+            
+            await dynamoDb.send(new DeleteCommand( {
+                TableName: TABLE_NAME,
+                Key: {
+                    PK: `USER#${userId}`,
+                    SK: `ORG#${orgName.toUpperCase()}`
+                }
+            }));
+            return true;
+        } catch (error: any) {
+            throw new AppError(`Failed to remove member: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Update a member's role in an organization
+     * @param orgName The name of the organization
+     * @param userId The ID of the user to update
+     * @param role The new role for the user
+     * @returns The updated user-organization relationship
+     */
+    async updateMemberRole(orgName: string, userId: string, role: UserRole): Promise<UserOrganizationRelationship> {
+        try {
+            const now = new Date().toISOString();
+            
+            
+            const result = await dynamoDb.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: {
+                    PK: `USER#${userId}`,
+                    SK: `ORG#${orgName.toUpperCase()}`
+                },
+                UpdateExpression: 'SET #role = :role, updatedAt = :updatedAt',
+                ExpressionAttributeNames: {
+                    '#role': 'role'
+                },
+                ExpressionAttributeValues: {
+                    ':role': role,
+                    ':updatedAt': now
+                },
+                ReturnValues: 'ALL_NEW'
+            }));
+            
+            if (!result.Attributes) {
+                throw new AppError('Member not found', 404);
+            }
+            
+            return result.Attributes as UserOrganizationRelationship;
+        } catch (error: any) {
+            throw new AppError(`Failed to update member role: ${error.message}`, 500);
+        }
+    }
 
 
 }
