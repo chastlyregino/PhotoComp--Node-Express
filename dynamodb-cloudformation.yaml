@@ -6,7 +6,7 @@ Parameters:
         Type: String
         Default: PhotoComp
         Description: Name of the application
-
+    
     Environment:
         Type: String
         Default: Dev
@@ -20,7 +20,8 @@ Resources:
     PhotoCompTable:
         Type: AWS::DynamoDB::Table
         Properties:
-            TableName: PhotoCompTable
+            # Use dynamic table name with environment to make it unique
+            TableName: !Sub "${ApplicationName}-${Environment}-Table"
             BillingMode: PAY_PER_REQUEST
             AttributeDefinitions:
                 - AttributeName: PK
@@ -66,3 +67,4 @@ Resources:
                   Value: !Ref ApplicationName
                 - Key: Environment
                   Value: !Ref Environment
+                  

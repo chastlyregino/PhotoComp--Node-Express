@@ -72,6 +72,7 @@ Authorization: Bearer your-jwt-token
 | GSI2PK      | string | Event ID (`EVENT#<ID>`) |
 | GSI2SK      | string | User ID (`USER#<ID>`) |
 
+<<<<<<< HEAD
 ### Organization Membership Request Model
 
 | Property       | Type                                  | Description |
@@ -87,6 +88,22 @@ Authorization: Bearer your-jwt-token
 | GSI1PK       | string                              | GSI partition key for user lookups: `REQUEST#` |
 | GSI1SK       | string                              | GSI sort key for user lookups: `ORG#<NAME>` |
 
+=======
+### **Photo Model**
+| Property     | Type    | Description |
+|-------------|--------|-------------|
+| PK          | string | Primary key: `PHOTO#<ID>` |
+| SK          | string | Static value: `"ENTITY"` |
+| id          | string | Unique identifier for the photo |
+| eventId     | string | ID of the event the photo belongs to |
+| url         | string | Pre-signed URL for accessing the photo |
+| createdAt   | string | Timestamp when the photo was uploaded (ISO 8601) |
+| updatedAt   | string | Timestamp when the photo was last updated (ISO 8601) |
+| uploadedBy  | string | User ID of the uploader |
+| metadata    | object | Optional metadata (title, description, size, etc.) |
+| GSI2PK      | string | Event ID (`EVENT#<ID>`) |
+| GSI2SK      | string | Photo ID (`PHOTO#<ID>`) |
+>>>>>>> f97e747 (readme)
 
 ## API Overview
 
@@ -97,6 +114,7 @@ Authorization: Bearer your-jwt-token
 | GET | /guests | Get public organizations |
 | GET | /guests/organizations/:id/events | Get public organizations events|
 | GET | /organizations | Get all organizations for the authenticated user |
+<<<<<<< HEAD
 | POST | /organizations | Create a new organization |
 | GET | /organizations/:id/events | Get organizations events|
 | POST | /organizations/:id/events | Create a new organization event|
@@ -105,6 +123,11 @@ Authorization: Bearer your-jwt-token
 | PUT | /organizations/:id/requests/:userId | Approve a membership request |
 | DELETE | /organizations/:id/requests/:userId | Deny a membership request |
 
+=======
+| POST | /organizations/:id/events/:eventId/photos | Upload a photo to an event |
+| GET | /organizations/:id/events/:eventId/photos | Get all photos for an event |
+| DELETE | /organizations/:id/events/:eventId/photos/:photoId | Delete a photo |
+>>>>>>> f97e747 (readme)
 
 ## 1. Authentication Endpoints
 
@@ -742,6 +765,218 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 }
 ```
 
+# 4. Photo Management
+
+### 4.1. Upload a Photo
+
+`POST /organizations/:id/events/:eventId/photos`
+
+This endpoint allows organization admins to upload photos to an event.
+
+#### **Request Headers**
+| Key           | Value            | Required |
+|--------------|----------------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+| Content-Type  | `multipart/form-data` |  Yes  |
+
+#### **Request Body**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| photo | file | Yes | The photo file to upload (image files only) |
+| title | string | No | Title for the photo |
+| description | string | No | Description of the photo |
+
+#### **Response**
+**201 Created**
+```json
+{
+  "status": "success",
+  "data": {
+    "photo": {
+      "PK": "PHOTO#12345",
+      "SK": "ENTITY",
+      "id": "12345",
+      "eventId": "event-id",
+      "url": "https://presigned-url.amazonaws.com/photos/event-id/12345.jpg",
+      "createdAt": "2025-04-05T14:30:00Z",
+      "updatedAt": "2025-04-05T14:30:00Z",
+      "uploadedBy": "user-id",
+      "metadata": {
+        "title": "Company Picnic",
+        "description": "Team building activities",
+        "size": 1024000,
+        "mimeType": "image/jpeg",
+        "s3Key": "photos/event-id/12345.jpg"
+      },
+      "GSI2PK": "EVENT#event-id",
+      "GSI2SK": "PHOTO#12345"
+    }
+  }
+}
+```
+
+**400 Bad Request**
+```json
+{
+  "status": "error",
+  "message": "No photo file uploaded"
+}
+```
+
+```json
+{
+  "status": "error",
+  "message": "File size limit exceeded. Maximum size is 5MB"
+}
+```
+
+```json
+{
+  "status": "error",
+  "message": "Only image files are allowed"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Event not found: event-id"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to upload photo: S3 upload failed"
+}
+```
+
+### 4.2. Get Event Photos
+
+`GET /organizations/:id/events/:eventId/photos`
+
+This endpoint retrieves all photos for a specific event.
+
+#### **Request Headers**
+| Key           | Value            | Required |
+|--------------|----------------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+
+#### **Response**
+**200 OK**
+```json
+{
+  "status": "success",
+  "data": {
+    "photos": [
+      {
+        "PK": "PHOTO#12345",
+        "SK": "ENTITY",
+        "id": "12345",
+        "eventId": "event-id",
+        "url": "https://presigned-url.amazonaws.com/photos/event-id/12345.jpg",
+        "createdAt": "2025-04-05T14:30:00Z",
+        "updatedAt": "2025-04-05T14:30:00Z",
+        "uploadedBy": "user-id",
+        "metadata": {
+          "title": "Company Picnic",
+          "description": "Team building activities",
+          "s3Key": "photos/event-id/12345.jpg"
+        },
+        "GSI2PK": "EVENT#event-id",
+        "GSI2SK": "PHOTO#12345"
+      },
+      {
+        "PK": "PHOTO#67890",
+        "SK": "ENTITY",
+        "id": "67890",
+        "eventId": "event-id",
+        "url": "https://presigned-url.amazonaws.com/photos/event-id/67890.jpg",
+        "createdAt": "2025-04-05T15:15:00Z",
+        "updatedAt": "2025-04-05T15:15:00Z",
+        "uploadedBy": "user-id",
+        "metadata": {
+          "title": "Award Ceremony",
+          "description": "Annual awards presentation",
+          "s3Key": "photos/event-id/67890.jpg"
+        },
+        "GSI2PK": "EVENT#event-id",
+        "GSI2SK": "PHOTO#67890"
+      }
+    ]
+  }
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Event not found: event-id"
+}
+```
+
+### 4.3. Delete a Photo
+
+`DELETE /organizations/:id/events/:eventId/photos/:photoId`
+
+This endpoint allows organization admins to delete a photo from an event.
+
+#### **Request Headers**
+| Key           | Value            | Required |
+|--------------|----------------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+
+#### **Response**
+**200 OK**
+```json
+{
+  "status": "success",
+  "message": "Photo deleted successfully"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Photo not found: photo-id"
+}
+```
+
+```json
+{
+  "status": "error",
+  "message": "Photo does not belong to the specified event"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to delete photo: S3 deletion failed"
+}
+```
+
 ## Guest Router
 
 ### Get Public Organizations
@@ -845,10 +1080,11 @@ The system uses a single-table design in DynamoDB with the following structure:
 
 | Component | Description |
 |-----------|-------------|
-| PK | Primary partition key in format [USER: USER#{id}; ORG: ORG#{NAME}; USER-ORG: USER#{id}]  |
-| SK | Primary sort key in format [USER/ORG: ENTITY; USER-ORG: ORG#{NAME}] |
+| PK | Primary partition key in format [USER: USER#{id}; ORG: ORG#{NAME}; EVENT: EVENT#{id}; PHOTO: PHOTO#{id}] |
+| SK | Primary sort key in format [USER/ORG/EVENT/PHOTO: ENTITY; USER-ORG: ORG#{NAME}; USER-EVENT: EVENT#{id}] |
 | GSI1PK | Global Secondary Index partition key in format [USER: EMAIL#{email}; ORG: USER#{id}] |
 | GSI1SK | Global Secondary Index sort key in format [USER: USER#{id}; ORG: ORG#{NAME}] |
+<<<<<<< HEAD
 | type | Item type identifier used for filtering (e.g., "USER", "ORGANIZATION", "USER_ORG") |
 
 ## Security Considerations
@@ -1123,3 +1359,8 @@ Deny a user's request to join an organization (admin only).
   "message": "Membership request not found"
 }
 ```
+=======
+| GSI2PK | Second Global Secondary Index partition key in format [EVENT: ORG#{name}; PHOTO: EVENT#{id}] |
+| GSI2SK | Second Global Secondary Index sort key in format [EVENT: EVENT#{id}; PHOTO: PHOTO#{id}] |
+| type | Item type identifier used for filtering (e.g., "USER", "ORGANIZATION", "USER_ORG", "EVENT", "PHOTO")
+>>>>>>> f97e747 (readme)
