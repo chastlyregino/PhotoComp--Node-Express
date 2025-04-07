@@ -126,15 +126,21 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /guests/organizations/:id/events | Get public organizations events|
 | GET | /organizations | Get all organizations for the authenticated user |
 | POST | /organizations | Create a new organization |
-| GET | /organizations/:id/events | Get organizations events|
-| POST | /organizations/:id/events | Create a new organization event|
 | POST | /organizations/:id | Apply to join an organization with events |
 | GET | /organizations/:id/requests | Get all pending membership requests |
 | PUT | /organizations/:id/requests/:userId | Approve a membership request |
 | DELETE | /organizations/:id/requests/:userId | Deny a membership request |
-| POST | /organizations/:id/events/:eventId/photos | Upload a photo to an event |
+| GET | /organizations/:id/members | Get organization members |
+| PUT | /organizations/:id/members/:userID | Update organization member |
+| DELETE | /organizations/:id/members/:userID | Remove organization member |
+| GET | /organizations/:id/events | Get organizations events|
+| POST | /organizations/:id/events | Create a new organization event|
+| POST | /organizations/:id/events/:eventId | Attend an event |
+| DELETE | /organizations/:id/events/:eventId | Leave an event |
 | GET | /organizations/:id/events/:eventId/photos | Get all photos for an event |
+| POST | /organizations/:id/events/:eventId/photos | Upload a photo to an event |
 | DELETE | /organizations/:id/events/:eventId/photos/:photoId | Delete a photo |
+
 
 ## 1. Authentication Endpoints
 
@@ -1285,3 +1291,354 @@ The JWT token contains the following payload:
 - Passwords must be at least 8 characters long
 - logoUrl must be a valid URL can perform this action. Please talk to your Admin for more information"
 `
+
+
+## 7. Organization Members Endpoints
+
+### 7.1 Get Organization Members
+
+`GET /organizations/:id/members`
+
+This endpoint allows organization admins to retrieve all members of an organization.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Response
+
+**200 OK**
+```json
+{
+  "status": "success",
+  "data": {
+    "members": [
+      {
+        "PK": "USER#userId",
+        "SK": "ORG#ORGNAME",
+        "userId": "userId",
+        "organizationName": "OrgName",
+        "role": "ADMIN",
+        "joinedAt": "2025-04-01T12:34:56.789Z",
+        "type": "USER_ORG",
+        "GSI1PK": "ORG#ORGNAME",
+        "GSI1SK": "USER#userId",
+        "userDetails": {
+          "id": "userId",
+          "email": "user@example.com",
+          "firstName": "John",
+          "lastName": "Doe"
+        }
+      },
+      {
+        "PK": "USER#userId2",
+        "SK": "ORG#ORGNAME",
+        "userId": "userId2",
+        "organizationName": "OrgName",
+        "role": "MEMBER",
+        "joinedAt": "2025-04-02T12:34:56.789Z",
+        "type": "USER_ORG",
+        "GSI1PK": "ORG#ORGNAME",
+        "GSI1SK": "USER#userId2",
+        "userDetails": {
+          "id": "userId2",
+          "email": "user2@example.com",
+          "firstName": "Jane",
+          "lastName": "Smith"
+        }
+      }
+    ]
+  }
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Organization not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to retrieve organization members"
+}
+```
+
+### 7.2 Update Organization Member Role
+
+`PATCH /organizations/:id/members/:userId`
+
+This endpoint allows organization admins to update a member's role within the organization.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+| Content-Type | application/json | Yes |
+
+#### Request Body
+
+```json
+{
+  "role": "ADMIN"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| role | string | Yes | New role for the member (must be "ADMIN" or "MEMBER") |
+
+#### Response
+
+**200 OK**
+```json
+{
+  "status": "success",
+  "message": "Member role updated successfully",
+  "data": {
+    "member": {
+      "PK": "USER#userId",
+      "SK": "ORG#ORGNAME",
+      "userId": "userId",
+      "organizationName": "OrgName",
+      "role": "ADMIN",
+      "joinedAt": "2025-04-01T12:34:56.789Z",
+      "type": "USER_ORG",
+      "GSI1PK": "ORG#ORGNAME",
+      "GSI1SK": "USER#userId"
+    }
+  }
+}
+```
+
+**400 Bad Request**
+```json
+{
+  "status": "error",
+  "message": "Role must be either ADMIN or MEMBER"
+}
+```
+
+```json
+{
+  "status": "error",
+  "message": "Administrators cannot change their own role"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Member or organization not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to update member role"
+}
+```
+
+### 7.3 Remove Organization Member
+
+`DELETE /organizations/:id/members/:userId`
+
+This endpoint allows organization admins to remove a member from the organization.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Response
+
+**200 OK**
+```json
+{
+  "status": "success",
+  "message": "Member removed successfully"
+}
+```
+
+**400 Bad Request**
+```json
+{
+  "status": "error",
+  "message": "Administrators cannot remove themselves from the organization"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Member or organization not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to remove member from organization"
+}
+```
+## 8. Event Attendance Endpoints
+
+### 8.1 Create Attendance Record
+
+`POST /organizations/:id/events/:eid`
+
+This endpoint allows organization members to create an attendance record for an event.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Response
+
+**201 Created**
+```json
+{
+  "status": "success",
+  "data": {
+    "userEvent": {
+      "PK": "USER#userId",
+      "SK": "EVENT#eventId",
+      "GSI2PK": "EVENT#eventId",
+      "GSI2SK": "USER#userId"
+    }
+  }
+}
+```
+
+**401 Unauthorized**
+```json
+{
+  "status": "error",
+  "message": "Authentication required"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "You are not a member of this organization"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Event not found"
+}
+```
+
+**409 Conflict**
+```json
+{
+  "status": "error",
+  "message": "You are already registered for this event"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to create attendance record"
+}
+```
+
+### 8.2 Remove Attendance Record
+
+`DELETE /organizations/:id/events/:eid`
+
+This endpoint allows organization members to remove their attendance record from an event.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Response
+
+**200 OK** (Note: The implementation returns 201, but 200 would be more appropriate for this operation)
+```json
+{
+  "status": "success",
+  "message": "Attendance removed successfully"
+}
+```
+
+**401 Unauthorized**
+```json
+{
+  "status": "error",
+  "message": "Authentication required"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "You are not a member of this organization"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Event not found or you are not registered for this event"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to remove attendance record"
+}
+```
