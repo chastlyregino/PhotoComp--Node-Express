@@ -78,26 +78,24 @@ export class PhotoRepository {
         }
     }
 
-        /**
-     * Deletes a photo from the database
-     * @param photoId The ID of the photo to delete
-     * @throws AppError if the operation fails
-     */
-        async deletePhoto(photoId: string): Promise<void> {
-            try {
-                await dynamoDb.send(
-                    new DeleteCommand({
-                        TableName: TABLE_NAME,
-                        Key: {
-                            PK: `PHOTO#${photoId}`,
-                            SK: 'ENTITY',
-                        },
-                    })
-                );
-            } catch (error: any) {
-                throw new AppError(`Failed to delete photo: ${error.message}`, 500);
-            }
+    /**
+ * Deletes a photo from the database
+ * @param photoId The ID of the photo to delete
+ * @throws AppError if the operation fails
+ */
+    async deletePhoto(photoId: string): Promise<void> {
+        try {
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `PHOTO#${photoId}`,
+                        SK: 'ENTITY',
+                    },
+                })
+            );
+        } catch (error: any) {
+            throw new AppError(`Failed to delete photo: ${error.message}`, 500);
         }
     }
-
 }
