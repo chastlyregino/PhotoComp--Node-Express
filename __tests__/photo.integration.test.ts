@@ -74,6 +74,7 @@ import jwt from 'jsonwebtoken';
 import { UserRole } from '../src/models/User';
 import { photoRouter } from '../src/controllers/photoController';
 import { setupTestEnvironment } from './utils/test-utils';
+import { errorHandler } from '../src/middleware/errorHandler';
 
 // Cast mocks for type safety
 const mockDynamoSend = dynamoDb.send as jest.Mock;
@@ -132,6 +133,7 @@ describe('Photo Controller Integration Tests', () => {
         app = express();
         app.use(express.json());
         app.use(express.urlencoded({ extended: true }));
+        app.use(errorHandler);
 
         // Mock middleware for authentication
         app.use((req, res, next) => {

@@ -41,6 +41,7 @@ export class PhotoService {
             description?: string;
             size?: number;
             mimeType?: string;
+            s3Key?: string;
         }
     ): Promise<Photo> {
         try {
@@ -58,14 +59,14 @@ export class PhotoService {
             await this.s3Service.uploadFileBuffer(fileBuffer, s3Key, mimeType);
             
             // Add S3 key to metadata
-            if (!metadata) metadata = {};
-            metadata.s3Key = s3Key;
+            const updatedMetadata = metadata || {};
+            updatedMetadata.s3Key = s3Key;
 
             // Generate a pre-signed URL for accessing the photo
             const photoUrl = await this.s3Service.getLogoPreSignedUrl(s3Key);
 
             // Create and save the photo record
-            const photo = createPhoto(photoId, eventId, photoUrl, uploadedBy, metadata);
+            const photo = createPhoto(photoId, eventId, photoUrl, uploadedBy, updatedMetadata);
             await this.photoRepository.createPhoto(photo);
 
             return photo;
@@ -97,13 +98,19 @@ export class PhotoService {
             // Refresh pre-signed URLs for all photos
             for (const photo of photos) {
                 try {
-                    // Extract the S3 key from the URL - this depends on your URL format
-                    // This is a simplified approach; you might need to adjust based on your URL structure
-                    const urlParts = new URL(photo.url);
-                    const s3Key = urlParts.pathname.substring(1); // Remove leading slash
-                    
-                    // Generate a fresh pre-signed URL
-                    photo.url = await this.s3Service.getLogoPreSignedUrl(s3Key);
+                    if (photo.metadata?.s3Key) {
+                        // If we have the S3 key stored directly, use it
+                        photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
+                    } else {
+                        // Otherwise, try to extract it from the URL
+                        try {
+                            const urlParts = new URL(photo.url);
+                            const s3Key = urlParts.pathname.substring(1); // Remove leading slash
+                            photo.url = await this.s3Service.getLogoPreSignedUrl(s3Key);
+                        } catch (error) {
+                            logger.error(`Error refreshing pre-signed URL for photo ${photo.id}:`, error);
+                        }
+                    }
                 } catch (error) {
                     logger.error(`Error refreshing pre-signed URL for photo ${photo.id}:`, error);
                     // Continue processing other photos even if one fails
@@ -141,30 +148,30 @@ export class PhotoService {
             // Delete the photo from the database
             await this.photoRepository.deletePhoto(photoId);
             
-                            // If we have the S3 key stored directly, use it
-                // Otherwise, extract it from the URL
-                const s3Key = photo.metadata?.s3Key || (() => {
-                    try {
-                        const urlParts = new URL(photo.url);
-                        return urlParts.pathname.substring(1); // Remove leading slash
-                    } catch (error) {
-                        logger.error(`Error parsing photo URL: ${photo.url}`, error);
-                        return null;
-                    }
-                })();
-                
-                if (s3Key) {
-                    // Delete the file from S3
-                    try {
-                        await this.s3Service.deleteFile(s3Key);
-                        logger.info(`Deleted photo file from S3: ${s3Key}`);
-                    } catch (error) {
-                        logger.error(`Error deleting photo file from S3: ${error}`);
-                        // Continue with database deletion even if S3 deletion fails
-                    }
-                } else {
-                    logger.warn(`Could not determine S3 key for photo: ${photoId}`);
+            // If we have the S3 key stored directly, use it
+            // Otherwise, extract it from the URL
+            const s3Key = photo.metadata?.s3Key || (() => {
+                try {
+                    const urlParts = new URL(photo.url);
+                    return urlParts.pathname.substring(1); // Remove leading slash
+                } catch (error) {
+                    logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                    return null;
                 }
+            })();
+            
+            if (s3Key) {
+                // Delete the file from S3
+                try {
+                    await this.s3Service.deleteFile(s3Key);
+                    logger.info(`Deleted photo file from S3: ${s3Key}`);
+                } catch (error) {
+                    logger.error(`Error deleting photo file from S3: ${error}`);
+                    // Continue with database deletion even if S3 deletion fails
+                }
+            } else {
+                logger.warn(`Could not determine S3 key for photo: ${photoId}`);
+            }
             
         } catch (error) {
             logger.error('Error deleting photo:', error);
