@@ -9,7 +9,6 @@ import { UserOrganizationRelationship } from '@/models/Organizations';
  */
 export class EventService {
     private eventRepository: EventRepository;
-    private orgService = new OrgService();
 
     /**
      * Initializes the EventService with an optional EventRepository instance.
