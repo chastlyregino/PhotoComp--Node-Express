@@ -14,7 +14,8 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["src/*"]
-        }
+        },
+        "isolatedModules": true
     },
     "include": ["src/**/*", "__tests__/**/*", "setupTests.ts"],
     "exclude": ["node_modules"]
