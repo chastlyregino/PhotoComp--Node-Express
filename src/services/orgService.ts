@@ -40,6 +40,10 @@ export class OrgService {
         return true;
     }
 
+    validateUserOrgMember(userOrg: UserOrganizationRelationship): boolean {
+        return userOrg?.role != null;
+    }
+
     async createOrg(
         createOrg: OrganizationCreateRequest,
         userId: string

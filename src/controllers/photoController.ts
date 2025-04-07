@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-import { checkOrgAdmin } from '../middleware/orgMiddleware';
+import { checkOrgAdmin, checkOrgMember } from '../middleware/orgMiddleware';
 import { validateUserID } from './orgController';
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
@@ -71,6 +71,7 @@ photoRouter.post(
 photoRouter.get(
     '/:id/events/:eventId/photos',
     validateUserID,
+    checkOrgMember,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;
