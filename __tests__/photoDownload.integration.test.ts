@@ -175,13 +175,18 @@ jest.mock('../src/repositories/photoRepository', () => {
     };
 });
 
-// Mock the PhotoService
+// Create a flexible mock for the validateUserEventAccess method
+// This allows us to directly control its behavior in tests
+const mockValidateUserEventAccess = jest.fn().mockResolvedValue(true);
+const mockGetPhotoDownloadUrl = jest.fn().mockResolvedValue('https://download-url.example.com/photo.jpg');
+
+// Mock the PhotoService - using our flexible mocks
 jest.mock('../src/services/photoService', () => {
     return {
         PhotoService: jest.fn().mockImplementation(() => {
             return {
-                validateUserEventAccess: jest.fn().mockResolvedValue(true),
-                getPhotoDownloadUrl: jest.fn().mockResolvedValue('https://download-url.example.com/photo.jpg')
+                validateUserEventAccess: mockValidateUserEventAccess,
+                getPhotoDownloadUrl: mockGetPhotoDownloadUrl
             };
         })
     };
@@ -210,33 +215,9 @@ describe('Photo Download Integration Tests', () => {
         // Reset all mocks
         jest.clearAllMocks();
 
-        // Reset flexible mocks to their default behavior
-        mockFindEventUserbyUser = jest.fn().mockResolvedValue({
-            PK: 'USER#test-user-id',
-            SK: 'EVENT#test-event-id',
-            GSI2PK: 'EVENT#test-event-id',
-            GSI2SK: 'USER#test-user-id'
-        });
-        
-        mockGetPhotoById = jest.fn().mockImplementation((photoId) => {
-            return Promise.resolve({
-                id: photoId,
-                PK: `PHOTO#${photoId}`,
-                SK: 'ENTITY',
-                eventId: 'test-event-id',
-                url: 'https://presigned-url.example.com/photo.jpg',
-                uploadedBy: 'test-user-id',
-                createdAt: '2023-01-01T00:00:00.000Z',
-                updatedAt: '2023-01-01T00:00:00.000Z',
-                metadata: {
-                    title: 'Test Photo',
-                    description: 'Test Photo Description',
-                    s3Key: `photos/test-event-id/${photoId}.jpg`
-                },
-                GSI2PK: `EVENT#test-event-id`,
-                GSI2SK: `PHOTO#${photoId}`
-            });
-        });
+        // Reset our flexible mocks to default values
+        mockValidateUserEventAccess.mockClear().mockResolvedValue(true);
+        mockGetPhotoDownloadUrl.mockClear().mockResolvedValue('https://download-url.example.com/photo.jpg');
 
         // Create a fresh Express app for each test
         app = express();
@@ -276,6 +257,8 @@ describe('Photo Download Integration Tests', () => {
 
     describe('GET /:id/events/:eventId/photos/:photoId/download', () => {
         it('should return a download URL when user has access to the event', async () => {
+            // Default mock behavior is already set to return true for access
+
             const response = await request(app)
                 .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
                 .expect(200);
@@ -284,15 +267,14 @@ describe('Photo Download Integration Tests', () => {
             expect(response.body.status).toBe('success');
             expect(response.body.data.downloadUrl).toBeDefined();
             expect(response.body.data.downloadUrl).toBe('https://download-url.example.com/photo.jpg');
+
+            // Verify our mock was called
+            expect(mockValidateUserEventAccess).toHaveBeenCalledWith(testEventId, testUserId);
         });
 
         it('should return 403 when user does not have access to the event', async () => {
-            // Override the mock to return false (user not having access)
-            const mockPhotoService = require('../src/services/photoService').PhotoService;
-            mockPhotoService.mockImplementationOnce(() => ({
-                validateUserEventAccess: jest.fn().mockResolvedValue(false),
-                getPhotoDownloadUrl: jest.fn()
-            }));
+            // Set our mock to return false for this test
+            mockValidateUserEventAccess.mockResolvedValue(false);
 
             const response = await request(app)
                 .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
@@ -301,6 +283,12 @@ describe('Photo Download Integration Tests', () => {
             // Verify error response
             expect(response.body.status).toBe('error');
             expect(response.body.message).toBe('You do not have access to photos from this event');
+
+            // Verify our mock was called
+            expect(mockValidateUserEventAccess).toHaveBeenCalledWith(testEventId, testUserId);
+
+            // The download URL function should not be called
+            expect(mockGetPhotoDownloadUrl).not.toHaveBeenCalled();
         });
     });
 });
