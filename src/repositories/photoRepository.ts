@@ -72,7 +72,8 @@ export class PhotoRepository {
                 })
             );
 
-            return response.Items as Photo[];
+            // Ensure we always return an array, even if Items is undefined
+            return (response.Items || []) as Photo[];
         } catch (error: any) {
             throw new AppError(`Failed to retrieve event photos: ${error.message}`, 500);
         }

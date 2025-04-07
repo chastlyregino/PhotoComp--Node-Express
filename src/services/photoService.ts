@@ -80,10 +80,10 @@ export class PhotoService {
     }
 
     /**
-     * Get all photos for an event
-     * @param eventId The event ID to get photos for
-     * @returns Array of photos for the event
-     */
+  * Get all photos for an event
+  * @param eventId The event ID to get photos for
+  * @returns Array of photos for the event
+  */
     async getEventPhotos(eventId: string): Promise<Photo[]> {
         try {
             // Verify that the event exists
@@ -92,38 +92,45 @@ export class PhotoService {
                 throw new AppError(`Event not found: ${eventId}`, 404);
             }
 
-            // Get all photos for the event
-            const photos = await this.photoRepository.getPhotosByEvent(eventId);
+            // Get all photos for the event with better error handling
+            try {
+                const photos = await this.photoRepository.getPhotosByEvent(eventId);
 
-            // Ensure photos is an array
-            if (!Array.isArray(photos)) {
-                logger.warn(`Expected photos to be an array, but got: ${typeof photos}`);
+                // Ensure photos is an array
+                if (!Array.isArray(photos)) {
+                    logger.warn(`Expected photos to be an array, but got: ${typeof photos}`);
+                    return [];
+                }
+
+                // Refresh pre-signed URLs for all photos
+                for (const photo of photos) {
+                    try {
+                        if (photo?.metadata?.s3Key) {
+                            // If we have the S3 key stored directly, use it
+                            photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
+                        } else if (photo?.url) {
+                            // Otherwise, try to extract it from the URL
+                            try {
+                                const urlParts = new URL(photo.url);
+                                const s3Key = urlParts.pathname.substring(1); // Remove leading slash
+                                photo.url = await this.s3Service.getLogoPreSignedUrl(s3Key);
+                            } catch (error) {
+                                logger.error(`Error refreshing pre-signed URL for photo: ${error}`);
+                                // Keep original URL if parsing fails
+                            }
+                        }
+                    } catch (error) {
+                        logger.error(`Error refreshing pre-signed URL: ${error}`);
+                        // Continue processing other photos even if one fails
+                    }
+                }
+
+                return photos;
+            } catch (error) {
+                logger.error(`Error in photoRepository.getPhotosByEvent: ${error}`);
+                // Return empty array on repository error to prevent controller failure
                 return [];
             }
-
-            // Refresh pre-signed URLs for all photos
-            for (const photo of photos) {
-                try {
-                    if (photo.metadata?.s3Key) {
-                        // If we have the S3 key stored directly, use it
-                        photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
-                    } else {
-                        // Otherwise, try to extract it from the URL
-                        try {
-                            const urlParts = new URL(photo.url);
-                            const s3Key = urlParts.pathname.substring(1); // Remove leading slash
-                            photo.url = await this.s3Service.getLogoPreSignedUrl(s3Key);
-                        } catch (error) {
-                            logger.error(`Error refreshing pre-signed URL for photo ${photo.id}:`, error);
-                        }
-                    }
-                } catch (error) {
-                    logger.error(`Error refreshing pre-signed URL for photo ${photo.id}:`, error);
-                    // Continue processing other photos even if one fails
-                }
-            }
-
-            return photos;
         } catch (error) {
             logger.error('Error getting event photos:', error);
             if (error instanceof AppError) {
@@ -132,7 +139,7 @@ export class PhotoService {
             throw new AppError(`Failed to get event photos: ${(error as Error).message}`, 500);
         }
     }
-
+    
     /**
      * Delete a photo
      * @param photoId The ID of the photo to delete
