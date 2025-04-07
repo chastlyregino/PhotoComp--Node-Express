@@ -66,6 +66,21 @@ export class EventService {
             throw new AppError(`Failed to create event: ${error.message}`, 500);
         }
     }
+    /**
+     * Removes a user from an event by removing an attendance record.
+     *
+     * @param userID - The ID of the user attending the event.
+     * @param eventID - The ID of the event the user is attending.
+     * @returns The deleted EventUser record.
+     * @throws {AppError} If the database operation fails.
+     */
+    async removeEventUser(userID: string, eventID: string): Promise<Boolean> {
+        try {
+            return await this.eventRepository.removeAttendingEventRecord(userID, eventID);
+        } catch (error: any) {
+            throw new AppError(`Failed to create event: ${error.message}`, 500);
+        }
+    }
 
     /**
      * Retrieves all events for a given organization
@@ -127,7 +142,7 @@ export class EventService {
                 throw new AppError(`No Event found!`, 400);
             }
 
-            console.log(event);
+            // console.log(event);
             return event as Event;
         } catch (error) {
             if (error instanceof AppError) {
@@ -154,7 +169,7 @@ export class EventService {
             if (updatedEvent === null) {
                 throw new AppError(`Updating Event's publicity failed!`, 500);
             }
-            console.log(updatedEvent);
+            // console.log(updatedEvent);
             return updatedEvent as Event;
         } catch (error) {
             if (error instanceof AppError) {

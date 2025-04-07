@@ -1,7 +1,7 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgMembershipService } from '../services/orgMembershipService';
 import { validateUserID } from './orgController';
-import { checkOrgAdmin } from '../middleware/orgMiddleware';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { OrganizationMembershipRequest } from '../models/Organizations';
 import { UserService } from '../services/userService';
 

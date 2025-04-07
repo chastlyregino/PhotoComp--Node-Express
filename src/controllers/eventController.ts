@@ -3,7 +3,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { EventRequest, Event, EventUser } from '../models/Event';
-import { checkOrgAdmin, checkOrgMember } from '../middleware/orgMiddleware';
+import { checkOrgAdmin, checkOrgMember } from '../middleware/OrgMiddleware';
 import { validateUserID } from './orgController';
 
 const eventService = new EventService();
@@ -57,7 +57,7 @@ eventRouter.get(
         return res.status(200).json({
             status: 'success',
             data: {
-                event: events,
+                events: events,
             },
         });
     } catch (error) {
@@ -89,7 +89,7 @@ eventRouter.patch('/:id/events/:eid', validateUserID, checkOrgAdmin, async (req:
 });
 
 /*
-  * Create an Attendance record for the events 
+  * Create an Attendance record for an event
   * POST /:id/events/:eid
   * */
 eventRouter.post(
@@ -112,3 +112,26 @@ eventRouter.post(
         next(error);
     }
 })
+
+/*
+  * Remove the Attendance record for an event 
+  * POST /:id/events/:eid
+  * */
+eventRouter.delete(
+  "/:id/events/:eid", 
+  checkOrgMember, 
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eventId: string = req.params.eid;
+        const member = res.locals.user as { id: string; email: string; role: string };
+
+        await eventService.removeEventUser(member.id, eventId);
+
+        return res.status(201).json({
+            status: 'success',
+             message: 'Attendance removed successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+});

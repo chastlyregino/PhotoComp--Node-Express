@@ -8,7 +8,7 @@ import {
     UserOrganizationRelationship,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
-import { checkOrgAdmin } from '../middleware/orgMiddleware';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 
 const userService = new UserService();
 const orgService = new OrgService();
@@ -25,6 +25,10 @@ export const validateUserID = async (req: Request, res: Response, next: NextFunc
     next();
 };
 
+/*
+  * Get all orgs that a User is a part of 
+  * GET /organizations
+  * */
 orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = res.locals.user.info;
@@ -41,6 +45,10 @@ orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: Nex
     }
 });
 
+/*
+  * Create a new organization, and make the creator an Admin
+  * POST /organizations
+  * */
 orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
@@ -79,6 +87,10 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
     }
 });
 
+/*
+  * Update an organization's information
+  * POST /organizations
+  * */
 orgRouter.patch(`/`, validateUserID, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl, description, website, contactEmail } = req.body;
@@ -109,57 +121,3 @@ orgRouter.patch(`/`, validateUserID, checkOrgAdmin, async (req: Request, res: Re
     }
 });
 
-// members Route
-// orgRouter.get(`/members`, async (req: Request, res: Response) => {
-//   const members = req.body; //update with getMembers
-
-//   if (members) {
-//     res.status(200).json({ message: `Org Members!`, orgMembers: members });
-//   } else {
-//     res.status(400).json({ message: `No members found!` });
-//   }
-// });
-
-// orgRouter.post(`/members`, async (req: Request, res: Response) => {
-//   const member = req.body; //update with updateMemberStatus()
-
-//   if (member) {
-//     res.status(201).json({ message: `Member status updated!`, orgMember: member });
-//   } else {
-//     res.status(400).json({ message: `Failed to update member status!` });
-//   }
-// });
-
-// orgRouter.delete(`/members`, async (req: Request, res: Response) => {
-//   const members = req.body; //update with getMembers
-
-//   if (members) {
-//     const member = members; // update with .getMember
-//     if (member) {
-//       res.status(200).json({ message: `Member deleted!`, orgMember: req.body });
-//     } else {
-//       res.status(400).json({ message: `No member found!` });
-//     }
-//   } else {
-//     res.status(400).json({ message: `No members found!` });
-//   }
-// });
-
-// orgRouter.patch(`/members`, async (req: Request, res: Response) => {
-//   const members = req.body; //update with getMembers
-
-//   if (members) {
-//     const member = members; // update with .getMember
-//     if (member) {
-//       const updatedMember = member; // update with .updateMemberRole()
-//       if (updatedMember) {
-//         res.status(200).json({ message: `Member role updated!`, orgMember: req.body });
-//       }
-//       res.status(400).json({ message: `Failed to  update Member role!` });
-//     } else {
-//       res.status(400).json({ message: `No member found!` });
-//     }
-//   } else {
-//     res.status(400).json({ message: `No members found!` });
-//   }
-// });
