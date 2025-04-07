@@ -84,6 +84,17 @@ export class S3Service {
     }
 
     /**
+     * Gets a pre-signed URL for downloading a file from S3
+     * @param s3Key The S3 key of the file
+     * @param filename The suggested filename for the download
+     * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
+     * @returns The pre-signed URL with content-disposition header set
+     */
+    async getDownloadUrl(s3Key: string, filename: string, expiresIn: number = 3600): Promise<string> {
+        return this.s3Repository.getDownloadPreSignedUrl(s3Key, filename, expiresIn);
+    }
+
+    /**
      * Deletes a file from S3
      * @param s3Key The S3 key of the file to delete
      */

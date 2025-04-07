@@ -91,6 +91,41 @@ photoRouter.get(
 );
 
 /**
+ * Get a download URL for a specific photo
+ * GET /:id/events/:eventId/photos/:photoId/download
+ */
+photoRouter.get(
+    '/:id/events/:eventId/photos/:photoId/download',
+    validateUserID,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const eventId = req.params.eventId;
+            const photoId = req.params.photoId;
+            const user = res.locals.user.info;
+            
+            // Check if user has access to the event (is a member or admin)
+            const canAccess = await photoService.validateUserEventAccess(eventId, user.id);
+            
+            if (!canAccess) {
+                throw new AppError('You do not have access to photos from this event', 403);
+            }
+            
+            // Generate download URL
+            const downloadUrl = await photoService.getPhotoDownloadUrl(photoId, eventId);
+            
+            return res.status(200).json({
+                status: 'success',
+                data: {
+                    downloadUrl,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
  * Delete a photo
  * DELETE /:id/events/:eventId/photos/:photoId
  */

@@ -4,20 +4,24 @@ import { Photo, createPhoto } from '../models/Photo';
 import { AppError } from '../middleware/errorHandler';
 import { EventService } from './eventService';
 import { logger } from '../util/logger';
+import { EventRepository } from '../repositories/eventRepository';
 
 export class PhotoService {
     private photoRepository: PhotoRepository;
     private s3Service: S3Service;
     private eventService: EventService;
+    private eventRepository: EventRepository;
 
     constructor(
         photoRepository: PhotoRepository = new PhotoRepository(),
         s3Service: S3Service = new S3Service(),
-        eventService: EventService = new EventService()
+        eventService: EventService = new EventService(),
+        eventRepository: EventRepository = new EventRepository()
     ) {
         this.photoRepository = photoRepository;
         this.s3Service = s3Service;
         this.eventService = eventService;
+        this.eventRepository = eventRepository;
     }
 
     /**
@@ -80,10 +84,10 @@ export class PhotoService {
     }
 
     /**
-  * Get all photos for an event
-  * @param eventId The event ID to get photos for
-  * @returns Array of photos for the event
-  */
+     * Get all photos for an event
+     * @param eventId The event ID to get photos for
+     * @returns Array of photos for the event
+     */
     async getEventPhotos(eventId: string): Promise<Photo[]> {
         try {
             // Verify that the event exists
@@ -193,5 +197,89 @@ export class PhotoService {
             }
             throw new AppError(`Failed to delete photo: ${(error as Error).message}`, 500);
         }
+    }
+
+    /**
+     * Validates if a user has access to an event (either as an admin or attendee)
+     * @param eventId The ID of the event
+     * @param userId The ID of the user
+     * @returns Boolean indicating if the user has access
+     */
+    async validateUserEventAccess(eventId: string, userId: string): Promise<boolean> {
+        try {
+            // Check if user is attending the event
+            const eventUser = await this.eventRepository.findEventUserbyUser(eventId, userId);
+            
+            // If user is found as an attendee, they have access
+            if (eventUser) {
+                return true;
+            }
+            
+            // Otherwise, return false
+            return false;
+        } catch (error) {
+            logger.error(`Error validating user event access: ${error}`);
+            // In case of error, deny access by default for security
+            return false;
+        }
+    }
+
+    /**
+     * Gets a download URL for a specific photo
+     * @param photoId The ID of the photo to download
+     * @param eventId The ID of the event (for validation)
+     * @returns A pre-signed URL for downloading the photo
+     */
+    async getPhotoDownloadUrl(photoId: string, eventId: string): Promise<string> {
+        try {
+            // Get the photo to verify it exists and belongs to the right event
+            const photo = await this.photoRepository.getPhotoById(photoId);
+
+            if (!photo) {
+                throw new AppError(`Photo not found: ${photoId}`, 404);
+            }
+
+            if (photo.eventId !== eventId) {
+                throw new AppError('Photo does not belong to the specified event', 400);
+            }
+
+            // Get the S3 key from the photo metadata
+            const s3Key = photo.metadata?.s3Key;
+            
+            if (!s3Key) {
+                throw new AppError('Photo S3 key not found', 500);
+            }
+
+            // Generate download-specific presigned URL with proper filename
+            // Set content-disposition header to suggest filename for download
+            const filename = this.generateDownloadFilename(photo);
+            const downloadUrl = await this.s3Service.getDownloadUrl(s3Key, filename);
+            
+            return downloadUrl;
+        } catch (error) {
+            logger.error('Error generating photo download URL:', error);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to generate photo download URL: ${(error as Error).message}`, 500);
+        }
+    }
+    
+    /**
+     * Generates a user-friendly filename for downloading
+     * @param photo The photo object
+     * @returns A sanitized filename
+     */
+    private generateDownloadFilename(photo: Photo): string {
+        // Use photo title if available, otherwise use photo ID
+        let baseName = photo.metadata?.title || `photo-${photo.id}`;
+        
+        // Sanitize filename - replace any characters that might cause issues
+        baseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        
+        // Get extension from S3 key or use jpg as fallback
+        const extension = photo.metadata?.s3Key?.split('.').pop() || 'jpg';
+        
+        return `${baseName}.${extension}`;
     }
 }
