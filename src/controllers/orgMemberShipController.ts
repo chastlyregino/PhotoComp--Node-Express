@@ -1,10 +1,6 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgMembershipService } from '../services/orgMembershipService';
-<<<<<<< HEAD
-import { checkOrgAdmin } from '../middleware/OrgMiddleware';
-=======
 import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
->>>>>>> 7addd4b (revise middleware to handle deleted user with valid token)
 import { OrganizationMembershipRequest } from '../models/Organizations';
 import { UserService } from '../services/userService';
 
