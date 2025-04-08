@@ -114,18 +114,19 @@ eventRouter.post(
             const eventId: string = req.params.eid;
             const member = res.locals.user as { id: string; email: string; role: string };
 
-        const userEvent: EventUser = await eventService.addEventUser(member.id, eventId);
+            const userEvent: EventUser = await eventService.addEventUser(member.id, eventId);
 
-        return res.status(201).json({
-            status: 'success',
-            data: {
-                userEvent,
-            },
-        });
-    } catch (error) {
-        next(error);
+            return res.status(201).json({
+                status: 'success',
+                data: {
+                    userEvent,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
     }
-});
+);
 
 /*
  * Remove the Attendance record for an event
@@ -138,13 +139,14 @@ eventRouter.delete(
             const eventId: string = req.params.eid;
             const member = res.locals.user as { id: string; email: string; role: string };
 
-        await eventService.removeEventUser(member.id, eventId);
+            await eventService.removeEventUser(member.id, eventId);
 
-        return res.status(201).json({
-            status: 'success',
-            message: 'Attendance removed successfully',
-        });
-    } catch (error) {
-        next(error);
+            return res.status(201).json({
+                status: 'success',
+                message: 'Attendance removed successfully',
+            });
+        } catch (error) {
+            next(error);
+        }
     }
-});
+);
