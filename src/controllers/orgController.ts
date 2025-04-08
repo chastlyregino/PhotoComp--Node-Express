@@ -13,11 +13,6 @@ import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 7addd4b (revise middleware to handle deleted user with valid token)
 /*
  * Get all orgs that a User is a part of
  * GET /organizations
