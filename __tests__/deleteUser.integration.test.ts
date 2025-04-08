@@ -142,39 +142,14 @@ describe('Delete User Integration Tests', () => {
             expect(response.body.message).toBe('User deleted successfully');
         });
 
-        it('should allow an admin to delete any user account', async () => {
-            mockDynamoSend.mockImplementation((command) => {
-                // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand' &&
-                    command.input &&
-                    command.input.Key &&
-                    command.input.Key.PK === 'USER#user123') {
-                    return Promise.resolve({
-                        Item: mockUser
-                    });
-                }
-
-                // Check if it's a QueryCommand for user memberships
-                if (command.constructor.name === 'QueryCommand' &&
-                    command.input &&
-                    command.input.KeyConditionExpression &&
-                    command.input.KeyConditionExpression.includes('PK = :userId')) {
-                    return Promise.resolve({
-                        Items: [] // No memberships found
-                    });
-                }
-
-                // For DeleteCommand or any other commands
-                return Promise.resolve({});
-            });
-
+        it('should not allow even an admin to delete another user\'s account', async () => {
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
                 .set('Authorization', 'Bearer admin-jwt-token')
-                .expect(200);
+                .expect(403);
 
-            expect(response.body.status).toBe('success');
-            expect(response.body.message).toBe('User deleted successfully');
+            expect(response.body.status).toBe('error');
+            expect(response.body.message).toBe('Not authorized to delete this user');
         });
 
         it('should not allow a user to delete another user\'s account', async () => {
@@ -209,15 +184,23 @@ describe('Delete User Integration Tests', () => {
         });
 
         it('should handle database errors gracefully', async () => {
+            // Reset mocks for this specific test
+            mockDynamoSend.mockReset();
+
+            // Setup the mock to first return the user, then throw an error on deletion
+            let callCount = 0;
             mockDynamoSend.mockImplementation((command) => {
-                // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand') {
+                // First call: Find the user (this would be the authenticated user's ID)
+                if (command.constructor.name === 'GetCommand' &&
+                    command.input &&
+                    command.input.Key &&
+                    command.input.Key.PK === 'USER#user123') {
                     return Promise.resolve({
                         Item: mockUser
                     });
                 }
 
-                // Check if it's a QueryCommand for user memberships - simulate database error
+                // Second call: Throw error when trying to delete memberships
                 if (command.constructor.name === 'QueryCommand') {
                     throw new Error('Database connection failed');
                 }
