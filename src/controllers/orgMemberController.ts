@@ -1,6 +1,5 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgService } from '../services/orgService';
-import { validateUserID } from './orgController';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { UserRole } from '../models/User';
@@ -16,7 +15,6 @@ export const orgMemberRouter = Router();
  */
 orgMemberRouter.get(
     '/:id/members',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -58,7 +56,6 @@ orgMemberRouter.get(
  */
 orgMemberRouter.delete(
     '/:id/members/:userId',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -92,7 +89,6 @@ orgMemberRouter.delete(
  */
 orgMemberRouter.patch(
     '/:id/members/:userId',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {

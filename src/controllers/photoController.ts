@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-import { checkOrgAdmin, checkOrgMember } from '../middleware/OrgMiddleware';
-import { validateUserID } from './orgController';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,7 +15,6 @@ export const photoRouter = Router();
  */
 photoRouter.post(
     '/:id/events/:eventId/photos',
-    validateUserID,
     checkOrgAdmin,
     handleUpload('photo'),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -70,8 +68,6 @@ photoRouter.post(
  */
 photoRouter.get(
     '/:id/events/:eventId/photos',
-    validateUserID,
-    checkOrgMember,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;
@@ -131,7 +127,6 @@ photoRouter.get(
  */
 photoRouter.delete(
     '/:id/events/:eventId/photos/:photoId',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {

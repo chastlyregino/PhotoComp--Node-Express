@@ -1,6 +1,5 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgMembershipService } from '../services/orgMembershipService';
-import { validateUserID } from './orgController';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { OrganizationMembershipRequest } from '../models/Organizations';
 import { UserService } from '../services/userService';
@@ -15,7 +14,6 @@ export const orgMembershipRouter = Router();
  */
 orgMembershipRouter.post(
     '/:id',
-    validateUserID,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const orgName: string = req.params.id;
@@ -47,7 +45,6 @@ orgMembershipRouter.post(
  */
 orgMembershipRouter.get(
     '/:id/requests',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -90,7 +87,6 @@ orgMembershipRouter.get(
  */
 orgMembershipRouter.put(
     '/:id/requests/:userId',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -116,7 +112,6 @@ orgMembershipRouter.put(
  */
 orgMembershipRouter.delete(
     '/:id/requests/:userId',
-    validateUserID,
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {

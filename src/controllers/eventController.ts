@@ -3,8 +3,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { EventRequest, Event, EventUser } from '../models/Event';
-import { checkOrgAdmin, checkOrgMember } from '../middleware/OrgMiddleware';
-import { validateUserID } from './orgController';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 
 const eventService = new EventService();
 export const eventRouter = Router();
@@ -13,13 +12,12 @@ export const eventRouter = Router();
  * POST /:id/events
  * */
 eventRouter.post(
-    '/:id/events',
-    validateUserID,
-    checkOrgAdmin,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const orgName: string = req.params.id;
-            const orgAdmin = res.locals.user as { id: string; email: string; role: string };
+  '/:id/events', 
+  checkOrgAdmin, 
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const orgName: string = req.params.id;
+        const orgAdmin = res.locals.user as { id: string; email: string; role: string };
 
             const eventRequest: EventRequest = {
                 title: req.body.title,
@@ -48,34 +46,27 @@ eventRouter.post(
  * GET /:id/events
  * */
 eventRouter.get(
-    '/:id/events',
-    validateUserID,
-    checkOrgMember,
-    async (req: Request, res: Response, next: NextFunction) => {
-        const orgID: string = req.params.id;
-        try {
-            const events: Event[] = await eventService.getAllOrganizationEvents(orgID);
-            return res.status(200).json({
-                status: 'success',
-                data: {
-                    events: events,
-                },
-            });
-        } catch (error) {
-            next(error);
-        }
+  '/:id/events', 
+  async (req: Request, res: Response, next: NextFunction) => {
+    const orgID: string = req.params.id;
+    try {
+        const events: Event[] = await eventService.getAllOrganizationEvents(orgID);
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                events: events,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
 );
 
 // CURRENT function FOUND @ `orgService.ts` - `validateUserOrgAdmin(): boolean`
 // CURRENT PATCH: Changing event.isPublic attribute ONLY - CHANGE LOGIC WHEN UPDATING OTHER attributes
-eventRouter.patch(
-    '/:id/events/:eid',
-    validateUserID,
-    checkOrgAdmin,
-    async (req: Request, res: Response, next: NextFunction) => {
-        const eventId: string = req.params.eid;
-        const user = res.locals.user.info;
+eventRouter.patch('/:id/events/:eid', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
+    const eventId: string = req.params.eid;
+    const user = res.locals.user.info;
 
         try {
             const event = await eventService.findEventById(eventId);
@@ -100,12 +91,11 @@ eventRouter.patch(
  * POST /:id/events/:eid
  * */
 eventRouter.post(
-    '/:id/events/:eid',
-    checkOrgMember,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const eventId: string = req.params.eid;
-            const member = res.locals.user as { id: string; email: string; role: string };
+  "/:id/events/:eid", 
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eventId: string = req.params.eid;
+        const member = res.locals.user as { id: string; email: string; role: string };
 
             const userEvent: EventUser = await eventService.addEventUser(member.id, eventId);
 
@@ -126,12 +116,11 @@ eventRouter.post(
  * POST /:id/events/:eid
  * */
 eventRouter.delete(
-    '/:id/events/:eid',
-    checkOrgMember,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const eventId: string = req.params.eid;
-            const member = res.locals.user as { id: string; email: string; role: string };
+  "/:id/events/:eid", 
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eventId: string = req.params.eid;
+        const member = res.locals.user as { id: string; email: string; role: string };
 
             await eventService.removeEventUser(member.id, eventId);
 

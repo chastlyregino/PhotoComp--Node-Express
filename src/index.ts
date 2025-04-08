@@ -11,6 +11,7 @@ import { photoRouter } from './controllers/photoController';
 import { authenticate } from './middleware/authMiddleware';
 import { orgMemberRouter } from './controllers/orgMemberController';
 import { orgMembershipRouter } from './controllers/orgMemberShipController';
+import { checkOrgMember, validateUserID } from './middleware/OrgMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -30,14 +31,17 @@ app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
 
 app.use(
-    `/organizations`,
-    authenticate,
-    orgRouter,
-    eventRouter,
-    orgMemberRouter,
-    orgMembershipRouter,
-    photoRouter
-); // Added photoRouter
+  `/organizations`, 
+  authenticate, 
+  validateUserID, // Only users can access everything below
+  orgRouter, 
+  orgMembershipRouter, 
+  checkOrgMember, // Only org members can access everythin below
+  eventRouter, 
+  photoRouter,
+  orgMemberRouter, 
+); // Added photoRouter 
+
 
 // Default route
 app.get('/', (req, res) => {
