@@ -227,6 +227,7 @@ describe('Photo Download Integration Tests', () => {
         app = express();
         app.use(express.json());
         app.use(express.urlencoded({ extended: true }));
+        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
         // Set up middleware to properly populate res.locals with user info
         app.use((req, res, next) => {
