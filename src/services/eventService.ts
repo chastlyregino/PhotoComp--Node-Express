@@ -1,22 +1,23 @@
 import { EventRepository } from '../repositories/eventRepository';
 import { Event, EventRequest, EventUser, createEvent, createEventUser } from '../models/Event';
-import { AppError } from '../middleware/errorHandler'; // Ensure meaningful errors
+import { AppError } from '../middleware/errorHandler';
 import { OrgService } from '../services/orgService';
 import { UserOrganizationRelationship } from '@/models/Organizations';
 import { WeatherData, WeatherService } from './weatherService';
 
 /**
- * Service class for handling event-related services.
+ * Service class for handling event-related operations including CRUD operations,
+ * user-event relationships, and weather data integration.
  */
 export class EventService {
     private eventRepository: EventRepository;
     private weatherService: WeatherService;
 
     /**
-     * Initializes the EventService with an optional EventRepository instance.
-     * If no repository is provided, a new instance is created.
-     *
-     * @param eventRepository - The event repository instance (optional).
+     * Initializes the EventService with repository and service dependencies
+     * 
+     * @param eventRepository - Handles database operations for events
+     * @param weatherService - Provides weather forecast data from Open-Meteo API
      */
     constructor(
         eventRepository: EventRepository = new EventRepository(),
@@ -26,14 +27,18 @@ export class EventService {
         this.weatherService = weatherService;
     }
 
-
-
     /**
-    * Adds a new event to an organization with weather data if location is provided
-    * @param orgID - The organization ID
-    * @param eventRequest - The event details
-    * @returns The created Event object
-    */
+     * Creates a new event for an organization with optional weather data
+     * 
+     * If location data is provided with the event request, this method will
+     * automatically fetch and attach weather forecast data from Open-Meteo.
+     * Weather fetching failures will be logged but won't prevent event creation.
+     * 
+     * @param orgID - The organization ID that owns the event
+     * @param eventRequest - Event details including title, description, date and optional location
+     * @returns The created Event object with weather data if available
+     * @throws AppError for validation failures or database errors
+     */
     async addEventToOrganization(orgID: string, eventRequest: EventRequest): Promise<Event> {
         try {
             if (!orgID) throw new AppError('Invalid organization ID.', 400);
@@ -81,12 +86,17 @@ export class EventService {
         }
     }
 
-
     /**
-    * Refreshes weather data for an event
-    * @param eventId - The ID of the event
-    * @returns The updated event with refreshed weather data
-    */
+     * Refreshes the weather forecast data for an existing event
+     * 
+     * This method fetches the latest weather data from Open-Meteo based on
+     * the event's stored location information and date. Useful for updating
+     * forecasts as the event date approaches.
+     * 
+     * @param eventId - The ID of the event to refresh weather data for
+     * @returns The updated event with fresh weather data
+     * @throws AppError if event not found, missing location data, or API errors
+     */
     async refreshEventWeather(eventId: string): Promise<Event> {
         try {
             const event = await this.findEventById(eventId);
@@ -118,8 +128,10 @@ export class EventService {
 
     /**
      * Retrieves all events for a given organization
-     * @param orgID - The organization ID
+     * 
+     * @param orgID - The organization ID to fetch events for
      * @returns A list of events for the organization
+     * @throws AppError for invalid input or database errors
      */
     async getAllOrganizationEvents(orgID: string): Promise<Event[]> {
         try {
@@ -132,9 +144,11 @@ export class EventService {
     }
 
     /**
-     * Retrieves all public events for a given organization
-     * @param orgID - The organization ID
-     * @returns A list of events for the organization
+     * Retrieves all public events for a given organization with pagination support
+     * 
+     * @param orgID - The organization ID to fetch public events for
+     * @returns Object containing events array and pagination key
+     * @throws AppError for invalid input or database errors
      */
     async getAllPublicOrganizationEvents(
         orgID: string
@@ -148,6 +162,14 @@ export class EventService {
         }
     }
 
+    /**
+     * Finds an event-user relationship by event ID and user ID
+     * 
+     * @param eventId - The event ID to check
+     * @param userId - The user ID to check
+     * @returns The event-user relationship if found
+     * @throws AppError if relationship not found or database errors
+     */
     async findEventUserbyUser(eventId: string, userId: string): Promise<EventUser | null> {
         try {
             const eventUser = await this.eventRepository.findEventUserbyUser(eventId, userId);
@@ -168,6 +190,13 @@ export class EventService {
         }
     }
 
+    /**
+     * Finds an event by its ID
+     * 
+     * @param eventId - The ID of the event to find
+     * @returns The event if found
+     * @throws AppError if event not found or database errors
+     */
     async findEventById(eventId: string): Promise<Event | null> {
         try {
             const event = await this.eventRepository.findEventById(eventId);
@@ -176,7 +205,6 @@ export class EventService {
                 throw new AppError(`No Event found!`, 400);
             }
 
-            // console.log(event);
             return event as Event;
         } catch (error) {
             if (error instanceof AppError) {
@@ -186,6 +214,13 @@ export class EventService {
         }
     }
 
+    /**
+     * Toggles an event's public/private status
+     * 
+     * @param event - The event to update publicity for
+     * @returns The updated event
+     * @throws AppError if event not found or update fails
+     */
     async updateEventPublicity(event: Event): Promise<Event | null> {
         try {
             const existingEvent = await this.findEventById(event.id);
@@ -194,16 +229,13 @@ export class EventService {
                 throw new AppError(`No Event found!`, 400);
             }
 
-            // console.log(`before ${event}`)
             existingEvent.isPublic = !existingEvent.isPublic;
-            // console.log(`after ${event.isPublic}`)
 
             const updatedEvent = await this.eventRepository.updateEventPublicity(existingEvent);
 
             if (updatedEvent === null) {
                 throw new AppError(`Updating Event's publicity failed!`, 500);
             }
-            // console.log(updatedEvent);
             return updatedEvent as Event;
         } catch (error) {
             if (error instanceof AppError) {
@@ -216,6 +248,13 @@ export class EventService {
         }
     }
 
+    /**
+     * Updates an entire event object in the database
+     * 
+     * @param event - The event object with updated fields
+     * @returns The updated event
+     * @throws AppError if database operation fails
+     */
     async updateEvent(event: Event): Promise<Event> {
         try {
             return await this.eventRepository.updateEvent(event);
@@ -227,6 +266,14 @@ export class EventService {
         }
     }
 
+    /**
+     * Updates just the weather data for an event
+     * 
+     * @param eventId - The ID of the event to update weather for
+     * @param weatherData - The weather data to store with the event
+     * @returns The updated event with weather data
+     * @throws AppError if database operation fails
+     */
     async updateEventWeather(eventId: string, weatherData: WeatherData): Promise<Event> {
         try {
             return await this.eventRepository.updateEventWeather(eventId, weatherData);
