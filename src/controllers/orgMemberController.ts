@@ -1,6 +1,6 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgService } from '../services/orgService';
-import { checkOrgAdmin } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { UserRole } from '../models/User';
 import { UserService } from '../services/userService';
