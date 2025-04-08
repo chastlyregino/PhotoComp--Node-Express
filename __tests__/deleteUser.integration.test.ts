@@ -1,39 +1,10 @@
+// __tests__/deleteUser.integration.test.ts
+
 // Mock the modules before any imports
 jest.mock('bcryptjs', () => ({
     genSalt: jest.fn().mockResolvedValue('salt'),
     hash: jest.fn().mockResolvedValue('hashedPassword'),
     compare: jest.fn().mockResolvedValue(true),
-}));
-
-// Mock DynamoDB and related modules
-jest.mock('@aws-sdk/lib-dynamodb', () => ({
-    DynamoDBDocumentClient: {
-        from: jest.fn().mockReturnValue({
-            send: jest.fn(),
-        }),
-    },
-    PutCommand: jest.fn(),
-    QueryCommand: jest.fn(),
-    GetCommand: jest.fn().mockImplementation((params) => ({
-        ...params,
-        constructor: { name: 'GetCommand' }
-    })),
-    DeleteCommand: jest.fn().mockImplementation((params) => ({
-        ...params,
-        constructor: { name: 'DeleteCommand' }
-    })),
-    BatchWriteCommand: jest.fn().mockImplementation((params) => ({
-        ...params,
-        constructor: { name: 'BatchWriteCommand' }
-    })),
-}));
-
-// Mock the config/db module with correct path
-jest.mock('../src/config/db', () => ({
-    dynamoDb: {
-        send: jest.fn(),
-    },
-    TABLE_NAME: 'test-table',
 }));
 
 // Mock JWT
@@ -49,52 +20,40 @@ jest.mock('jsonwebtoken', () => ({
     }),
 }));
 
+// Create a manual mock for the userService to control deleteUser behavior
+jest.mock('../src/services/userService', () => {
+    const mockUserService = {
+        getUserByEmail: jest.fn(),
+        getUserById: jest.fn(),
+        login: jest.fn(),
+        register: jest.fn(),
+        deleteUser: jest.fn()
+    };
+    
+    return {
+        UserService: jest.fn().mockImplementation(() => mockUserService)
+    };
+});
+
 // Now import dependencies after mocks are set up
 import request from 'supertest';
 import express from 'express';
-import { dynamoDb } from '../src/config/db';
-import { setupTestEnvironment, createTestApp } from './utils/test-utils';
+import { setupTestEnvironment } from './utils/test-utils';
 import { authRouter } from '../src/controllers/authController';
-import { authenticate } from '../src/middleware/authMiddleware';
 import { errorHandler } from '../src/middleware/errorHandler';
-import { UserRole } from '../src/models/User';
-
-// Cast the mock for type safety
-const mockDynamoSend = dynamoDb.send as jest.Mock;
+import { UserService } from '../src/services/userService';
+import { User, UserRole } from '../src/models/User';
 
 describe('Delete User Integration Tests', () => {
     let app: express.Application;
+    let mockUserService: any;
 
     const mockUser = {
-        PK: 'USER#user123',
-        SK: 'ENTITY',
         id: 'user123',
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
-        password: 'hashedPassword123',
-        role: UserRole.USER,
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        type: 'USER',
-        GSI1PK: 'EMAIL#test@example.com',
-        GSI1SK: 'ENTITY',
-    };
-
-    const mockAdmin = {
-        PK: 'USER#admin456',
-        SK: 'ENTITY',
-        id: 'admin456',
-        email: 'admin@example.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        password: 'hashedPassword123',
-        role: UserRole.ADMIN,
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        type: 'USER',
-        GSI1PK: 'EMAIL#admin@example.com',
-        GSI1SK: 'ENTITY',
+        role: UserRole.USER
     };
 
     beforeAll(() => {
@@ -106,6 +65,9 @@ describe('Delete User Integration Tests', () => {
         // Reset all mocks before each test
         jest.clearAllMocks();
 
+        // Get mockUserService for controlling test behavior
+        mockUserService = new UserService() as jest.Mocked<UserService>;
+
         // Create a fresh Express app for each test with authentication middleware
         app = express();
         app.use(express.json());
@@ -115,23 +77,11 @@ describe('Delete User Integration Tests', () => {
 
     describe('DELETE /api/auth/users/:id', () => {
         it('should allow a user to delete their own account', async () => {
-            // Set up a more flexible mock that responds based on the command type and parameters
-            mockDynamoSend.mockImplementation((command) => {
-                if (command.constructor && command.constructor.name === 'GetCommand') {
-                    return Promise.resolve({
-                        Item: mockUser
-                    });
-                }
-
-                if (command.constructor && command.constructor.name === 'QueryCommand') {
-                    return Promise.resolve({
-                        Items: [] // No memberships found
-                    });
-                }
-
-                // For DeleteCommand or any other commands
-                return Promise.resolve({});
-            });
+            // Mock getUserByEmail to return the user for authentication
+            mockUserService.getUserByEmail.mockResolvedValue(mockUser);
+            
+            // Mock deleteUser to succeed
+            mockUserService.deleteUser.mockResolvedValue(true);
 
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
@@ -140,9 +90,17 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('success');
             expect(response.body.message).toBe('User deleted successfully');
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith('user123');
         });
 
         it('should not allow even an admin to delete another user\'s account', async () => {
+            // Mock getUserByEmail to return the admin user
+            mockUserService.getUserByEmail.mockResolvedValue({
+                ...mockUser,
+                id: 'admin456',
+                role: UserRole.ADMIN
+            });
+
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
                 .set('Authorization', 'Bearer admin-jwt-token')
@@ -150,9 +108,13 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('error');
             expect(response.body.message).toBe('Not authorized to delete this user');
+            expect(mockUserService.deleteUser).not.toHaveBeenCalled();
         });
 
         it('should not allow a user to delete another user\'s account', async () => {
+            // Mock getUserByEmail to return the user
+            mockUserService.getUserByEmail.mockResolvedValue(mockUser);
+
             const response = await request(app)
                 .delete(`/api/auth/users/otheruser456`)
                 .set('Authorization', 'Bearer valid-jwt-token')
@@ -160,19 +122,15 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('error');
             expect(response.body.message).toBe('Not authorized to delete this user');
+            expect(mockUserService.deleteUser).not.toHaveBeenCalled();
         });
 
         it('should return 404 when user not found', async () => {
-            mockDynamoSend.mockImplementation((command) => {
-                // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand') {
-                    return Promise.resolve({
-                        Item: null // User not found
-                    });
-                }
-
-                return Promise.resolve({});
-            });
+            // Mock getUserByEmail to return the user for authentication
+            mockUserService.getUserByEmail.mockResolvedValue(mockUser);
+            
+            // Mock deleteUser to throw a user not found error
+            mockUserService.deleteUser.mockRejectedValue(new Error('User not found'));
 
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
@@ -181,32 +139,15 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('error');
             expect(response.body.message).toBe('User not found');
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith('user123');
         });
 
         it('should handle database errors gracefully', async () => {
-            // Reset mocks for this specific test
-            mockDynamoSend.mockReset();
-
-            // Setup the mock to first return the user, then throw an error on deletion
-            let callCount = 0;
-            mockDynamoSend.mockImplementation((command) => {
-                // First call: Find the user (this would be the authenticated user's ID)
-                if (command.constructor.name === 'GetCommand' &&
-                    command.input &&
-                    command.input.Key &&
-                    command.input.Key.PK === 'USER#user123') {
-                    return Promise.resolve({
-                        Item: mockUser
-                    });
-                }
-
-                // Second call: Throw error when trying to delete memberships
-                if (command.constructor.name === 'QueryCommand') {
-                    throw new Error('Database connection failed');
-                }
-
-                return Promise.resolve({});
-            });
+            // Mock getUserByEmail to return the user for authentication
+            mockUserService.getUserByEmail.mockResolvedValue(mockUser);
+            
+            // Mock deleteUser to throw a database error
+            mockUserService.deleteUser.mockRejectedValue(new Error('Database connection failed'));
 
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
@@ -215,6 +156,7 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('error');
             expect(response.body.message).toContain('Database connection failed');
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith('user123');
         });
 
         it('should require authentication', async () => {
@@ -225,43 +167,15 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('error');
             expect(response.body.message).toContain('Authentication required');
+            expect(mockUserService.deleteUser).not.toHaveBeenCalled();
         });
 
         it('should delete memberships before deleting the user', async () => {
-            mockDynamoSend.mockImplementation((command) => {
-                // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand' &&
-                    command.input &&
-                    command.input.Key &&
-                    command.input.Key.PK === 'USER#user123') {
-                    return Promise.resolve({
-                        Item: mockUser
-                    });
-                }
-
-                // Check if it's a QueryCommand for user memberships
-                if (command.constructor.name === 'QueryCommand' &&
-                    command.input &&
-                    command.input.KeyConditionExpression &&
-                    command.input.KeyConditionExpression.includes('PK = :userId')) {
-                    return Promise.resolve({
-                        Items: [
-                            {
-                                PK: 'USER#user123',
-                                SK: 'ORG#TESTORG'
-                            }
-                        ]
-                    });
-                }
-
-                // For BatchWriteCommand (membership deletion)
-                if (command.constructor.name === 'BatchWriteCommand') {
-                    return Promise.resolve({});
-                }
-
-                // For DeleteCommand or any other commands
-                return Promise.resolve({});
-            });
+            // Mock getUserByEmail to return the user for authentication
+            mockUserService.getUserByEmail.mockResolvedValue(mockUser);
+            
+            // Mock deleteUser to succeed
+            mockUserService.deleteUser.mockResolvedValue(true);
 
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
@@ -270,6 +184,7 @@ describe('Delete User Integration Tests', () => {
 
             expect(response.body.status).toBe('success');
             expect(response.body.message).toBe('User deleted successfully');
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith('user123');
         });
     });
 });
