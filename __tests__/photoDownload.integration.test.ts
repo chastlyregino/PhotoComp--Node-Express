@@ -215,7 +215,7 @@ describe('Photo Download Integration Tests', () => {
         // Reset all mocks
         jest.clearAllMocks();
 
-        // Reset our flexible mocks to default values
+        // Reset flexible mocks to default values
         mockValidateUserEventAccess.mockClear().mockResolvedValue(true);
         mockGetPhotoDownloadUrl.mockClear().mockResolvedValue('https://download-url.example.com/photo.jpg');
 
@@ -223,31 +223,27 @@ describe('Photo Download Integration Tests', () => {
         app = express();
         app.use(express.json());
         app.use(express.urlencoded({ extended: true }));
-        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
-        // Mock middleware for authentication
+        // Set up middleware to properly populate res.locals with user info
         app.use((req, res, next) => {
-            // Set auth headers and mock user in res.locals
-            req.headers.authorization = 'Bearer valid-jwt-token';
-            res.locals = {
-                user: {
+            // Properly set up res.locals user object with nested info property
+            res.locals.user = {
+                id: testUserId,
+                email: 'test@example.com',
+                role: 'ADMIN',
+                info: {
                     id: testUserId,
                     email: 'test@example.com',
+                    firstName: 'Test',
+                    lastName: 'User',
                     role: 'ADMIN',
-                    info: {
-                        id: testUserId,
-                        email: 'test@example.com',
-                        firstName: 'Test',
-                        lastName: 'User',
-                        role: 'ADMIN'
-                    }
-                }
+                },
             };
             next();
         });
 
-        // Add the photoRouter
-        app.use('/organizations', photoRouter);
+        // Mount the routes - use the correct path that matches how routes are defined in your app
+        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
         // Add error handler at the end
         app.use(errorHandler);
@@ -261,7 +257,7 @@ describe('Photo Download Integration Tests', () => {
             // Default mock behavior is already set to return true for access
 
             const response = await request(app)
-            .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
+                .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
                 .expect(200);
 
             // Verify response structure
@@ -278,7 +274,7 @@ describe('Photo Download Integration Tests', () => {
             mockValidateUserEventAccess.mockResolvedValue(false);
 
             const response = await request(app)
-            .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
+                .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
                 .expect(403);
 
             // Verify error response

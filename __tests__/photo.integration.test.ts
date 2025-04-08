@@ -308,31 +308,27 @@ describe('Photo Controller Integration Tests', () => {
         app = express();
         app.use(express.json());
         app.use(express.urlencoded({ extended: true }));
-        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
-        // Mock middleware for authentication
+        // Set up middleware to properly populate res.locals with user info
         app.use((req, res, next) => {
-            // Set auth headers and mock user in res.locals
-            req.headers.authorization = 'Bearer valid-jwt-token';
-            res.locals = {
-                user: {
+            // Properly set up res.locals user object with nested info property
+            res.locals.user = {
+                id: testUserId,
+                email: 'test@example.com',
+                role: 'ADMIN',
+                info: {
                     id: testUserId,
                     email: 'test@example.com',
+                    firstName: 'Test',
+                    lastName: 'User',
                     role: 'ADMIN',
-                    info: {
-                        id: testUserId,
-                        email: 'test@example.com',
-                        firstName: 'Test',
-                        lastName: 'User',
-                        role: 'ADMIN',
-                    },
                 },
             };
             next();
         });
 
-        // Add the photoRouter
-        app.use('/organizations', photoRouter);
+        // Mount the routes
+        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
         // Add error handler at the end
         app.use(errorHandler);
