@@ -3,7 +3,8 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { EventRequest, Event, EventUser } from '../models/Event';
-import { checkOrgAdmin } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin, checkOrgMember, validateUserID } from '../middleware/OrgMiddleware';
+
 
 const eventService = new EventService();
 export const eventRouter = Router();
@@ -60,7 +61,7 @@ eventRouter.get(
     } catch (error) {
         next(error);
     }
-);
+});
 
 // CURRENT function FOUND @ `orgService.ts` - `validateUserOrgAdmin(): boolean`
 // CURRENT PATCH: Changing event.isPublic attribute ONLY - CHANGE LOGIC WHEN UPDATING OTHER attributes
