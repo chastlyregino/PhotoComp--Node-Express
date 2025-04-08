@@ -7,7 +7,9 @@ import {
     DeleteCommand,
     UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
+
 import { AppError } from '../middleware/errorHandler';
+import { WeatherData } from '@/services/weatherService';
 
 /**
  * Repository class for handling event-related database operations.
@@ -70,13 +72,9 @@ export class EventRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `USER#${userID}`,
-<<<<<<< HEAD
                         SK: `EVENT#${eventID}`,
                     },
-=======
-                        SK: `EVENT#${eventID}`
-                    }
->>>>>>> fc56c44 (repo/service/controller layers for adding weather to an event with open mateo)
+
                 })
             );
 
@@ -294,6 +292,26 @@ export class EventRepository {
             throw new AppError(`Failed to update Event's Publicity: ${error.message}`, 500);
         }
     }
+
+    async updateEvent(event: Event): Promise<Event> {
+        try {
+            await dynamoDb.send(
+                new PutCommand({
+                    TableName: TABLE_NAME,
+                    Item: {
+                        ...event,
+                        updatedAt: new Date().toISOString()
+                    }
+                })
+            );
+
+            return event;
+        } catch (error: any) {
+            throw new AppError(`Failed to update event: ${error.message}`, 500);
+        }
+    }
+
+
 
     /**
     * Updates weather data for an event

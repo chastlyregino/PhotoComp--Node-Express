@@ -9,6 +9,16 @@ export interface WeatherData {
   weatherDescription: string;
 }
 
+interface WeatherApiResponse {
+  daily: {
+    time: string[];
+    temperature_2m_max: number[];
+    weathercode: number[];
+    precipitation_sum: number[];
+    windspeed_10m_max: number[];
+  };
+}
+
 export class WeatherService {
   private baseUrl = 'https://api.open-meteo.com/v1/forecast';
 
@@ -42,7 +52,8 @@ export class WeatherService {
         throw new AppError(`Failed to fetch weather data: ${response.statusText}`, 500);
       }
 
-      const data = await response.json();
+      // Type the response data to match the expected structure
+      const data = await response.json() as WeatherApiResponse;
       
       if (!data.daily || !data.daily.time || data.daily.time.length === 0) {
         throw new AppError('Invalid weather data format received', 500);
