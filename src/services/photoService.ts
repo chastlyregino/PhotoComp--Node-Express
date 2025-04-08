@@ -111,7 +111,9 @@ export class PhotoService {
                     try {
                         if (photo?.metadata?.s3Key) {
                             // If we have the S3 key stored directly, use it
-                            photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
+                            photo.url = await this.s3Service.getLogoPreSignedUrl(
+                                photo.metadata.s3Key
+                            );
                         } else if (photo?.url) {
                             // Otherwise, try to extract it from the URL
                             try {
@@ -143,7 +145,7 @@ export class PhotoService {
             throw new AppError(`Failed to get event photos: ${(error as Error).message}`, 500);
         }
     }
-    
+
     /**
      * Delete a photo
      * @param photoId The ID of the photo to delete
@@ -167,15 +169,17 @@ export class PhotoService {
 
             // If we have the S3 key stored directly, use it
             // Otherwise, extract it from the URL
-            const s3Key = photo.metadata?.s3Key || (() => {
-                try {
-                    const urlParts = new URL(photo.url);
-                    return urlParts.pathname.substring(1); // Remove leading slash
-                } catch (error) {
-                    logger.error(`Error parsing photo URL: ${photo.url}`, error);
-                    return null;
-                }
-            })();
+            const s3Key =
+                photo.metadata?.s3Key ||
+                (() => {
+                    try {
+                        const urlParts = new URL(photo.url);
+                        return urlParts.pathname.substring(1); // Remove leading slash
+                    } catch (error) {
+                        logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                        return null;
+                    }
+                })();
 
             if (s3Key) {
                 // Delete the file from S3
@@ -189,7 +193,6 @@ export class PhotoService {
             } else {
                 logger.warn(`Could not determine S3 key for photo: ${photoId}`);
             }
-
         } catch (error) {
             logger.error('Error deleting photo:', error);
             if (error instanceof AppError) {
@@ -197,89 +200,5 @@ export class PhotoService {
             }
             throw new AppError(`Failed to delete photo: ${(error as Error).message}`, 500);
         }
-    }
-
-    /**
-     * Validates if a user has access to an event (either as an admin or attendee)
-     * @param eventId The ID of the event
-     * @param userId The ID of the user
-     * @returns Boolean indicating if the user has access
-     */
-    async validateUserEventAccess(eventId: string, userId: string): Promise<boolean> {
-        try {
-            // Check if user is attending the event
-            const eventUser = await this.eventRepository.findEventUserbyUser(eventId, userId);
-            
-            // If user is found as an attendee, they have access
-            if (eventUser) {
-                return true;
-            }
-            
-            // Otherwise, return false
-            return false;
-        } catch (error) {
-            logger.error(`Error validating user event access: ${error}`);
-            // In case of error, deny access by default for security
-            return false;
-        }
-    }
-
-    /**
-     * Gets a download URL for a specific photo
-     * @param photoId The ID of the photo to download
-     * @param eventId The ID of the event (for validation)
-     * @returns A pre-signed URL for downloading the photo
-     */
-    async getPhotoDownloadUrl(photoId: string, eventId: string): Promise<string> {
-        try {
-            // Get the photo to verify it exists and belongs to the right event
-            const photo = await this.photoRepository.getPhotoById(photoId);
-
-            if (!photo) {
-                throw new AppError(`Photo not found: ${photoId}`, 404);
-            }
-
-            if (photo.eventId !== eventId) {
-                throw new AppError('Photo does not belong to the specified event', 400);
-            }
-
-            // Get the S3 key from the photo metadata
-            const s3Key = photo.metadata?.s3Key;
-            
-            if (!s3Key) {
-                throw new AppError('Photo S3 key not found', 500);
-            }
-
-            // Generate download-specific presigned URL with proper filename
-            // Set content-disposition header to suggest filename for download
-            const filename = this.generateDownloadFilename(photo);
-            const downloadUrl = await this.s3Service.getDownloadUrl(s3Key, filename);
-            
-            return downloadUrl;
-        } catch (error) {
-            logger.error('Error generating photo download URL:', error);
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Failed to generate photo download URL: ${(error as Error).message}`, 500);
-        }
-    }
-    
-    /**
-     * Generates a user-friendly filename for downloading
-     * @param photo The photo object
-     * @returns A sanitized filename
-     */
-    private generateDownloadFilename(photo: Photo): string {
-        // Use photo title if available, otherwise use photo ID
-        let baseName = photo.metadata?.title || `photo-${photo.id}`;
-        
-        // Sanitize filename - replace any characters that might cause issues
-        baseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_');
-        
-        // Get extension from S3 key or use jpg as fallback
-        const extension = photo.metadata?.s3Key?.split('.').pop() || 'jpg';
-        
-        return `${baseName}.${extension}`;
     }
 }

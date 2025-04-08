@@ -67,7 +67,10 @@ export class OrgService {
             }
 
             // Upload logo to S3 and get the S3 key
-            const logoS3Key = await this.s3Service.uploadLogoFromUrl(createOrg.logoUrl, createOrg.name);
+            const logoS3Key = await this.s3Service.uploadLogoFromUrl(
+                createOrg.logoUrl,
+                createOrg.name
+            );
 
             // Get pre-signed URL for the logo
             const preSignedUrl = await this.s3Service.getLogoPreSignedUrl(logoS3Key);
@@ -196,14 +199,13 @@ export class OrgService {
     }
 
     async updateOrgByName(
-        org: OrganizationUpdateRequest,
-        userId: string
+        org: OrganizationUpdateRequest
     ): Promise<OrganizationUpdateRequest | null> {
         try {
             if (!org.name) {
                 throw new AppError(`You need to specify the Organization name.`, 400);
             }
-            
+
             await this.validateUrl(org.logoUrl);
             await this.validateUrl(org.website);
 
@@ -266,17 +268,20 @@ export class OrgService {
     async getOrgMembers(orgName: string): Promise<UserOrganizationRelationship[]> {
         try {
             const members = await this.orgRepository.getOrgMembers(orgName);
-            
+
             if (!members || members.length === 0) {
                 throw new AppError('No members found for this organization', 404);
             }
-            
+
             return members;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(`Failed to get organization members: ${(error as Error).message}`, 500);
+            throw new AppError(
+                `Failed to get organization members: ${(error as Error).message}`,
+                500
+            );
         }
     }
 
@@ -290,18 +295,18 @@ export class OrgService {
         try {
             // Check if the member exists in the organization
             const member = await this.orgRepository.findSpecificOrgByUser(orgName, userId);
-            
+
             if (!member) {
                 throw new AppError('Member not found in this organization', 404);
             }
-            
+
             // Remove the member
             const result = await this.orgRepository.removeMember(orgName, userId);
-            
+
             if (!result) {
                 throw new AppError('Failed to remove member', 500);
             }
-            
+
             return result;
         } catch (error) {
             if (error instanceof AppError) {
@@ -318,22 +323,26 @@ export class OrgService {
      * @param role The new role for the user
      * @returns The updated user-organization relationship
      */
-    async updateMemberRole(orgName: string, userId: string, role: UserRole): Promise<UserOrganizationRelationship> {
+    async updateMemberRole(
+        orgName: string,
+        userId: string,
+        role: UserRole
+    ): Promise<UserOrganizationRelationship> {
         try {
             // Check if the member exists in the organization
             const member = await this.orgRepository.findSpecificOrgByUser(orgName, userId);
-            
+
             if (!member) {
                 throw new AppError('Member not found in this organization', 404);
             }
-            
+
             // Update the member's role
             const updatedMember = await this.orgRepository.updateMemberRole(orgName, userId, role);
-            
+
             if (!updatedMember) {
                 throw new AppError('Failed to update member role', 500);
             }
-            
+
             return updatedMember;
         } catch (error) {
             if (error instanceof AppError) {

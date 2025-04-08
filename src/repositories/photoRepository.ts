@@ -64,7 +64,8 @@ export class PhotoRepository {
                 new QueryCommand({
                     TableName: TABLE_NAME,
                     IndexName: 'GSI2PK-GSI2SK-INDEX',
-                    KeyConditionExpression: 'GSI2PK = :eventId AND begins_with(GSI2SK, :photoPrefix)',
+                    KeyConditionExpression:
+                        'GSI2PK = :eventId AND begins_with(GSI2SK, :photoPrefix)',
                     ExpressionAttributeValues: {
                         ':eventId': `EVENT#${eventId}`,
                         ':photoPrefix': 'PHOTO#',
@@ -80,10 +81,10 @@ export class PhotoRepository {
     }
 
     /**
- * Deletes a photo from the database
- * @param photoId The ID of the photo to delete
- * @throws AppError if the operation fails
- */
+     * Deletes a photo from the database
+     * @param photoId The ID of the photo to delete
+     * @throws AppError if the operation fails
+     */
     async deletePhoto(photoId: string): Promise<void> {
         try {
             await dynamoDb.send(

@@ -7,7 +7,13 @@ import {
     addOrganizationAdmin,
 } from '../models/Organizations';
 
-import { PutCommand, QueryCommand, GetCommand, DeleteCommand,UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import {
+    PutCommand,
+    QueryCommand,
+    GetCommand,
+    DeleteCommand,
+    UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 import { UserRole } from '../models/User';
 
@@ -120,25 +126,31 @@ export class OrgRepository {
 
     async updateOrgByName(org: Organization): Promise<OrganizationUpdateRequest | null> {
         try {
-            const params = {
-                TableName: TABLE_NAME,
-                KeyConditionExpression: 'PK = :orgKey and SK = :org',
-                UpdateExpression:
-                    'SET description = :description, logoUrl = :logoUrl, website = :website, contactEmail = :contactEmail',
-                ExpressionAttributeValues: {
-                    ':org': org.SK,
-                    ':orgKey': org.PK,
-                },
-                AttributeUpdates: {
-                    ':description': org.description,
-                    ':logoUrl': org.logoUrl,
-                    ':website': org.website,
-                    ':contactEmail': org.contactEmail,
-                },
-                ReturnValues: `UPDATE_NEW`,
-            };
+            const updatedOrg = await dynamoDb.send(
+                new UpdateCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: org.PK,
+                        SK: org.SK,
+                    },
+                    UpdateExpression:
+                        'SET #description = :description, logoUrl = :logoUrl, website = :website, contactEmail = :contactEmail',
+                    ExpressionAttributeNames: {
+                        '#description': 'description',
+                    },
+                    ExpressionAttributeValues: {
+                        ':description': org.description,
+                        ':logoUrl': org.logoUrl,
+                        ':website': org.website,
+                        ':contactEmail': org.contactEmail,
+                    },
+                    ReturnValues: 'ALL_NEW',
+                })
+            );
 
-            await dynamoDb.send(new QueryCommand(params));
+            if (!updatedOrg.Attributes) {
+                throw new AppError('Organization not updated', 400);
+            }
 
             return org;
         } catch (error: any) {
@@ -146,43 +158,48 @@ export class OrgRepository {
         }
     }
 
-    async findAllPublicOrgs(lastEvaluatedKey: Record<string, any> | undefined): Promise<{ orgs: Organization[], newLastEvaluatedKey: Record<string, any> | null }> {
-    try {
-        let publicOrgs: Organization[] = [];
-        let newlastEvaluatedKey: Record<string, any> | undefined = lastEvaluatedKey;
+    async findAllPublicOrgs(
+        lastEvaluatedKey: Record<string, any> | undefined
+    ): Promise<{ orgs: Organization[]; newLastEvaluatedKey: Record<string, any> | null }> {
+        try {
+            let publicOrgs: Organization[] = [];
+            let newlastEvaluatedKey: Record<string, any> | undefined = lastEvaluatedKey;
 
-        // Keep querying until we have at least 9 public organizations or no more data
-        while (publicOrgs.length < 9) {
-            const result:any= await dynamoDb.send(new QueryCommand({
-                TableName: TABLE_NAME,
-                IndexName: 'GSI1PK-GSI1SK-INDEX',
-                KeyConditionExpression: 'GSI1PK = :orgKey and begins_with(GSI1SK, :orgName)',
-                ExpressionAttributeValues: {
-                    ':orgKey': `ORG`,
-                    ':orgName': `ORG#`,
-                },
-                Limit: 15, 
-                ExclusiveStartKey: newlastEvaluatedKey || undefined,
-            }));
+            // Keep querying until we have at least 9 public organizations or no more data
+            while (publicOrgs.length < 9) {
+                const result: any = await dynamoDb.send(
+                    new QueryCommand({
+                        TableName: TABLE_NAME,
+                        IndexName: 'GSI1PK-GSI1SK-INDEX',
+                        KeyConditionExpression:
+                            'GSI1PK = :orgKey and begins_with(GSI1SK, :orgName)',
+                        ExpressionAttributeValues: {
+                            ':orgKey': `ORG`,
+                            ':orgName': `ORG#`,
+                        },
+                        Limit: 15,
+                        ExclusiveStartKey: newlastEvaluatedKey || undefined,
+                    })
+                );
 
-            // Append only public organizations
-            const fetchedOrgs = result.Items as Organization[];
-            publicOrgs.push(...fetchedOrgs.filter((org) => org.isPublic));
+                // Append only public organizations
+                const fetchedOrgs = result.Items as Organization[];
+                publicOrgs.push(...fetchedOrgs.filter(org => org.isPublic));
 
-            // no more data to paginate
-            if (!result.LastEvaluatedKey) break;
+                // no more data to paginate
+                if (!result.LastEvaluatedKey) break;
 
-            newlastEvaluatedKey = result.LastEvaluatedKey;
+                newlastEvaluatedKey = result.LastEvaluatedKey;
+            }
+
+            // Return exactly 9 public organizations (or less if there aren't enough)
+            return {
+                orgs: publicOrgs.slice(0, 9),
+                newLastEvaluatedKey: newlastEvaluatedKey || null,
+            };
+        } catch (error: any) {
+            throw new AppError(`Failed to find organizations: ${error.message}`, 500);
         }
-
-        // Return exactly 9 public organizations (or less if there aren't enough)
-        return {
-            orgs: publicOrgs.slice(0, 9),
-            newLastEvaluatedKey: newlastEvaluatedKey || null,
-        };
-    } catch (error: any) {
-        throw new AppError(`Failed to find organizations: ${error.message}`, 500);
-    }
     }
 
     /**
@@ -192,21 +209,22 @@ export class OrgRepository {
      */
     async getOrgMembers(orgName: string): Promise<UserOrganizationRelationship[]> {
         try {
+            const result = await dynamoDb.send(
+                new QueryCommand({
+                    TableName: TABLE_NAME,
+                    IndexName: 'GSI1PK-GSI1SK-INDEX',
+                    KeyConditionExpression: 'GSI1PK = :orgKey AND begins_with(GSI1SK, :userPrefix)',
+                    ExpressionAttributeValues: {
+                        ':orgKey': `ORG#${orgName.toUpperCase()}`,
+                        ':userPrefix': 'USER#',
+                    },
+                })
+            );
 
-            const result = await dynamoDb.send(new QueryCommand({
-                TableName: TABLE_NAME,
-                IndexName: 'GSI1PK-GSI1SK-INDEX',
-                KeyConditionExpression: 'GSI1PK = :orgKey AND begins_with(GSI1SK, :userPrefix)',
-                ExpressionAttributeValues: {
-                    ':orgKey': `ORG#${orgName.toUpperCase()}`,
-                    ':userPrefix': 'USER#',
-                }
-            }));
-            
             if (!result.Items || result.Items.length === 0) {
                 return [];
             }
-            
+
             return result.Items as UserOrganizationRelationship[];
         } catch (error: any) {
             throw new AppError(`Failed to get organization members: ${error.message}`, 500);
@@ -221,14 +239,15 @@ export class OrgRepository {
      */
     async removeMember(orgName: string, userId: string): Promise<boolean> {
         try {
-            
-            await dynamoDb.send(new DeleteCommand( {
-                TableName: TABLE_NAME,
-                Key: {
-                    PK: `USER#${userId}`,
-                    SK: `ORG#${orgName.toUpperCase()}`
-                }
-            }));
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `USER#${userId}`,
+                        SK: `ORG#${orgName.toUpperCase()}`,
+                    },
+                })
+            );
             return true;
         } catch (error: any) {
             throw new AppError(`Failed to remove member: ${error.message}`, 500);
@@ -242,37 +261,40 @@ export class OrgRepository {
      * @param role The new role for the user
      * @returns The updated user-organization relationship
      */
-    async updateMemberRole(orgName: string, userId: string, role: UserRole): Promise<UserOrganizationRelationship> {
+    async updateMemberRole(
+        orgName: string,
+        userId: string,
+        role: UserRole
+    ): Promise<UserOrganizationRelationship> {
         try {
             const now = new Date().toISOString();
-            
-            
-            const result = await dynamoDb.send(new UpdateCommand({
-                TableName: TABLE_NAME,
-                Key: {
-                    PK: `USER#${userId}`,
-                    SK: `ORG#${orgName.toUpperCase()}`
-                },
-                UpdateExpression: 'SET #role = :role, updatedAt = :updatedAt',
-                ExpressionAttributeNames: {
-                    '#role': 'role'
-                },
-                ExpressionAttributeValues: {
-                    ':role': role,
-                    ':updatedAt': now
-                },
-                ReturnValues: 'ALL_NEW'
-            }));
-            
+
+            const result = await dynamoDb.send(
+                new UpdateCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `USER#${userId}`,
+                        SK: `ORG#${orgName.toUpperCase()}`,
+                    },
+                    UpdateExpression: 'SET #role = :role, updatedAt = :updatedAt',
+                    ExpressionAttributeNames: {
+                        '#role': 'role',
+                    },
+                    ExpressionAttributeValues: {
+                        ':role': role,
+                        ':updatedAt': now,
+                    },
+                    ReturnValues: 'ALL_NEW',
+                })
+            );
+
             if (!result.Attributes) {
                 throw new AppError('Member not found', 404);
             }
-            
+
             return result.Attributes as UserOrganizationRelationship;
         } catch (error: any) {
             throw new AppError(`Failed to update member role: ${error.message}`, 500);
         }
     }
-
-
 }

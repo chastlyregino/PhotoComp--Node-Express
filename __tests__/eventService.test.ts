@@ -1,7 +1,14 @@
 import { EventService } from '../src/services/eventService';
 import { EventRepository } from '../src/repositories/eventRepository';
 import { EventRequest, Event, EventUser, createEvent } from '../src/models/Event';
-import { createdEventRequest, INVALID_ORGID, invalidEvent, ORGID, validEventRequest, createdEvent } from './utils/eventService-test-data';
+import {
+    createdEventRequest,
+    INVALID_ORGID,
+    invalidEvent,
+    ORGID,
+    validEventRequest,
+    createdEvent,
+} from './utils/eventService-test-data';
 import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('../src/repositories/eventRepository');
@@ -38,93 +45,100 @@ describe('EventService', () => {
         });
 
         it('should throw an error if eventRequest is invalid', async () => {
-            await expect(
-                eventService.addEventToOrganization(ORGID, invalidEvent)
-            ).rejects.toThrow('Missing required fields: title, description, or date.');
+            await expect(eventService.addEventToOrganization(ORGID, invalidEvent)).rejects.toThrow(
+                'Missing required fields: title, description, or date.'
+            );
         });
-        
+
         it('should throw an error when organization ID is invalid', async () => {
             await expect(
                 eventService.addEventToOrganization(INVALID_ORGID, invalidEvent)
             ).rejects.toThrow('Missing required fields: title, description, or date.');
         });
-        
+
         it('should handle repository errors gracefully', async () => {
             mockEventRepository.createOrgEvent.mockRejectedValue(new Error('DynamoDB error'));
 
-            await expect(eventService.addEventToOrganization(ORGID, validEventRequest)).rejects.toThrow(
+            await expect(
+                eventService.addEventToOrganization(ORGID, validEventRequest)
+            ).rejects.toThrow('Failed to create event: DynamoDB error');
+        });
+    });
+
+    describe('Join an Event as a Member', () => {
+        const USERID = 'test-user-id';
+        const EVENTID = 'test-event-id';
+        const mockEventUser = {
+            PK: `USER#${USERID}`,
+            SK: `EVENT#${EVENTID}`,
+            GSI2PK: `EVENT#${EVENTID}`,
+            GSI2SK: `USER#${USERID}`,
+        };
+
+        beforeAll(() => {
+            // Freeze time to prevent timestamp mismatches
+            jest.useFakeTimers().setSystemTime(new Date('2025-04-02T21:26:21.561Z'));
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
+        });
+
+        it('should successfully join an event', async () => {
+            mockEventRepository.addAttendingEventRecord.mockResolvedValue(mockEventUser);
+
+            const result = await eventService.addEventUser(USERID, EVENTID);
+
+            expect(result).toEqual(mockEventUser);
+            expect(mockEventRepository.addAttendingEventRecord).toHaveBeenCalledWith(mockEventUser);
+        });
+
+        it('should handle repository errors gracefully', async () => {
+            mockEventRepository.addAttendingEventRecord.mockRejectedValue(
+                new Error('DynamoDB error')
+            );
+
+            await expect(eventService.addEventUser(USERID, EVENTID)).rejects.toThrow(
                 'Failed to create event: DynamoDB error'
             );
         });
     });
 
-    describe('Join an Event as a Member', () => {
-      const USERID = 'test-user-id'; 
-      const EVENTID = 'test-event-id'; 
-      const mockEventUser = { 
-          PK: `USER#${USERID}`,
-          SK: `EVENT#${EVENTID}`,
-          GSI2PK: `EVENT#${EVENTID}`,
-          GSI2SK: `USER#${USERID}`,
-      };
-      
-      beforeAll(() => {
-          // Freeze time to prevent timestamp mismatches
-          jest.useFakeTimers().setSystemTime(new Date('2025-04-02T21:26:21.561Z'));
-      });
-      
-      afterAll(() => {
-          jest.useRealTimers();
-      });
-      
-      it('should successfully join an event', async () => {
-          mockEventRepository.addAttendingEventRecord.mockResolvedValue(mockEventUser);
-          
-          const result = await eventService.addEventUser(USERID, EVENTID);
-          
-          expect(result).toEqual(mockEventUser);
-          expect(mockEventRepository.addAttendingEventRecord).toHaveBeenCalledWith(mockEventUser);
-      });
-      
-      it('should handle repository errors gracefully', async () => {
-          mockEventRepository.addAttendingEventRecord.mockRejectedValue(new Error('DynamoDB error'));
-          
-          await expect(eventService.addEventUser(USERID, EVENTID)).rejects.toThrow(
-              'Failed to create event: DynamoDB error'
-          );
-      });
-  });
+    describe('Leave an Event as a Member', () => {
+        const USERID = 'test-user-id';
+        const EVENTID = 'test-event-id';
 
-  describe('Leave an Event as a Member', () => {
-      const USERID = 'test-user-id'; 
-      const EVENTID = 'test-event-id'; 
-      
-      beforeAll(() => {
-          // Freeze time to prevent timestamp mismatches
-          jest.useFakeTimers().setSystemTime(new Date('2025-04-02T21:26:21.561Z'));
-      });
-      
-      afterAll(() => {
-          jest.useRealTimers();
-      });
-      
-      it('should successfully leave an event', async () => {
-          mockEventRepository.removeAttendingEventRecord.mockResolvedValue(true);
-          
-          const result = await eventService.removeEventUser(USERID, EVENTID);
-          
-          expect(result).toBe(true);
-          expect(mockEventRepository.removeAttendingEventRecord).toHaveBeenCalledWith(USERID, EVENTID);
-      });
-      
-      it('should handle repository errors gracefully', async () => {
-          mockEventRepository.removeAttendingEventRecord.mockRejectedValue(new Error('DynamoDB error'));
-          
-          await expect(eventService.removeEventUser(USERID, EVENTID)).rejects.toThrow(
-              'Failed to create event: DynamoDB error'
-          );
-      });
-  });
+        beforeAll(() => {
+            // Freeze time to prevent timestamp mismatches
+            jest.useFakeTimers().setSystemTime(new Date('2025-04-02T21:26:21.561Z'));
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
+        });
+
+        it('should successfully leave an event', async () => {
+            mockEventRepository.removeAttendingEventRecord.mockResolvedValue(true);
+
+            const result = await eventService.removeEventUser(USERID, EVENTID);
+
+            expect(result).toBe(true);
+            expect(mockEventRepository.removeAttendingEventRecord).toHaveBeenCalledWith(
+                USERID,
+                EVENTID
+            );
+        });
+
+        it('should handle repository errors gracefully', async () => {
+            mockEventRepository.removeAttendingEventRecord.mockRejectedValue(
+                new Error('DynamoDB error')
+            );
+
+            await expect(eventService.removeEventUser(USERID, EVENTID)).rejects.toThrow(
+                'Failed to create event: DynamoDB error'
+            );
+        });
+    });
 });
 
 describe('createEvent', () => {
@@ -172,11 +186,14 @@ describe('Update event', () => {
     it('should successfully update event publicity', async () => {
         // Setup mocks
         mockEventRepository.findEventById.mockResolvedValue(createdEvent);
-        mockEventRepository.updateEventPublicity.mockResolvedValue({...createdEvent, isPublic: false});
-        
+        mockEventRepository.updateEventPublicity.mockResolvedValue({
+            ...createdEvent,
+            isPublic: false,
+        });
+
         // Execute test
         const updatedEvent = await eventService.updateEventPublicity(createdEvent);
-        
+
         // Assertions
         expect(updatedEvent).toBeDefined();
         expect(updatedEvent?.isPublic).toBe(false);
@@ -187,24 +204,26 @@ describe('Update event', () => {
     it('should throw error when event not found', async () => {
         // Setup mocks
         mockEventRepository.findEventById.mockResolvedValue(null);
-        
+
         // Execute test & assertions
-        await expect(eventService.updateEventPublicity(createdEvent))
-            .rejects.toThrow('No Event found!');
-        
+        await expect(eventService.updateEventPublicity(createdEvent)).rejects.toThrow(
+            'No Event found!'
+        );
+
         expect(mockEventRepository.findEventById).toHaveBeenCalledWith(createdEvent.id);
         expect(mockEventRepository.updateEventPublicity).not.toHaveBeenCalled();
     });
-    
+
     it('should handle repository errors gracefully', async () => {
         // Setup mocks
         mockEventRepository.findEventById.mockResolvedValue(createdEvent);
         mockEventRepository.updateEventPublicity.mockRejectedValue(new Error('DynamoDB error'));
-        
+
         // Execute test & assertions
-        await expect(eventService.updateEventPublicity(createdEvent))
-            .rejects.toThrow('Updating Event\'s publicity failed! DynamoDB error');
-        
+        await expect(eventService.updateEventPublicity(createdEvent)).rejects.toThrow(
+            "Updating Event's publicity failed! DynamoDB error"
+        );
+
         expect(mockEventRepository.findEventById).toHaveBeenCalledWith(createdEvent.id);
         expect(mockEventRepository.updateEventPublicity).toHaveBeenCalled();
     });

@@ -19,17 +19,17 @@ export class S3Repository {
                 Body: fileBuffer,
                 ContentType: contentType,
             });
-            
+
             await s3Client.send(command);
             logger.info(`Uploaded file to S3: ${key}`);
-            
+
             return key;
         } catch (error) {
             logger.error('Error uploading file to S3:', error);
             throw new AppError(`Failed to upload file to S3: ${(error as Error).message}`, 500);
         }
     }
-    
+
     /**
      * Generates a pre-signed URL for accessing an S3 object
      * @param key The S3 key of the object
@@ -42,12 +42,15 @@ export class S3Repository {
                 Bucket: S3_BUCKET_NAME,
                 Key: key,
             });
-            
+
             const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
             return presignedUrl;
         } catch (error) {
             logger.error('Error generating pre-signed URL:', error);
-            throw new AppError(`Failed to generate pre-signed URL: ${(error as Error).message}`, 500);
+            throw new AppError(
+                `Failed to generate pre-signed URL: ${(error as Error).message}`,
+                500
+            );
         }
     }
 
@@ -84,7 +87,7 @@ export class S3Repository {
                 Bucket: S3_BUCKET_NAME,
                 Key: key,
             });
-            
+
             await s3Client.send(command);
             logger.info(`Deleted file from S3: ${key}`);
         } catch (error) {

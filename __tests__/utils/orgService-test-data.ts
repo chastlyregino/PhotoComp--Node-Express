@@ -152,4 +152,4 @@ export const publicOrgsArray: Organization[] = [
         GSI1PK: 'ORG',
         GSI1SK: 'ORG#PIZZAHUT',
     },
-]
+];

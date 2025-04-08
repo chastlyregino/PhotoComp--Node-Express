@@ -26,9 +26,9 @@ export const validateUserID = async (req: Request, res: Response, next: NextFunc
 };
 
 /*
-  * Get all orgs that a User is a part of 
-  * GET /organizations
-  * */
+ * Get all orgs that a User is a part of
+ * GET /organizations
+ * */
 orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = res.locals.user.info;
@@ -46,9 +46,9 @@ orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: Nex
 });
 
 /*
-  * Create a new organization, and make the creator an Admin
-  * POST /organizations
-  * */
+ * Create a new organization, and make the creator an Admin
+ * POST /organizations
+ * */
 orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
@@ -72,7 +72,7 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
                             user: userAdmin.userId,
                             org: org.name,
                             logoUrl: org.logoUrl, // Return the pre-signed URL
-                            logoS3Key: org.logoS3Key // Return the S3 key for reference
+                            logoS3Key: org.logoS3Key, // Return the S3 key for reference
                         },
                     });
                 }
@@ -88,36 +88,39 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
 });
 
 /*
-  * Update an organization's information
-  * POST /organizations
-  * */
-orgRouter.patch(`/`, validateUserID, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { name, logoUrl, description, website, contactEmail } = req.body;
-        const user = res.locals.user.info;
+ * Update an organization's information
+ * POST /organizations
+ * */
+orgRouter.patch(
+    `/:id`,
+    validateUserID,
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { name, logoUrl, description, website, contactEmail } = req.body;
 
-        const org: OrganizationUpdateRequest = {
-            name,
-            logoUrl,
-            description,
-            website,
-            contactEmail,
-        };
+            const org: OrganizationUpdateRequest = {
+                name,
+                logoUrl,
+                description,
+                website,
+                contactEmail,
+            };
 
-        const updatedOrg = await orgService.updateOrgByName(org, user.id);
+            const updatedOrg = await orgService.updateOrgByName(org);
 
-        if (!updatedOrg) {
-            throw new AppError(`Failed to update Organization`, 400);
+            if (!updatedOrg) {
+                throw new AppError(`Failed to update Organization`, 400);
+            }
+
+            res.status(200).json({
+                status: 'Updated organization!',
+                data: {
+                    org: updatedOrg,
+                },
+            });
+        } catch (error) {
+            next(error);
         }
-
-        res.status(200).json({
-            status: 'Updated organization!',
-            data: {
-                org: updatedOrg,
-            },
-        });
-    } catch (error) {
-        next(error);
     }
-});
-
+);

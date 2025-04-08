@@ -12,7 +12,9 @@ export class OrgMembershipRepository {
      * @param request The membership request to create
      * @returns The created membership request
      */
-    async createMembershipRequest(request: OrganizationMembershipRequest): Promise<OrganizationMembershipRequest> {
+    async createMembershipRequest(
+        request: OrganizationMembershipRequest
+    ): Promise<OrganizationMembershipRequest> {
         try {
             await dynamoDb.send(
                 new PutCommand({
@@ -24,7 +26,10 @@ export class OrgMembershipRepository {
             return request;
         } catch (error: any) {
             if (error.name === 'ConditionalCheckFailedException') {
-                throw new AppError('You have already submitted a request to join this organization', 409);
+                throw new AppError(
+                    'You have already submitted a request to join this organization',
+                    409
+                );
             }
             throw new AppError(`Failed to create membership request: ${error.message}`, 500);
         }
@@ -35,7 +40,9 @@ export class OrgMembershipRepository {
      * @param organizationName The name of the organization
      * @returns List of pending membership requests
      */
-    async getPendingRequestsByOrganization(organizationName: string): Promise<OrganizationMembershipRequest[]> {
+    async getPendingRequestsByOrganization(
+        organizationName: string
+    ): Promise<OrganizationMembershipRequest[]> {
         try {
             const result = await dynamoDb.send(
                 new QueryCommand({
@@ -44,7 +51,7 @@ export class OrgMembershipRepository {
                     ExpressionAttributeValues: {
                         ':orgKey': `ORG#${organizationName.toUpperCase()}`,
                         ':requestPrefix': 'REQUEST#',
-                    }
+                    },
                 })
             );
 
@@ -68,7 +75,7 @@ export class OrgMembershipRepository {
                     Key: {
                         PK: `ORG#${organizationName.toUpperCase()}`,
                         SK: `REQUEST#${userId}`,
-                    }
+                    },
                 })
             );
             return true;
@@ -76,5 +83,4 @@ export class OrgMembershipRepository {
             throw new AppError(`Failed to delete membership request: ${error.message}`, 500);
         }
     }
-
 }

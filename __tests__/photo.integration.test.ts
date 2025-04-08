@@ -1,28 +1,28 @@
 // Mock the modules before any imports
 jest.mock('@aws-sdk/client-s3', () => ({
     S3Client: jest.fn().mockImplementation(() => ({
-        send: jest.fn().mockResolvedValue({})
+        send: jest.fn().mockResolvedValue({}),
     })),
     PutObjectCommand: jest.fn(),
     GetObjectCommand: jest.fn(),
-    DeleteObjectCommand: jest.fn()
+    DeleteObjectCommand: jest.fn(),
 }));
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
-    getSignedUrl: jest.fn().mockResolvedValue('https://presigned-url.example.com/photo.jpg')
+    getSignedUrl: jest.fn().mockResolvedValue('https://presigned-url.example.com/photo.jpg'),
 }));
 
 // Mock DynamoDB and related modules
 jest.mock('@aws-sdk/lib-dynamodb', () => ({
     DynamoDBDocumentClient: {
         from: jest.fn().mockReturnValue({
-            send: jest.fn()
-        })
+            send: jest.fn(),
+        }),
     },
     PutCommand: jest.fn(),
     QueryCommand: jest.fn(),
     GetCommand: jest.fn(),
-    DeleteCommand: jest.fn()
+    DeleteCommand: jest.fn(),
 }));
 
 // Mock multer
@@ -33,10 +33,10 @@ jest.mock('multer', () => {
             req.file = {
                 buffer: Buffer.from('mock file content'),
                 mimetype: 'image/jpeg',
-                size: 1024 * 10 // 10KB
+                size: 1024 * 10, // 10KB
             };
             next();
-        }
+        },
     });
     multerMock.memoryStorage = jest.fn();
     return multerMock;
@@ -44,23 +44,23 @@ jest.mock('multer', () => {
 
 // Mock UUID for controlled test values
 jest.mock('uuid', () => ({
-    v4: jest.fn().mockReturnValue('test-photo-uuid')
+    v4: jest.fn().mockReturnValue('test-photo-uuid'),
 }));
 
 // Mock config modules
 jest.mock('../src/config/db', () => ({
     dynamoDb: {
-        send: jest.fn()
+        send: jest.fn(),
     },
-    TABLE_NAME: 'test-table'
+    TABLE_NAME: 'test-table',
 }));
 
 jest.mock('../src/config/s3', () => ({
     s3Client: {
-        send: jest.fn().mockResolvedValue({})
+        send: jest.fn().mockResolvedValue({}),
     },
     getSignedUrl: jest.fn().mockResolvedValue('https://presigned-url.example.com/photo.jpg'),
-    S3_BUCKET_NAME: 'test-bucket'
+    S3_BUCKET_NAME: 'test-bucket',
 }));
 
 // IMPORTANT: Mock UserService and its getUserByEmail method
@@ -119,8 +119,8 @@ jest.mock('../src/controllers/orgController', () => {
                     email: 'test@example.com',
                     firstName: 'Test',
                     lastName: 'User',
-                    role: 'ADMIN'
-                }
+                    role: 'ADMIN',
+                },
             };
             next();
         },
@@ -131,7 +131,7 @@ jest.mock('../src/controllers/orgController', () => {
 // Mock the auth middleware
 jest.mock('../src/middleware/authMiddleware', () => ({
     authenticate: (req: any, res: any, next: any) => next(),
-    authorizeAdmin: (req: any, res: any, next: any) => next()
+    authorizeAdmin: (req: any, res: any, next: any) => next(),
 }));
 
 // Mock the org middleware
@@ -158,10 +158,10 @@ jest.mock('../src/middleware/uploadMiddleware', () => ({
         req.file = {
             buffer: Buffer.from('mock file content'),
             mimetype: 'image/jpeg',
-            size: 1024 * 10 // 10KB
+            size: 1024 * 10, // 10KB
         };
         next();
-    }
+    },
 }));
 
 jest.mock('../src/repositories/photoRepository', () => {
@@ -185,8 +185,8 @@ jest.mock('../src/repositories/photoRepository', () => {
                             metadata: {
                                 title: 'Test Photo 1',
                                 description: 'Test Photo Description 1',
-                                s3Key: `photos/${eventId}/photo-1.jpg`
-                            }
+                                s3Key: `photos/${eventId}/photo-1.jpg`,
+                            },
                         },
                         {
                             id: 'photo-2',
@@ -202,12 +202,12 @@ jest.mock('../src/repositories/photoRepository', () => {
                             metadata: {
                                 title: 'Test Photo 2',
                                 description: 'Test Photo Description 2',
-                                s3Key: `photos/${eventId}/photo-2.jpg`
-                            }
-                        }
+                                s3Key: `photos/${eventId}/photo-2.jpg`,
+                            },
+                        },
                     ]);
                 }),
-                getPhotoById: jest.fn().mockImplementation((photoId) => {
+                getPhotoById: jest.fn().mockImplementation(photoId => {
                     return Promise.resolve({
                         id: photoId,
                         PK: `PHOTO#${photoId}`,
@@ -220,13 +220,13 @@ jest.mock('../src/repositories/photoRepository', () => {
                         metadata: {
                             title: 'Test Photo',
                             description: 'Test Photo Description',
-                            s3Key: `photos/test-event-id/${photoId}.jpg`
+                            s3Key: `photos/test-event-id/${photoId}.jpg`,
                         },
                         GSI2PK: `EVENT#test-event-id`,
-                        GSI2SK: `PHOTO#${photoId}`
+                        GSI2SK: `PHOTO#${photoId}`,
                     });
                 }),
-                createPhoto: jest.fn().mockImplementation((photo) => {
+                createPhoto: jest.fn().mockImplementation(photo => {
                     return Promise.resolve(photo);
                 }),
                 deletePhoto: jest.fn().mockImplementation(() => {
@@ -323,9 +323,9 @@ describe('Photo Controller Integration Tests', () => {
                         email: 'test@example.com',
                         firstName: 'Test',
                         lastName: 'User',
-                        role: 'ADMIN'
-                    }
-                }
+                        role: 'ADMIN',
+                    },
+                },
             };
             next();
         });
@@ -381,8 +381,9 @@ describe('Photo Controller Integration Tests', () => {
 
             mockDynamoSend.mockResolvedValueOnce({});
 
-            const response = await request(app)
-                .delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`);
+            const response = await request(app).delete(
+                `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`
+            );
 
             // Verify response
             expect(response.statusCode).toBe(200);

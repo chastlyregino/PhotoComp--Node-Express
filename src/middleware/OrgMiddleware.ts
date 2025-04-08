@@ -17,7 +17,12 @@ export const checkOrgAdmin = async (req: Request, res: Response, next: NextFunct
             await orgService.findSpecificOrgByUser(orgName, user.id);
 
         if (!orgService.validateUserOrgAdmin(userAdminOrg as UserOrganizationRelationship)) {
-            return next(new AppError('Only an Org Admin can perform this action. Please talk to your Admin for more information', 403));
+            return next(
+                new AppError(
+                    'Only an Org Admin can perform this action. Please talk to your Admin for more information',
+                    403
+                )
+            );
         }
 
         next();
@@ -31,11 +36,16 @@ export const checkOrgMember = async (req: Request, res: Response, next: NextFunc
         const orgName: string = req.params.id;
         const user = res.locals.user as { id: string; email: string; role: UserRole };
 
-        const userMemberOrg : UserOrganizationRelationship | null =
+        const userMemberOrg: UserOrganizationRelationship | null =
             await orgService.findSpecificOrgByUser(orgName, user.id);
 
         if (!orgService.validateUserOrgMember(userMemberOrg as UserOrganizationRelationship)) {
-            return next(new AppError('Only an Org Member can perform this action. Please talk to the Admin for more information', 403));
+            return next(
+                new AppError(
+                    'Only an Org Member can perform this action. Please talk to the Admin for more information',
+                    403
+                )
+            );
         }
 
         next();

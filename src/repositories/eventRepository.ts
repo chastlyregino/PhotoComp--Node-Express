@@ -1,6 +1,12 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { Event, EventUser } from '../models/Event';
-import { PutCommand, QueryCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+    PutCommand,
+    QueryCommand,
+    GetCommand,
+    DeleteCommand,
+    UpdateCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 /**
@@ -63,9 +69,9 @@ export class EventRepository {
                 new DeleteCommand({
                     TableName: TABLE_NAME,
                     Key: {
-                      PK: `USER#${userID}`,
-                      SK: `EVENT#${eventID}`
-                    }
+                        PK: `USER#${userID}`,
+                        SK: `EVENT#${eventID}`,
+                    },
                 })
             );
 
@@ -256,21 +262,28 @@ export class EventRepository {
 
     async updateEventPublicity(event: Event): Promise<Event | null> {
         try {
-            const params = {
-                TableName: TABLE_NAME,
-                KeyConditionExpression: 'PK = :eventKey and SK = :event',
-                UpdateExpression: 'SET isPublic = :isPublic',
-                ExpressionAttributeValues: {
-                    ':eventKey': event.PK,
-                    ':event': event.SK,
-                },
-                AttributeUpdates: {
-                    ':isPublic': event.isPublic,
-                },
-                ReturnValues: `UPDATE_NEW`,
-            };
+            const updatedEvent = await dynamoDb.send(
+                new UpdateCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: event.PK,
+                        SK: event.SK,
+                    },
+                    UpdateExpression: 'SET #isPublic = :isPublic',
+                    ExpressionAttributeNames: {
+                        '#isPublic': 'isPublic',
+                    },
+                    ExpressionAttributeValues: {
+                        ':isPublic': event.isPublic,
+                    },
+                    ReturnValues: 'ALL_NEW',
+                })
+            );
 
-            const udpatedEvent = await dynamoDb.send(new QueryCommand(params));
+            if (!updatedEvent.Attributes) {
+                throw new AppError('Event Publicity not updated', 400);
+            }
+
             return event as Event;
         } catch (error: any) {
             throw new AppError(`Failed to update Event's Publicity: ${error.message}`, 500);
