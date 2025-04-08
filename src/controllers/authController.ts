@@ -55,6 +55,32 @@ authRouter.post('/register', async (req: Request, res: Response, next: NextFunct
 });
 
 /**
+ * Delete a user account
+ * @route DELETE /api/auth/users/:id
+ */
+authRouter.delete('/users/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.params.id;
+        const requestingUserId = res.locals.user.id;
+
+        // Only allow users to delete their own account or admins to delete any account
+        if (userId !== requestingUserId && res.locals.user.role !== UserRole.ADMIN) {
+            throw new AppError('Not authorized to delete this user', 403);
+        }
+
+        const result = await userService.deleteUser(userId);
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'User deleted successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+/**
  * Login an existing user
  * @route POST /api/auth/login
  */
@@ -88,3 +114,5 @@ authRouter.post('/login', async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 });
+
+

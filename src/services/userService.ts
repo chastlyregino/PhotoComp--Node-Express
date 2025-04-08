@@ -123,4 +123,32 @@ export class UserService {
             throw new AppError(`Failed to get user by ID: ${(error as Error).message}`, 500);
         }
     }
+
+    /**
+ * Deletes a user and all their membership records
+ * @param userId The ID of the user to delete
+ * @returns Boolean indicating success
+ */
+    async deleteUser(userId: string): Promise<boolean> {
+        try {
+            // First get the user to make sure they exist
+            const user = await this.userRepository.getUserById(userId);
+            if (!user) {
+                throw new AppError('User not found', 404);
+            }
+
+            // Delete all organization memberships
+            const deletedMemberships = await this.userRepository.deleteUserOrganizationMemberships(userId);
+
+            // Delete the user entity
+            const deletedUser = await this.userRepository.deleteUser(userId);
+
+            return deletedUser && deletedMemberships;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to delete user: ${(error as Error).message}`, 500);
+        }
+    }
 }
