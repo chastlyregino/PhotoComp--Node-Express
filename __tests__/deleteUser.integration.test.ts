@@ -29,7 +29,7 @@ jest.mock('../src/services/userService', () => {
         register: jest.fn(),
         deleteUser: jest.fn()
     };
-    
+
     return {
         UserService: jest.fn().mockImplementation(() => mockUserService)
     };
@@ -43,6 +43,7 @@ import { authRouter } from '../src/controllers/authController';
 import { errorHandler } from '../src/middleware/errorHandler';
 import { UserService } from '../src/services/userService';
 import { User, UserRole } from '../src/models/User';
+import { AppError } from '../src/middleware/errorHandler';
 
 describe('Delete User Integration Tests', () => {
     let app: express.Application;
@@ -79,7 +80,7 @@ describe('Delete User Integration Tests', () => {
         it('should allow a user to delete their own account', async () => {
             // Mock getUserByEmail to return the user for authentication
             mockUserService.getUserByEmail.mockResolvedValue(mockUser);
-            
+
             // Mock deleteUser to succeed
             mockUserService.deleteUser.mockResolvedValue(true);
 
@@ -128,9 +129,9 @@ describe('Delete User Integration Tests', () => {
         it('should return 404 when user not found', async () => {
             // Mock getUserByEmail to return the user for authentication
             mockUserService.getUserByEmail.mockResolvedValue(mockUser);
-            
-            // Mock deleteUser to throw a user not found error
-            mockUserService.deleteUser.mockRejectedValue(new Error('User not found'));
+
+            // Mock deleteUser to throw a user not found error with the proper AppError class and status code
+            mockUserService.deleteUser.mockRejectedValue(new AppError('User not found', 404));
 
             const response = await request(app)
                 .delete(`/api/auth/users/user123`)
@@ -145,7 +146,7 @@ describe('Delete User Integration Tests', () => {
         it('should handle database errors gracefully', async () => {
             // Mock getUserByEmail to return the user for authentication
             mockUserService.getUserByEmail.mockResolvedValue(mockUser);
-            
+
             // Mock deleteUser to throw a database error
             mockUserService.deleteUser.mockRejectedValue(new Error('Database connection failed'));
 
@@ -173,7 +174,7 @@ describe('Delete User Integration Tests', () => {
         it('should delete memberships before deleting the user', async () => {
             // Mock getUserByEmail to return the user for authentication
             mockUserService.getUserByEmail.mockResolvedValue(mockUser);
-            
+
             // Mock deleteUser to succeed
             mockUserService.deleteUser.mockResolvedValue(true);
 
