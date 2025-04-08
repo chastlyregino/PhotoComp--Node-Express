@@ -171,7 +171,7 @@ describe('Delete User Integration Tests', () => {
             expect(mockUserService.deleteUser).not.toHaveBeenCalled();
         });
 
-        it('should delete memberships before deleting the user', async () => {
+        it('should delete event attendance records and memberships before deleting the user', async () => {
             // Mock getUserByEmail to return the user for authentication
             mockUserService.getUserByEmail.mockResolvedValue(mockUser);
 

@@ -125,10 +125,10 @@ export class UserService {
     }
 
     /**
- * Deletes a user and all their membership records
- * @param userId The ID of the user to delete
- * @returns Boolean indicating success
- */
+     * Deletes a user and all their membership records and event attendance records
+     * @param userId The ID of the user to delete
+     * @returns Boolean indicating success
+     */
     async deleteUser(userId: string): Promise<boolean> {
         try {
             // First get the user to make sure they exist
@@ -137,13 +137,16 @@ export class UserService {
                 throw new AppError('User not found', 404);
             }
 
+            // Delete all event attendance records
+            const deletedEventAttendance = await this.userRepository.deleteUserEventAttendance(userId);
+
             // Delete all organization memberships
             const deletedMemberships = await this.userRepository.deleteUserOrganizationMemberships(userId);
 
             // Delete the user entity
             const deletedUser = await this.userRepository.deleteUser(userId);
 
-            return deletedUser && deletedMemberships;
+            return deletedUser && deletedMemberships && deletedEventAttendance;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
