@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-<<<<<<< HEAD
-import { checkOrgAdmin } from '../middleware/OrgMiddleware';
-=======
 import { checkOrgAdmin, checkOrgMember, validateUserID } from '../middleware/OrgMiddleware';
->>>>>>> 7addd4b (revise middleware to handle deleted user with valid token)
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
