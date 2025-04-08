@@ -1,6 +1,6 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { User, UserRole } from '../models/User';
-import { PutCommand, QueryCommand, GetCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, GetCommand, BatchWriteCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 
 /**
@@ -98,50 +98,35 @@ export class UserRepository {
      */
     async deleteUser(userId: string): Promise<boolean> {
         try {
-            if (!TABLE_NAME) {
-                throw new AppError('Table name not configured', 500);
-            }
-
-            // First get the user to find their email
+            // First check if the user exists
             const user = await this.getUserById(userId);
             if (!user) {
                 throw new AppError('User not found', 404);
             }
 
-            // Prepare batch delete for user records
-            const deleteRequests = [
-                // Delete primary user record
-                {
-                    DeleteRequest: {
-                        Key: {
-                            PK: `USER#${userId}`,
-                            SK: 'ENTITY'
-                        }
+            // Delete the user record using DeleteCommand
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `USER#${userId}`,
+                        SK: 'ENTITY'
                     }
-                }
-            ];
+                })
+            );
 
-            // Add email index record if available
+            // If the user has an email (they should), delete the GSI record too
             if (user.email) {
-                deleteRequests.push({
-                    DeleteRequest: {
+                await dynamoDb.send(
+                    new DeleteCommand({
+                        TableName: TABLE_NAME,
                         Key: {
                             PK: `EMAIL#${user.email}`,
                             SK: 'ENTITY'
                         }
-                    }
-                });
+                    })
+                );
             }
-
-            // Execute batch delete
-            const requestItems: Record<string, any> = {};
-            requestItems[TABLE_NAME] = deleteRequests;
-
-            await dynamoDb.send(
-                new BatchWriteCommand({
-                    RequestItems: requestItems
-                })
-            );
 
             return true;
         } catch (error: any) {
