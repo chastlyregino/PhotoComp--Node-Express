@@ -7,10 +7,12 @@ import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { UserOrganizationRelationship } from '../models/Organizations';
 import { AppError } from '@/middleware/errorHandler';
 import { WeatherService } from '@/services/weatherService';
+import { GeocodingService } from '@/services/geocodingService';
 
 const eventService = new EventService();
 const orgService = new OrgService();
 const weatherService = new WeatherService();
+const geocodingService = new GeocodingService();
 
 export const eventRouter = Router({ mergeParams: true });
 
@@ -236,3 +238,80 @@ eventRouter.patch('/:eid/location', checkOrgAdmin, async (req: Request, res: Res
         next(error);
     }
 });
+
+/*
+ * Update event location using an address and fetch weather data
+ * PATCH /events/:eid/location/address
+ */
+eventRouter.patch(
+    '/:eid/location/address',
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const eventId: string = req.params.eid;
+            const { address } = req.body;
+
+            if (!address || typeof address !== 'string') {
+                throw new AppError('Valid address is required', 400);
+            }
+
+            // First get the existing event
+            const event = await eventService.findEventById(eventId);
+
+            if (!event) {
+                throw new AppError('Event not found', 404);
+            }
+
+            // Geocode the address to get coordinates
+            const geocodingResult = await geocodingService.geocodeAddress(address);
+
+            // Update event with location data
+            event.location = {
+                latitude: geocodingResult.latitude,
+                longitude: geocodingResult.longitude,
+                name: geocodingResult.displayName
+            };
+
+            // Update event in database
+            const updatedEvent = await eventService.updateEvent(event);
+
+            // Fetch and add weather data
+            try {
+                const weatherData = await weatherService.getWeatherForLocation(
+                    geocodingResult.latitude,
+                    geocodingResult.longitude,
+                    event.date
+                );
+
+                const eventWithWeather = await eventService.updateEventWeather(eventId, weatherData);
+
+                return res.status(200).json({
+                    status: 'success',
+                    data: {
+                        event: eventWithWeather,
+                        geocoding: {
+                            latitude: geocodingResult.latitude,
+                            longitude: geocodingResult.longitude,
+                            formattedAddress: geocodingResult.displayName
+                        }
+                    }
+                });
+            } catch (weatherError) {
+                // Return updated event even if weather fetch fails
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'Location updated but weather data could not be fetched',
+                    data: {
+                        event: updatedEvent,
+                        geocoding: {
+                            latitude: geocodingResult.latitude,
+                            longitude: geocodingResult.longitude,
+                            formattedAddress: geocodingResult.displayName
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            next(error);
+        }
+    });

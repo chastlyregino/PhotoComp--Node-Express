@@ -87,6 +87,38 @@ export class EventService {
     }
 
     /**
+ * Adds a user to an event by creating an attendance record.
+ *
+ * @param userID - The ID of the user attending the event.
+ * @param eventID - The ID of the event the user is attending.
+ * @returns The created EventUser record.
+ * @throws {AppError} If the database operation fails.
+ */
+    async addEventUser(userID: string, eventID: string): Promise<EventUser> {
+        try {
+            const eventUser: EventUser = createEventUser(userID, eventID);
+            return await this.eventRepository.addAttendingEventRecord(eventUser);
+        } catch (error: any) {
+            throw new AppError(`Failed to create event: ${error.message}`, 500);
+        }
+    }
+    /**
+     * Removes a user from an event by removing an attendance record.
+     *
+     * @param userID - The ID of the user attending the event.
+     * @param eventID - The ID of the event the user is attending.
+     * @returns The deleted EventUser record.
+     * @throws {AppError} If the database operation fails.
+     */
+    async removeEventUser(userID: string, eventID: string): Promise<Boolean> {
+        try {
+            return await this.eventRepository.removeAttendingEventRecord(userID, eventID);
+        } catch (error: any) {
+            throw new AppError(`Failed to create event: ${error.message}`, 500);
+        }
+    }
+
+    /**
      * Refreshes the weather forecast data for an existing event
      * 
      * This method fetches the latest weather data from Open-Meteo based on
