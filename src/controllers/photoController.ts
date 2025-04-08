@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-import { checkOrgAdmin, checkOrgMember, validateUserID } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin} from '../middleware/OrgMiddleware';
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
@@ -92,7 +92,6 @@ photoRouter.get(
  */
 photoRouter.get(
     '/:id/events/:eventId/photos/:photoId/download',
-    validateUserID,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;

@@ -8,7 +8,7 @@ import {
     UserOrganizationRelationship,
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
-import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 
 const orgService = new OrgService();
 export const orgRouter = Router();
