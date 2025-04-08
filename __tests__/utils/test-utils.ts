@@ -1,6 +1,7 @@
 import express from 'express';
 import { errorHandler } from '../../src/middleware/errorHandler';
 import { authRouter } from '../../src/controllers/authController';
+import { authenticate } from '../../src/middleware/authMiddleware';
 
 // Set up environment variables for tests if not already set
 export function setupTestEnvironment() {
@@ -17,3 +18,5 @@ export function createTestApp() {
     app.use(errorHandler);
     return app;
 }
+
+export { authenticate }; 

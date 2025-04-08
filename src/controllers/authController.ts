@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { UserService } from '../services/userService';
-import { AuthRequest, RegisterRequest } from '../models/User';
+import { AuthRequest, RegisterRequest, UserRole } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
+import { authenticate } from '../middleware/authMiddleware';
 
 const userService = new UserService();
 export const authRouter = Router();
