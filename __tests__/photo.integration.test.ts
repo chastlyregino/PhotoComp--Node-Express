@@ -74,11 +74,11 @@ jest.mock('../src/services/userService', () => {
                         email: 'test@example.com',
                         firstName: 'Test',
                         lastName: 'User',
-                        role: 'ADMIN'
+                        role: 'ADMIN',
                     });
-                })
+                }),
             };
-        })
+        }),
     };
 });
 
@@ -87,24 +87,24 @@ jest.mock('../src/services/eventService', () => {
     return {
         EventService: jest.fn().mockImplementation(() => {
             return {
-                findEventById: jest.fn().mockImplementation((eventId) => {
+                findEventById: jest.fn().mockImplementation(eventId => {
                     return Promise.resolve({
                         id: eventId,
                         title: 'Test Event',
                         description: 'Test Event Description',
                         isPublic: true,
                         PK: `EVENT#${eventId}`,
-                        SK: 'ENTITY'
+                        SK: 'ENTITY',
                     });
                 }),
                 findEventUserbyUser: jest.fn().mockImplementation(() => {
                     return Promise.resolve({
                         PK: 'USER#test-user-id',
-                        SK: 'EVENT#test-event-id'
+                        SK: 'EVENT#test-event-id',
                     });
-                })
+                }),
             };
-        })
+        }),
     };
 });
 
@@ -124,7 +124,7 @@ jest.mock('../src/controllers/orgController', () => {
             };
             next();
         },
-        orgRouter: jest.fn()
+        orgRouter: jest.fn(),
     };
 });
 
@@ -145,11 +145,11 @@ jest.mock('../src/middleware/OrgMiddleware', () => ({
                 email: 'test@example.com',
                 firstName: 'Test',
                 lastName: 'User',
-                role: 'ADMIN'
-            }
+                role: 'ADMIN',
+            },
         };
         next();
-    }
+    },
 }));
 
 // Mock the upload middleware
@@ -169,7 +169,7 @@ jest.mock('../src/repositories/photoRepository', () => {
     return {
         PhotoRepository: jest.fn().mockImplementation(() => {
             return {
-                getEventPhotos: jest.fn().mockImplementation((eventId) => {
+                getEventPhotos: jest.fn().mockImplementation(eventId => {
                     return Promise.resolve([
                         {
                             id: 'photo-1',
@@ -231,9 +231,9 @@ jest.mock('../src/repositories/photoRepository', () => {
                 }),
                 deletePhoto: jest.fn().mockImplementation(() => {
                     return Promise.resolve();
-                })
+                }),
             };
-        })
+        }),
     };
 });
 
@@ -242,39 +242,43 @@ jest.mock('../src/services/photoService', () => {
     return {
         PhotoService: jest.fn().mockImplementation(() => {
             return {
-                uploadPhoto: jest.fn().mockImplementation((photoId, eventId, buffer, mimetype, userId, metadata) => {
-                    return Promise.resolve({
-                        id: photoId,
-                        eventId: eventId,
-                        url: 'https://presigned-url.example.com/photo.jpg',
-                        uploadedBy: userId,
-                        metadata: {
-                            ...metadata,
-                            s3Key: `photos/${eventId}/${photoId}.jpg`
-                        }
-                    });
-                }),
-                getEventPhotos: jest.fn().mockImplementation((eventId) => {
+                uploadPhoto: jest
+                    .fn()
+                    .mockImplementation((photoId, eventId, buffer, mimetype, userId, metadata) => {
+                        return Promise.resolve({
+                            id: photoId,
+                            eventId: eventId,
+                            url: 'https://presigned-url.example.com/photo.jpg',
+                            uploadedBy: userId,
+                            metadata: {
+                                ...metadata,
+                                s3Key: `photos/${eventId}/${photoId}.jpg`,
+                            },
+                        });
+                    }),
+                getEventPhotos: jest.fn().mockImplementation(eventId => {
                     return Promise.resolve([
                         {
                             id: 'photo-1',
                             eventId: eventId,
                             url: 'https://presigned-url.example.com/photo1.jpg',
-                            metadata: { title: 'Test Photo 1' }
+                            metadata: { title: 'Test Photo 1' },
                         },
                         {
                             id: 'photo-2',
                             eventId: eventId,
                             url: 'https://presigned-url.example.com/photo2.jpg',
-                            metadata: { title: 'Test Photo 2' }
-                        }
+                            metadata: { title: 'Test Photo 2' },
+                        },
                     ]);
                 }),
                 validateUserEventAccess: jest.fn().mockResolvedValue(true),
-                getPhotoDownloadUrl: jest.fn().mockResolvedValue('https://download-url.example.com/photo.jpg'),
-                deletePhoto: jest.fn().mockResolvedValue(undefined)
+                getPhotoDownloadUrl: jest
+                    .fn()
+                    .mockResolvedValue('https://download-url.example.com/photo.jpg'),
+                deletePhoto: jest.fn().mockResolvedValue(undefined),
             };
-        })
+        }),
     };
 });
 

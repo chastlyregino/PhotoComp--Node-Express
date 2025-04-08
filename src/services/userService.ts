@@ -138,10 +138,12 @@ export class UserService {
             }
 
             // Delete all event attendance records
-            const deletedEventAttendance = await this.userRepository.deleteUserEventAttendance(userId);
+            const deletedEventAttendance =
+                await this.userRepository.deleteUserEventAttendance(userId);
 
             // Delete all organization memberships
-            const deletedMemberships = await this.userRepository.deleteUserOrganizationMemberships(userId);
+            const deletedMemberships =
+                await this.userRepository.deleteUserOrganizationMemberships(userId);
 
             // Delete the user entity
             const deletedUser = await this.userRepository.deleteUser(userId);

@@ -1,8 +1,13 @@
 import { AppError } from '../middleware/errorHandler';
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { User, UserRole } from '../models/User';
-import { PutCommand, QueryCommand, GetCommand, BatchWriteCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-
+import {
+    PutCommand,
+    QueryCommand,
+    GetCommand,
+    BatchWriteCommand,
+    DeleteCommand,
+} from '@aws-sdk/lib-dynamodb';
 
 /**
  * Repository class for User-related database operations
@@ -111,8 +116,8 @@ export class UserRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `USER#${userId}`,
-                        SK: 'ENTITY'
-                    }
+                        SK: 'ENTITY',
+                    },
                 })
             );
 
@@ -123,8 +128,8 @@ export class UserRepository {
                         TableName: TABLE_NAME,
                         Key: {
                             PK: `EMAIL#${user.email}`,
-                            SK: 'ENTITY'
-                        }
+                            SK: 'ENTITY',
+                        },
                     })
                 );
             }
@@ -154,8 +159,8 @@ export class UserRepository {
                 KeyConditionExpression: 'PK = :userId AND begins_with(SK, :orgPrefix)',
                 ExpressionAttributeValues: {
                     ':userId': `USER#${userId}`,
-                    ':orgPrefix': 'ORG#'
-                }
+                    ':orgPrefix': 'ORG#',
+                },
             };
 
             const result = await dynamoDb.send(new QueryCommand(params));
@@ -177,9 +182,9 @@ export class UserRepository {
                     DeleteRequest: {
                         Key: {
                             PK: item.PK,
-                            SK: item.SK
-                        }
-                    }
+                            SK: item.SK,
+                        },
+                    },
                 }));
 
                 const requestItems: Record<string, any> = {};
@@ -187,7 +192,7 @@ export class UserRepository {
 
                 await dynamoDb.send(
                     new BatchWriteCommand({
-                        RequestItems: requestItems
+                        RequestItems: requestItems,
                     })
                 );
             }
@@ -217,8 +222,8 @@ export class UserRepository {
                 KeyConditionExpression: 'PK = :userId AND begins_with(SK, :eventPrefix)',
                 ExpressionAttributeValues: {
                     ':userId': `USER#${userId}`,
-                    ':eventPrefix': 'EVENT#'
-                }
+                    ':eventPrefix': 'EVENT#',
+                },
             };
 
             const result = await dynamoDb.send(new QueryCommand(params));
@@ -240,9 +245,9 @@ export class UserRepository {
                     DeleteRequest: {
                         Key: {
                             PK: item.PK,
-                            SK: item.SK
-                        }
-                    }
+                            SK: item.SK,
+                        },
+                    },
                 }));
 
                 const requestItems: Record<string, any> = {};
@@ -250,14 +255,17 @@ export class UserRepository {
 
                 await dynamoDb.send(
                     new BatchWriteCommand({
-                        RequestItems: requestItems
+                        RequestItems: requestItems,
                     })
                 );
             }
 
             return true;
         } catch (error: any) {
-            throw new AppError(`Failed to delete user event attendance records: ${error.message}`, 500);
+            throw new AppError(
+                `Failed to delete user event attendance records: ${error.message}`,
+                500
+            );
         }
     }
 }

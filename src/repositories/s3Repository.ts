@@ -61,19 +61,26 @@ export class S3Repository {
      * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
      * @returns The pre-signed URL with content-disposition header set
      */
-    async getDownloadPreSignedUrl(key: string, filename: string, expiresIn: number = 3600): Promise<string> {
+    async getDownloadPreSignedUrl(
+        key: string,
+        filename: string,
+        expiresIn: number = 3600
+    ): Promise<string> {
         try {
             const command = new GetObjectCommand({
                 Bucket: S3_BUCKET_NAME,
                 Key: key,
                 ResponseContentDisposition: `attachment; filename="${encodeURIComponent(filename)}"`,
             });
-            
+
             const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
             return presignedUrl;
         } catch (error) {
             logger.error('Error generating download pre-signed URL:', error);
-            throw new AppError(`Failed to generate download pre-signed URL: ${(error as Error).message}`, 500);
+            throw new AppError(
+                `Failed to generate download pre-signed URL: ${(error as Error).message}`,
+                500
+            );
         }
     }
 

@@ -1,11 +1,11 @@
 // Mock the modules before any imports
 jest.mock('@aws-sdk/client-s3', () => ({
     S3Client: jest.fn().mockImplementation(() => ({
-        send: jest.fn().mockResolvedValue({})
+        send: jest.fn().mockResolvedValue({}),
     })),
     PutObjectCommand: jest.fn(),
     GetObjectCommand: jest.fn(),
-    DeleteObjectCommand: jest.fn()
+    DeleteObjectCommand: jest.fn(),
 }));
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
@@ -16,38 +16,38 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
         }
         // Regular view URL
         return Promise.resolve('https://presigned-url.example.com/photo.jpg');
-    })
+    }),
 }));
 
 // Mock DynamoDB and related modules
 jest.mock('@aws-sdk/lib-dynamodb', () => ({
     DynamoDBDocumentClient: {
         from: jest.fn().mockReturnValue({
-            send: jest.fn()
-        })
+            send: jest.fn(),
+        }),
     },
     PutCommand: jest.fn(),
     QueryCommand: jest.fn(),
     GetCommand: jest.fn(),
-    DeleteCommand: jest.fn()
+    DeleteCommand: jest.fn(),
 }));
 
 // Mock UUID for controlled test values
 jest.mock('uuid', () => ({
-    v4: jest.fn().mockReturnValue('test-photo-uuid')
+    v4: jest.fn().mockReturnValue('test-photo-uuid'),
 }));
 
 // Mock config modules
 jest.mock('../src/config/db', () => ({
     dynamoDb: {
-        send: jest.fn()
+        send: jest.fn(),
     },
-    TABLE_NAME: 'test-table'
+    TABLE_NAME: 'test-table',
 }));
 
 jest.mock('../src/config/s3', () => ({
     s3Client: {
-        send: jest.fn().mockResolvedValue({})
+        send: jest.fn().mockResolvedValue({}),
     },
     getSignedUrl: jest.fn().mockImplementation((client, command) => {
         // Check if this is a download URL request (has ResponseContentDisposition)
@@ -57,7 +57,7 @@ jest.mock('../src/config/s3', () => ({
         // Regular view URL
         return Promise.resolve('https://presigned-url.example.com/photo.jpg');
     }),
-    S3_BUCKET_NAME: 'test-bucket'
+    S3_BUCKET_NAME: 'test-bucket',
 }));
 
 // IMPORTANT: Mock UserService and its getUserByEmail method
@@ -71,11 +71,11 @@ jest.mock('../src/services/userService', () => {
                         email: 'test@example.com',
                         firstName: 'Test',
                         lastName: 'User',
-                        role: 'ADMIN'
+                        role: 'ADMIN',
                     });
-                })
+                }),
             };
-        })
+        }),
     };
 });
 
@@ -90,19 +90,19 @@ jest.mock('../src/controllers/orgController', () => {
                     email: 'test@example.com',
                     firstName: 'Test',
                     lastName: 'User',
-                    role: 'ADMIN'
-                }
+                    role: 'ADMIN',
+                },
             };
             next();
         },
-        orgRouter: jest.fn()
+        orgRouter: jest.fn(),
     };
 });
 
 // Mock the auth middleware
 jest.mock('../src/middleware/authMiddleware', () => ({
     authenticate: (req: any, res: any, next: any) => next(),
-    authorizeAdmin: (req: any, res: any, next: any) => next()
+    authorizeAdmin: (req: any, res: any, next: any) => next(),
 }));
 
 // Mock the org middleware
@@ -116,11 +116,11 @@ jest.mock('../src/middleware/OrgMiddleware', () => ({
                 email: 'test@example.com',
                 firstName: 'Test',
                 lastName: 'User',
-                role: 'ADMIN'
-            }
+                role: 'ADMIN',
+            },
         };
         next();
-    }
+    },
 }));
 
 // Create a flexible mock for the EventRepository's findEventUserbyUser method
@@ -129,7 +129,7 @@ let mockFindEventUserbyUser = jest.fn().mockResolvedValue({
     PK: 'USER#test-user-id',
     SK: 'EVENT#test-event-id',
     GSI2PK: 'EVENT#test-event-id',
-    GSI2SK: 'USER#test-user-id'
+    GSI2SK: 'USER#test-user-id',
 });
 
 // Mock the EventRepository
@@ -137,14 +137,14 @@ jest.mock('../src/repositories/eventRepository', () => {
     return {
         EventRepository: jest.fn().mockImplementation(() => {
             return {
-                findEventUserbyUser: (...args: any[]) => mockFindEventUserbyUser(...args)
+                findEventUserbyUser: (...args: any[]) => mockFindEventUserbyUser(...args),
             };
-        })
+        }),
     };
 });
 
 // Create a flexible mock for the PhotoRepository's getPhotoById method
-let mockGetPhotoById = jest.fn().mockImplementation((photoId) => {
+let mockGetPhotoById = jest.fn().mockImplementation(photoId => {
     return Promise.resolve({
         id: photoId,
         PK: `PHOTO#${photoId}`,
@@ -157,10 +157,10 @@ let mockGetPhotoById = jest.fn().mockImplementation((photoId) => {
         metadata: {
             title: 'Test Photo',
             description: 'Test Photo Description',
-            s3Key: `photos/test-event-id/${photoId}.jpg`
+            s3Key: `photos/test-event-id/${photoId}.jpg`,
         },
         GSI2PK: `EVENT#test-event-id`,
-        GSI2SK: `PHOTO#${photoId}`
+        GSI2SK: `PHOTO#${photoId}`,
     });
 });
 
@@ -169,16 +169,18 @@ jest.mock('../src/repositories/photoRepository', () => {
     return {
         PhotoRepository: jest.fn().mockImplementation(() => {
             return {
-                getPhotoById: (...args: any[]) => mockGetPhotoById(...args)
+                getPhotoById: (...args: any[]) => mockGetPhotoById(...args),
             };
-        })
+        }),
     };
 });
 
 // Create a flexible mock for the validateUserEventAccess method
 // This allows us to directly control its behavior in tests
 const mockValidateUserEventAccess = jest.fn().mockResolvedValue(true);
-const mockGetPhotoDownloadUrl = jest.fn().mockResolvedValue('https://download-url.example.com/photo.jpg');
+const mockGetPhotoDownloadUrl = jest
+    .fn()
+    .mockResolvedValue('https://download-url.example.com/photo.jpg');
 
 // Mock the PhotoService - using our flexible mocks
 jest.mock('../src/services/photoService', () => {
@@ -186,9 +188,9 @@ jest.mock('../src/services/photoService', () => {
         PhotoService: jest.fn().mockImplementation(() => {
             return {
                 validateUserEventAccess: mockValidateUserEventAccess,
-                getPhotoDownloadUrl: mockGetPhotoDownloadUrl
+                getPhotoDownloadUrl: mockGetPhotoDownloadUrl,
             };
-        })
+        }),
     };
 });
 
@@ -217,7 +219,9 @@ describe('Photo Download Integration Tests', () => {
 
         // Reset flexible mocks to default values
         mockValidateUserEventAccess.mockClear().mockResolvedValue(true);
-        mockGetPhotoDownloadUrl.mockClear().mockResolvedValue('https://download-url.example.com/photo.jpg');
+        mockGetPhotoDownloadUrl
+            .mockClear()
+            .mockResolvedValue('https://download-url.example.com/photo.jpg');
 
         // Create a fresh Express app for each test
         app = express();
@@ -257,13 +261,17 @@ describe('Photo Download Integration Tests', () => {
             // Default mock behavior is already set to return true for access
 
             const response = await request(app)
-                .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
+                .get(
+                    `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`
+                )
                 .expect(200);
 
             // Verify response structure
             expect(response.body.status).toBe('success');
             expect(response.body.data.downloadUrl).toBeDefined();
-            expect(response.body.data.downloadUrl).toBe('https://download-url.example.com/photo.jpg');
+            expect(response.body.data.downloadUrl).toBe(
+                'https://download-url.example.com/photo.jpg'
+            );
 
             // Verify our mock was called
             expect(mockValidateUserEventAccess).toHaveBeenCalledWith(testEventId, testUserId);
@@ -274,7 +282,9 @@ describe('Photo Download Integration Tests', () => {
             mockValidateUserEventAccess.mockResolvedValue(false);
 
             const response = await request(app)
-                .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
+                .get(
+                    `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`
+                )
                 .expect(403);
 
             // Verify error response

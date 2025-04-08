@@ -203,11 +203,11 @@ export class PhotoService {
     }
 
     /**
- * Validates if a user has access to an event's photos
- * @param eventId The event ID to check access for
- * @param userId The user ID requesting access
- * @returns Boolean indicating if the user has access
- */
+     * Validates if a user has access to an event's photos
+     * @param eventId The event ID to check access for
+     * @param userId The user ID requesting access
+     * @returns Boolean indicating if the user has access
+     */
     async validateUserEventAccess(eventId: string, userId: string): Promise<boolean> {
         try {
             // Check if the user is attending the event
@@ -239,15 +239,17 @@ export class PhotoService {
             }
 
             // Get the S3 key from metadata or extract it from the URL
-            const s3Key = photo.metadata?.s3Key || (() => {
-                try {
-                    const urlParts = new URL(photo.url);
-                    return urlParts.pathname.substring(1); // Remove leading slash
-                } catch (error) {
-                    logger.error(`Error parsing photo URL: ${photo.url}`, error);
-                    throw new AppError('Could not determine photo storage location', 500);
-                }
-            })();
+            const s3Key =
+                photo.metadata?.s3Key ||
+                (() => {
+                    try {
+                        const urlParts = new URL(photo.url);
+                        return urlParts.pathname.substring(1); // Remove leading slash
+                    } catch (error) {
+                        logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                        throw new AppError('Could not determine photo storage location', 500);
+                    }
+                })();
 
             if (!s3Key) {
                 throw new AppError('Photo storage information missing', 500);
@@ -263,7 +265,10 @@ export class PhotoService {
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(`Failed to get photo download URL: ${(error as Error).message}`, 500);
+            throw new AppError(
+                `Failed to get photo download URL: ${(error as Error).message}`,
+                500
+            );
         }
     }
 }
