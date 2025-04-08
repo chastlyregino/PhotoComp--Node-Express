@@ -3,11 +3,11 @@
 import { EventService } from './eventService';
 import { OrgService } from './orgService';
 import { OrgMembershipRepository } from '../repositories/orgMembershipRepository';
-import { 
+import {
     OrganizationMembershipRequest,
     UserOrganizationRelationship,
     createOrganizationMembershipRequest,
-    addOrganizationAdmin
+    addOrganizationAdmin,
 } from '../models/Organizations';
 import { UserRole } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
@@ -20,7 +20,7 @@ export class OrgMembershipService {
     constructor(
         orgMembershipRepository: OrgMembershipRepository = new OrgMembershipRepository(),
         eventService: EventService = new EventService(),
-        orgService: OrgService = new OrgService(),
+        orgService: OrgService = new OrgService()
     ) {
         this.orgMembershipRepository = orgMembershipRepository;
         this.eventService = eventService;
@@ -50,7 +50,7 @@ export class OrgMembershipService {
         }
 
         const request = createOrganizationMembershipRequest(organizationName, userId, message);
-        
+
         return await this.orgMembershipRepository.createMembershipRequest(request);
     }
 
@@ -60,10 +60,12 @@ export class OrgMembershipService {
      * @returns List of pending membership requests
      */
     async getPendingRequests(organizationName: string): Promise<OrganizationMembershipRequest[]> {
-        return await this.orgMembershipRepository.getPendingRequestsByOrganization(organizationName);
+        return await this.orgMembershipRepository.getPendingRequestsByOrganization(
+            organizationName
+        );
     }
 
-     /**
+    /**
      * Approve a membership request
      * @param organizationName The name of the organization
      * @param userId The ID of the user whose request is being approved
@@ -73,27 +75,30 @@ export class OrgMembershipService {
         organizationName: string,
         userId: string
     ): Promise<UserOrganizationRelationship | null> {
-
         const events = await this.eventService.getAllOrganizationEvents(organizationName);
         if (!events || events.length === 0) {
-            throw new AppError('Cannot approve new members for an organization without events', 400);
+            throw new AppError(
+                'Cannot approve new members for an organization without events',
+                400
+            );
         }
 
         // Check if request exists
         // We don't need to check the status since we're going to delete it regardless
         const requests = await this.getPendingRequests(organizationName);
         const userRequest = requests.find(req => req.userId === userId);
-        
+
         if (!userRequest) {
             throw new AppError('Membership request not found', 404);
         }
 
         const userOrgRelationship = {
             ...addOrganizationAdmin(organizationName, userId),
-            role: UserRole.MEMBER 
+            role: UserRole.MEMBER,
         };
-        
-        const membership = await this.orgService.createUserOrganizationRelationship(userOrgRelationship);
+
+        const membership =
+            await this.orgService.createUserOrganizationRelationship(userOrgRelationship);
 
         await this.orgMembershipRepository.deleteMembershipRequest(organizationName, userId);
 
@@ -106,13 +111,10 @@ export class OrgMembershipService {
      * @param userId The ID of the user whose request is being denied
      * @returns Boolean indicating success
      */
-    async denyRequest(
-        organizationName: string,
-        userId: string
-    ): Promise<boolean> {
+    async denyRequest(organizationName: string, userId: string): Promise<boolean> {
         const requests = await this.getPendingRequests(organizationName);
         const userRequest = requests.find(req => req.userId === userId);
-        
+
         if (!userRequest) {
             throw new AppError('Membership request not found', 404);
         }

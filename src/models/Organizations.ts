@@ -164,7 +164,7 @@ export const createOrganizationMembershipRequest = (
         message,
         status: 'PENDING',
         type: 'ORG_REQUEST',
-        GSI1PK: `REQUEST#${userId}` ,
+        GSI1PK: `REQUEST#${userId}`,
         GSI1SK: `ORG#${organizationName.toUpperCase()}`,
     };
 };

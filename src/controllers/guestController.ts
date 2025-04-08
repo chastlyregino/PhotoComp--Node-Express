@@ -39,7 +39,7 @@ guestRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => 
 
 /*
  * Returning the public events from a specific organizations
-*
+ *
  * Limits the total events to 9 per request (via eventRepo);
  * */
 guestRouter.get(

@@ -29,8 +29,15 @@ app.use(loggerMethodMiddleware);
 app.use('/api/auth', authRouter);
 app.use(`/guests`, guestRouter);
 
-app.use(`/organizations`, authenticate, orgRouter, eventRouter, orgMemberRouter, orgMembershipRouter, photoRouter); // Added photoRouter 
-
+app.use(
+    `/organizations`,
+    authenticate,
+    orgRouter,
+    eventRouter,
+    orgMemberRouter,
+    orgMembershipRouter,
+    photoRouter
+); // Added photoRouter
 
 // Default route
 app.get('/', (req, res) => {

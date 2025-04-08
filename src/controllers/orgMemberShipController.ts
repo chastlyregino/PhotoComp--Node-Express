@@ -32,8 +32,8 @@ orgMembershipRouter.post(
                 status: 'success',
                 message: 'Application submitted successfully',
                 data: {
-                    request
-                }
+                    request,
+                },
             });
         } catch (error) {
             next(error);
@@ -52,19 +52,22 @@ orgMembershipRouter.get(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const orgName: string = req.params.id;
-            const requests: OrganizationMembershipRequest[] = await orgMembershipService.getPendingRequests(orgName);
+            const requests: OrganizationMembershipRequest[] =
+                await orgMembershipService.getPendingRequests(orgName);
             // If there are requests, get user details for each
             const requestsWithUserDetails = await Promise.all(
-                requests.map(async (request) => {
+                requests.map(async request => {
                     const user = await userService.getUserById(request.userId);
                     return {
                         ...request,
-                        userDetails: user ? {
-                            id: user.id,
-                            email: user.email,
-                            firstName: user.firstName,
-                            lastName: user.lastName
-                        } : null
+                        userDetails: user
+                            ? {
+                                  id: user.id,
+                                  email: user.email,
+                                  firstName: user.firstName,
+                                  lastName: user.lastName,
+                              }
+                            : null,
                     };
                 })
             );
@@ -72,8 +75,8 @@ orgMembershipRouter.get(
             return res.status(200).json({
                 status: 'success',
                 data: {
-                    requests: requestsWithUserDetails
-                }
+                    requests: requestsWithUserDetails,
+                },
             });
         } catch (error) {
             next(error);
@@ -94,15 +97,12 @@ orgMembershipRouter.put(
             const orgName: string = req.params.id;
             const userId: string = req.params.userId;
 
-            const result = await orgMembershipService.approveRequest(
-                orgName,
-                userId
-            );
+            const result = await orgMembershipService.approveRequest(orgName, userId);
 
             return res.status(200).json({
                 status: 'success',
                 message: 'Membership request approved',
-                data: result
+                data: result,
             });
         } catch (error) {
             next(error);
@@ -123,17 +123,14 @@ orgMembershipRouter.delete(
             const orgName: string = req.params.id;
             const userId: string = req.params.userId;
 
-            const result = await orgMembershipService.denyRequest(
-                orgName,
-                userId
-            );
+            const result = await orgMembershipService.denyRequest(orgName, userId);
 
             return res.status(200).json({
                 status: 'success',
                 message: 'Membership request denied',
                 data: {
-                    request: result
-                }
+                    request: result,
+                },
             });
         } catch (error) {
             next(error);

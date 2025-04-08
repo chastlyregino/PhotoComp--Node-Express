@@ -12,7 +12,7 @@ export interface Photo {
     createdAt: string;
     updatedAt: string;
     uploadedBy: string;
-    
+
     // Optional metadata
     metadata?: {
         title?: string;
@@ -47,7 +47,7 @@ export const createPhoto = (
     }
 ): Photo => {
     const now = new Date().toISOString();
-    
+
     return {
         PK: `PHOTO#${photoId}`,
         SK: 'ENTITY',

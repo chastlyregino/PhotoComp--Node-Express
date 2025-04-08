@@ -75,9 +75,9 @@ photoRouter.get(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;
-            
+
             const photos = await photoService.getEventPhotos(eventId);
-            
+
             return res.status(200).json({
                 status: 'success',
                 data: {
@@ -137,9 +137,9 @@ photoRouter.delete(
         try {
             const photoId = req.params.photoId;
             const eventId = req.params.eventId;
-            
+
             await photoService.deletePhoto(photoId, eventId);
-            
+
             return res.status(200).json({
                 status: 'success',
                 message: 'Photo deleted successfully',

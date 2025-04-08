@@ -20,7 +20,6 @@ import { OrgService } from '../src/services/orgService';
 import { UserRole } from '@/models/User';
 import { S3Service } from '../src/services/s3Service';
 
-
 // Move mocks to the top level
 jest.mock(`../src/repositories/orgRepository`);
 jest.mock(`../src/services/s3Service`); // Mock the S3Service
@@ -48,7 +47,7 @@ describe(`User roles tests`, () => {
     test(`User is not an admin`, async () => {
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        expect(orgServiceWithMock.validateUserOrgAdmin(createdUserAdmin)).toBe(false)
+        expect(orgServiceWithMock.validateUserOrgAdmin(createdUserAdmin)).toBe(false);
     });
 });
 
@@ -80,7 +79,9 @@ describe(`Positive org tests`, () => {
 
         // Set up S3Service mocks
         jest.spyOn(s3Service, 'uploadLogoFromUrl').mockResolvedValue(`mocked-s3-key`);
-        jest.spyOn(s3Service, 'getLogoPreSignedUrl').mockResolvedValue(`https://presigned-url.example.com`);
+        jest.spyOn(s3Service, 'getLogoPreSignedUrl').mockResolvedValue(
+            `https://presigned-url.example.com`
+        );
 
         // Mock models function
         (createOrganization as jest.Mock).mockReturnValue(createdOrg);
@@ -99,11 +100,13 @@ describe(`Positive org tests`, () => {
         expect(s3Service.uploadLogoFromUrl).toHaveBeenCalledWith(org.logoUrl, org.name);
         expect(s3Service.getLogoPreSignedUrl).toHaveBeenCalledWith(`mocked-s3-key`);
         expect(orgRepository.createOrg).toHaveBeenCalled();
-        expect(result).toEqual(expect.objectContaining({
-            name: org.name,
-            logoUrl: expect.any(String),
-            logoS3Key: expect.any(String)
-        }));
+        expect(result).toEqual(
+            expect.objectContaining({
+                name: org.name,
+                logoUrl: expect.any(String),
+                logoS3Key: expect.any(String),
+            })
+        );
     });
 
     test(`UserAdmin created`, async () => {
@@ -162,7 +165,9 @@ describe(`Negative org tests`, () => {
 
         // Default mocks for S3Service
         jest.spyOn(s3Service, 'uploadLogoFromUrl').mockResolvedValue(`mocked-s3-key`);
-        jest.spyOn(s3Service, 'getLogoPreSignedUrl').mockResolvedValue(`https://presigned-url.example.com`);
+        jest.spyOn(s3Service, 'getLogoPreSignedUrl').mockResolvedValue(
+            `https://presigned-url.example.com`
+        );
     });
 
     afterEach(() => {
@@ -171,7 +176,6 @@ describe(`Negative org tests`, () => {
         org.name = `Jollibee`;
         org.logoUrl = `https://images.app.goo.gl/k7Yc6Yb6ebeaB9HB8`;
     });
-
 
     test(`Organization with the same name`, async () => {
         jest.spyOn(orgRepository, 'findOrgByName').mockResolvedValue(existingOrg);
@@ -201,9 +205,8 @@ describe(`Negative org tests`, () => {
         org.logoUrl = `invalid logo`;
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
 
-
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(`Invalid URL`);
-        
+
         // S3 upload should never be called since we fail the URL validation first
         expect(s3Service.uploadLogoFromUrl).not.toHaveBeenCalled();
     });
@@ -246,7 +249,8 @@ describe(`Negative org tests`, () => {
         jest.spyOn(orgRepository, 'findOrgsByUser').mockResolvedValue(null);
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
 
-        await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(`No Organizations found!`);
+        await expect(orgServiceWithMock.findOrgsByUser(`invalidId`)).rejects.toThrow(
+            `No Organizations found!`
+        );
     });
 });
-
