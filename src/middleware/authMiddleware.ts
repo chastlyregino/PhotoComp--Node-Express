@@ -14,6 +14,7 @@ export interface AuthRequest extends Request {
 /**
  * Middleware to authenticate API requests
  * Verifies JWT token from Authorization header and adds decoded user to res.locals
+ * Improved error handling to gracefully handle deleted users
  */
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -41,11 +42,18 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
             next();
         } catch (error) {
-            // Pass the original JWT error to errorHandler middleware
-            return next(error);
+            // Handle JWT verification errors specifically
+            if (error instanceof jwt.JsonWebTokenError) {
+                return next(new AppError('Invalid token. Please log in again.', 401));
+            } else if (error instanceof jwt.TokenExpiredError) {
+                return next(new AppError('Your token has expired. Please log in again.', 401));
+            }
+            
+            // Other unexpected errors
+            return next(new AppError(`Authentication failed: ${(error as Error).message}`, 401));
         }
     } catch (error) {
-        return next(new AppError('Authentication failed', 401));
+        return next(new AppError(`Authentication failed: ${(error as Error).message}`, 401));
     }
 };
 

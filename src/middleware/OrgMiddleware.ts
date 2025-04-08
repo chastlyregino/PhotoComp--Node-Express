@@ -55,12 +55,16 @@ export const checkOrgMember = async (req: Request, res: Response, next: NextFunc
 };
 
 export const validateUserID = async (req: Request, res: Response, next: NextFunction) => {
-    const user = await userService.getUserByEmail(res.locals.user.email);
+    try {
+        const user = await userService.getUserByEmail(res.locals.user.email);
 
-    if (!user) {
-        throw new AppError('User not found', 404);
+        if (!user) {
+            return next(new AppError('User not found', 404));
+        }
+
+        res.locals.user.info = user;
+        next();
+    } catch (error) {
+        return next(error instanceof AppError ? error : new AppError(`User validation failed: ${(error as Error).message}`, 500));
     }
-
-    res.locals.user.info = user;
-    next();
 };
