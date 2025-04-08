@@ -87,6 +87,10 @@ eventRouter.patch('/:eid', checkOrgAdmin, async (req: Request, res: Response, ne
     const eventId: string = req.params.eid;
     const user = res.locals.user.info;
 
+=======
+eventRouter.get('/:id/events', async (req: Request, res: Response, next: NextFunction) => {
+    const orgID: string = req.params.id;
+>>>>>>> f71589f (SMTP email sender middleware)
     try {
         const event = await eventService.findEventById(eventId);
         await eventService.findEventUserbyUser(eventId, user.id);
@@ -104,6 +108,36 @@ eventRouter.patch('/:eid', checkOrgAdmin, async (req: Request, res: Response, ne
     }
 });
 
+<<<<<<< HEAD
+=======
+// CURRENT function FOUND @ `orgService.ts` - `validateUserOrgAdmin(): boolean`
+// CURRENT PATCH: Changing event.isPublic attribute ONLY - CHANGE LOGIC WHEN UPDATING OTHER attributes
+eventRouter.patch(
+    '/:id/events/:eid',
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
+        const eventId: string = req.params.eid;
+        const user = res.locals.user.info;
+
+        try {
+            const event = await eventService.findEventById(eventId);
+            await eventService.findEventUserbyUser(eventId, user.id);
+
+            const updatedEvent = await eventService.updateEventPublicity(event as Event);
+
+            return res.status(200).json({
+                status: `Updating Event's publicity success!`,
+                data: {
+                    updatedEvent,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+>>>>>>> f71589f (SMTP email sender middleware)
 /*
  * Create an Attendance record for an event
  * POST /events/:eid
