@@ -3,12 +3,14 @@ import { Event, EventRequest, EventUser, createEvent, createEventUser } from '..
 import { AppError } from '../middleware/errorHandler'; // Ensure meaningful errors
 import { OrgService } from '../services/orgService';
 import { UserOrganizationRelationship } from '@/models/Organizations';
+import { WeatherData, WeatherService } from './weatherService';
 
 /**
  * Service class for handling event-related services.
  */
 export class EventService {
     private eventRepository: EventRepository;
+    private weatherService: WeatherService;
 
     /**
      * Initializes the EventService with an optional EventRepository instance.
@@ -16,16 +18,22 @@ export class EventService {
      *
      * @param eventRepository - The event repository instance (optional).
      */
-    constructor(eventRepository: EventRepository = new EventRepository()) {
+    constructor(
+        eventRepository: EventRepository = new EventRepository(),
+        weatherService: WeatherService = new WeatherService()
+    ) {
         this.eventRepository = eventRepository;
+        this.weatherService = weatherService;
     }
 
+
+
     /**
-     * Adds a new event to an organization
-     * @param orgID - The organization ID
-     * @param eventRequest - The event details
-     * @returns The created Event object
-     */
+    * Adds a new event to an organization with weather data if location is provided
+    * @param orgID - The organization ID
+    * @param eventRequest - The event details
+    * @returns The created Event object
+    */
     async addEventToOrganization(orgID: string, eventRequest: EventRequest): Promise<Event> {
         try {
             if (!orgID) throw new AppError('Invalid organization ID.', 400);
@@ -44,41 +52,67 @@ export class EventService {
             const event: Event = createEvent(orgID, eventRequest);
 
             // Save to database
-            return await this.eventRepository.createOrgEvent(event);
+            const createdEvent = await this.eventRepository.createOrgEvent(event);
+
+            // If location is provided, fetch and add weather data
+            if (eventRequest.location &&
+                typeof eventRequest.location.latitude === 'number' &&
+                typeof eventRequest.location.longitude === 'number') {
+
+                try {
+                    const weatherData = await this.weatherService.getWeatherForLocation(
+                        eventRequest.location.latitude,
+                        eventRequest.location.longitude,
+                        eventRequest.date
+                    );
+
+                    // Update the event with weather data
+                    return await this.eventRepository.updateEventWeather(createdEvent.id, weatherData);
+                } catch (weatherError) {
+                    // Log the error but continue without weather data
+                    console.error('Error fetching weather data:', weatherError);
+                    return createdEvent;
+                }
+            }
+
+            return createdEvent;
         } catch (error: any) {
             throw new AppError(`Failed to create event: ${error.message}`, 500);
         }
     }
 
+
     /**
-     * Adds a user to an event by creating an attendance record.
-     *
-     * @param userID - The ID of the user attending the event.
-     * @param eventID - The ID of the event the user is attending.
-     * @returns The created EventUser record.
-     * @throws {AppError} If the database operation fails.
-     */
-    async addEventUser(userID: string, eventID: string): Promise<EventUser> {
+    * Refreshes weather data for an event
+    * @param eventId - The ID of the event
+    * @returns The updated event with refreshed weather data
+    */
+    async refreshEventWeather(eventId: string): Promise<Event> {
         try {
-            const eventUser: EventUser = createEventUser(userID, eventID);
-            return await this.eventRepository.addAttendingEventRecord(eventUser);
+            const event = await this.findEventById(eventId);
+
+            if (!event) {
+                throw new AppError('Event not found', 404);
+            }
+
+            if (!event.location ||
+                typeof event.location.latitude !== 'number' ||
+                typeof event.location.longitude !== 'number') {
+                throw new AppError('Event does not have location data', 400);
+            }
+
+            const weatherData = await this.weatherService.getWeatherForLocation(
+                event.location.latitude,
+                event.location.longitude,
+                event.date
+            );
+
+            return await this.eventRepository.updateEventWeather(eventId, weatherData);
         } catch (error: any) {
-            throw new AppError(`Failed to create event: ${error.message}`, 500);
-        }
-    }
-    /**
-     * Removes a user from an event by removing an attendance record.
-     *
-     * @param userID - The ID of the user attending the event.
-     * @param eventID - The ID of the event the user is attending.
-     * @returns The deleted EventUser record.
-     * @throws {AppError} If the database operation fails.
-     */
-    async removeEventUser(userID: string, eventID: string): Promise<Boolean> {
-        try {
-            return await this.eventRepository.removeAttendingEventRecord(userID, eventID);
-        } catch (error: any) {
-            throw new AppError(`Failed to create event: ${error.message}`, 500);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to refresh event weather: ${error.message}`, 500);
         }
     }
 
@@ -179,6 +213,28 @@ export class EventService {
                 `Updating Event's publicity failed! ${(error as Error).message}`,
                 500
             );
+        }
+    }
+
+    async updateEvent(event: Event): Promise<Event> {
+        try {
+            return await this.eventRepository.updateEvent(event);
+        } catch (error: any) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to update event: ${error.message}`, 500);
+        }
+    }
+
+    async updateEventWeather(eventId: string, weatherData: WeatherData): Promise<Event> {
+        try {
+            return await this.eventRepository.updateEventWeather(eventId, weatherData);
+        } catch (error: any) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to update event weather: ${error.message}`, 500);
         }
     }
 }
