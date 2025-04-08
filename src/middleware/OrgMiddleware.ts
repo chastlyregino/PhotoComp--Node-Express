@@ -10,7 +10,7 @@ const userService = new UserService();
 
 export const checkOrgAdmin = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const orgName: string = req.params.id;
+        const orgName: string = req.params.orgId;
         const user = res.locals.user as { id: string; email: string; role: UserRole };
 
         const userAdminOrg: UserOrganizationRelationship | null =
@@ -33,8 +33,10 @@ export const checkOrgAdmin = async (req: Request, res: Response, next: NextFunct
 
 export const checkOrgMember = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const orgName: string = req.params.id;
+        const orgName: string = req.params.orgId;
         const user = res.locals.user as { id: string; email: string; role: UserRole };
+
+        console.log(`Checking organization membership for org: "${orgName}" and user: ${user.id}`);
 
         const userMemberOrg: UserOrganizationRelationship | null =
             await orgService.findSpecificOrgByUser(orgName, user.id);

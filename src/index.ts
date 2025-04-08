@@ -11,7 +11,7 @@ import { photoRouter } from './controllers/photoController';
 import { authenticate } from './middleware/authMiddleware';
 import { orgMemberRouter } from './controllers/orgMemberController';
 import { orgMembershipRouter } from './controllers/orgMemberShipController';
-import { checkOrgMember, validateUserID } from './middleware/OrgMiddleware';
+import { checkOrgMember, checkOrgAdmin, validateUserID } from './middleware/OrgMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -28,20 +28,23 @@ app.use(loggerMethodMiddleware);
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use(`/guests`, guestRouter);
+app.use('/guests', guestRouter);
 
-app.use(
-  `/organizations`, 
-  authenticate, 
-  validateUserID, // Only users can access everything below
-  orgRouter, 
-  orgMembershipRouter, 
-  checkOrgMember, // Only org members can access everythin below
-  eventRouter, 
-  photoRouter,
-  orgMemberRouter, 
-); // Added photoRouter 
+// Organizations base router that requires authentication
+const organizationsRouter = express.Router();
+app.use('/organizations', authenticate, validateUserID, organizationsRouter);
 
+// Routes that all authenticated users can access
+organizationsRouter.use('/', orgRouter);
+organizationsRouter.use('/', orgMembershipRouter);
+
+// Create a router specifically for protected org routes
+const orgProtectedRouter = express.Router({ mergeParams: true });
+organizationsRouter.use('/:orgId', checkOrgMember, orgProtectedRouter);
+
+// Mount member-only routes
+orgProtectedRouter.use('/events', eventRouter);
+orgProtectedRouter.use('/members', orgMemberRouter);
 
 // Default route
 app.get('/', (req, res) => {
@@ -61,9 +64,3 @@ app.use(errorHandler);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
-
-// powershell
-// $env:NODE_ENV="production"; npm run dev
-
-// terminal
-// NODE_ENV=production npm run dev
