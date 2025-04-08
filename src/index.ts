@@ -31,6 +31,7 @@ app.use(loggerMethodMiddleware);
 app.use('/api/auth', authRouter);
 app.use('/guests', guestRouter);
 
+<<<<<<< HEAD
 // Organizations base router that requires authentication
 const organizationsRouter = express.Router();
 app.use('/organizations', authenticate, validateUserID, organizationsRouter);
@@ -50,6 +51,19 @@ orgProtectedRouter.use('/events/:eventId/photos', (req, res, next) => {
     // This ensures parameters are properly passed down to the photo controller
     next();
 }, photoRouter);
+=======
+app.use(
+    `/organizations`,
+    authenticate,
+    validateUserID, // Only users can access everything below
+    orgRouter,
+    orgMembershipRouter,
+    checkOrgMember, // Only org members can access everythin below
+    eventRouter,
+    photoRouter,
+    orgMemberRouter
+); // Added photoRouter
+>>>>>>> f71589f (SMTP email sender middleware)
 
 // Default route
 app.get('/', (req, res) => {
