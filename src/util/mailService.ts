@@ -15,18 +15,16 @@ dotenv.config();
 //     viewPath: path.resolve('../views/'),
 // };
 
-
 const handlebarOptions = {
     viewEngine: {
-      extName: '.hbs',
-      partialsDir: '../views/',
-      layoutsDir: '../views/',
-      defaultLayout: 'email.body.hbs',
+        extName: '.hbs',
+        partialsDir: '../views/',
+        layoutsDir: '../views/',
+        defaultLayout: 'email.body.hbs',
     },
     viewPath: '../views/',
     extName: '.hbs',
 };
-  
 
 const sendMail = async (to: string, subject: string, message: string, header: string) => {
     const transporter = nodemailer.createTransport({
@@ -45,7 +43,7 @@ const sendMail = async (to: string, subject: string, message: string, header: st
         to: to,
         subject: subject,
         text: `${header}
-        ${message}`
+        ${message}`,
     };
 
     logger.info(`Sending mail to - ${to}`);

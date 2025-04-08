@@ -13,42 +13,38 @@ export const orgMemberRouter = Router({ mergeParams: true });
  * Get all members of an organization
  * @route GET /members
  */
-orgMemberRouter.get(
-    '/',
-    checkOrgAdmin,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const orgName: string = req.params.orgId;
+orgMemberRouter.get('/', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const orgName: string = req.params.orgId;
 
-            const members = await orgService.getOrgMembers(orgName);
-            const membersWithUserDetails = await Promise.all(
-                members.map(async request => {
-                    const user = await userService.getUserById(request.userId);
-                    return {
-                        ...request,
-                        userDetails: user
-                            ? {
-                                  id: user.id,
-                                  email: user.email,
-                                  firstName: user.firstName,
-                                  lastName: user.lastName,
-                              }
-                            : null,
-                    };
-                })
-            );
+        const members = await orgService.getOrgMembers(orgName);
+        const membersWithUserDetails = await Promise.all(
+            members.map(async request => {
+                const user = await userService.getUserById(request.userId);
+                return {
+                    ...request,
+                    userDetails: user
+                        ? {
+                              id: user.id,
+                              email: user.email,
+                              firstName: user.firstName,
+                              lastName: user.lastName,
+                          }
+                        : null,
+                };
+            })
+        );
 
-            return res.status(200).json({
-                status: 'success',
-                data: {
-                    members: membersWithUserDetails,
-                },
-            });
-        } catch (error) {
-            next(error);
-        }
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                members: membersWithUserDetails,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
-);
+});
 
 /**
  * Remove a member from an organization
