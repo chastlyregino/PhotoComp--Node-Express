@@ -1,4 +1,4 @@
-// src/models/Event.ts (updated)
+// src/models/Event.ts
 import { v4 as uuidv4 } from 'uuid';
 import { WeatherData } from '../services/weatherService';
 
@@ -14,7 +14,7 @@ export interface Event {
     createdAt: string;
     updatedAt: string;
     
-    // New location fields
+    // Location fields
     location?: {
         name?: string;
         latitude: number;
@@ -38,6 +38,8 @@ export interface EventRequest {
         latitude: number;
         longitude: number;
     };
+    // New field for address string during event creation
+    address?: string;
 }
 
 export interface EventUpdateRequest {
@@ -49,6 +51,7 @@ export interface EventUpdateRequest {
         latitude: number;
         longitude: number;
     };
+    address?: string;
 }
 
 export interface EventUser {

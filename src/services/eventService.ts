@@ -4,6 +4,8 @@ import { AppError } from '../middleware/errorHandler';
 import { OrgService } from '../services/orgService';
 import { UserOrganizationRelationship } from '@/models/Organizations';
 import { WeatherData, WeatherService } from './weatherService';
+import { GeocodingService } from './geocodingService';
+import { logger } from '../util/logger';
 
 /**
  * Service class for handling event-related operations including CRUD operations,
@@ -12,30 +14,34 @@ import { WeatherData, WeatherService } from './weatherService';
 export class EventService {
     private eventRepository: EventRepository;
     private weatherService: WeatherService;
+    private geocodingService: GeocodingService;
 
     /**
      * Initializes the EventService with repository and service dependencies
      * 
      * @param eventRepository - Handles database operations for events
      * @param weatherService - Provides weather forecast data from Open-Meteo API
+     * @param geocodingService - Provides geocoding services to convert addresses to coordinates
      */
     constructor(
         eventRepository: EventRepository = new EventRepository(),
-        weatherService: WeatherService = new WeatherService()
+        weatherService: WeatherService = new WeatherService(),
+        geocodingService: GeocodingService = new GeocodingService()
     ) {
         this.eventRepository = eventRepository;
         this.weatherService = weatherService;
+        this.geocodingService = geocodingService;
     }
 
     /**
      * Creates a new event for an organization with optional weather data
      * 
-     * If location data is provided with the event request, this method will
+     * If location data or address is provided with the event request, this method will
      * automatically fetch and attach weather forecast data from Open-Meteo.
      * Weather fetching failures will be logged but won't prevent event creation.
      * 
      * @param orgID - The organization ID that owns the event
-     * @param eventRequest - Event details including title, description, date and optional location
+     * @param eventRequest - Event details including title, description, date and optional location or address
      * @returns The created Event object with weather data if available
      * @throws AppError for validation failures or database errors
      */
@@ -53,6 +59,24 @@ export class EventService {
                 throw new AppError('Missing required fields: title, description, or date.', 400);
             }
 
+            // If address is provided but no location, geocode the address
+            if (eventRequest.address && !eventRequest.location) {
+                try {
+                    const geocodingResult = await this.geocodingService.geocodeAddress(eventRequest.address);
+                    // Add the geocoded location to the event request
+                    eventRequest.location = {
+                        latitude: geocodingResult.latitude,
+                        longitude: geocodingResult.longitude,
+                        name: geocodingResult.displayName
+                    };
+                    logger.info(`Geocoded address "${eventRequest.address}" to coordinates [${geocodingResult.latitude}, ${geocodingResult.longitude}]`);
+                } catch (geocodingError) {
+                    // Log the error but continue without location data
+                    logger.error('Error geocoding address:', geocodingError);
+                    // Don't throw - we'll create the event without location data
+                }
+            }
+
             // Create event object
             const event: Event = createEvent(orgID, eventRequest);
 
@@ -60,22 +84,22 @@ export class EventService {
             const createdEvent = await this.eventRepository.createOrgEvent(event);
 
             // If location is provided, fetch and add weather data
-            if (eventRequest.location &&
-                typeof eventRequest.location.latitude === 'number' &&
-                typeof eventRequest.location.longitude === 'number') {
+            if (createdEvent.location &&
+                typeof createdEvent.location.latitude === 'number' &&
+                typeof createdEvent.location.longitude === 'number') {
 
                 try {
                     const weatherData = await this.weatherService.getWeatherForLocation(
-                        eventRequest.location.latitude,
-                        eventRequest.location.longitude,
-                        eventRequest.date
+                        createdEvent.location.latitude,
+                        createdEvent.location.longitude,
+                        createdEvent.date
                     );
 
                     // Update the event with weather data
                     return await this.eventRepository.updateEventWeather(createdEvent.id, weatherData);
                 } catch (weatherError) {
                     // Log the error but continue without weather data
-                    console.error('Error fetching weather data:', weatherError);
+                    logger.error('Error fetching weather data:', weatherError);
                     return createdEvent;
                 }
             }
@@ -87,13 +111,13 @@ export class EventService {
     }
 
     /**
- * Adds a user to an event by creating an attendance record.
- *
- * @param userID - The ID of the user attending the event.
- * @param eventID - The ID of the event the user is attending.
- * @returns The created EventUser record.
- * @throws {AppError} If the database operation fails.
- */
+     * Adds a user to an event by creating an attendance record.
+     *
+     * @param userID - The ID of the user attending the event.
+     * @param eventID - The ID of the event the user is attending.
+     * @returns The created EventUser record.
+     * @throws {AppError} If the database operation fails.
+     */
     async addEventUser(userID: string, eventID: string): Promise<EventUser> {
         try {
             const eventUser: EventUser = createEventUser(userID, eventID);
