@@ -84,7 +84,7 @@ orgMembershipRouter.put(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const orgName: string = req.params.id;
-            const userId: string = req.params.userId;
+            const userId: string = req.params.userId; // member userid
 
             const result = await orgMembershipService.approveRequest(orgName, userId);
 

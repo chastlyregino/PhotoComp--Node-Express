@@ -2,6 +2,7 @@
 
 import { EventService } from './eventService';
 import { OrgService } from './orgService';
+import { UserService } from './userService';
 import { OrgMembershipRepository } from '../repositories/orgMembershipRepository';
 import {
     OrganizationMembershipRequest,
@@ -9,22 +10,25 @@ import {
     createOrganizationMembershipRequest,
     addOrganizationAdmin,
 } from '../models/Organizations';
-import { UserRole } from '../models/User';
+import { User, UserRole } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
 
 export class OrgMembershipService {
     private orgMembershipRepository: OrgMembershipRepository;
     private eventService: EventService;
     private orgService: OrgService;
+    private userService: UserService;
 
     constructor(
         orgMembershipRepository: OrgMembershipRepository = new OrgMembershipRepository(),
         eventService: EventService = new EventService(),
-        orgService: OrgService = new OrgService()
+        orgService: OrgService = new OrgService(),
+        userService: UserService = new UserService()
     ) {
         this.orgMembershipRepository = orgMembershipRepository;
         this.eventService = eventService;
         this.orgService = orgService;
+        this.userService = userService;
     }
 
     /**
@@ -92,8 +96,10 @@ export class OrgMembershipService {
             throw new AppError('Membership request not found', 404);
         }
 
+        const user: User = (await this.userService.getUserById(userId)) as User;
+
         const userOrgRelationship = {
-            ...addOrganizationAdmin(organizationName, userId),
+            ...addOrganizationAdmin(organizationName, userId, user.email),
             role: UserRole.MEMBER,
         };
 

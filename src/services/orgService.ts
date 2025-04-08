@@ -111,9 +111,10 @@ export class OrgService {
 
     async createUserAdmin(
         orgName: string,
-        userId: string
+        userId: string,
+        email: string
     ): Promise<UserOrganizationRelationship | null> {
-        const userAdmin = addOrganizationAdmin(orgName, userId);
+        const userAdmin = addOrganizationAdmin(orgName, userId, email);
 
         try {
             const createUserAdmin = await this.orgRepository.createUserAdmin(userAdmin);

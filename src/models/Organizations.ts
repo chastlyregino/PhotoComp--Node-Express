@@ -108,6 +108,7 @@ export interface UserOrganizationRelationship {
     role: UserRole;
     joinedAt: string;
     type: 'USER_ORG';
+    email: string;
 
     // GSI for fetching all organizations a user belongs to
     GSI1PK?: string; // ORG#NAME
@@ -116,7 +117,8 @@ export interface UserOrganizationRelationship {
 
 export const addOrganizationAdmin = (
     organizationName: string,
-    userId: string
+    userId: string,
+    email: string
 ): UserOrganizationRelationship => {
     const now = new Date().toISOString();
 
@@ -128,6 +130,7 @@ export const addOrganizationAdmin = (
         role: UserRole.ADMIN,
         joinedAt: now,
         type: 'USER_ORG',
+        email,
         // Add GSI for querying all organizations a user belongs to
         GSI1PK: `ORG#${organizationName.toUpperCase()}`,
         GSI1SK: `USER#${userId}`,

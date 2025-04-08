@@ -44,12 +44,16 @@ const orgProtectedRouter = express.Router({ mergeParams: true });
 organizationsRouter.use('/:orgId', checkOrgMember, orgProtectedRouter);
 
 // Mount member-only routes
-orgProtectedRouter.use('/events', eventRouter);
+orgProtectedRouter.use('/events', eventRouter, emailSender);
 orgProtectedRouter.use('/members', orgMemberRouter);
-orgProtectedRouter.use('/events/:eventId/photos', (req, res, next) => {
-    // This ensures parameters are properly passed down to the photo controller
-    next();
-}, photoRouter);
+orgProtectedRouter.use(
+    '/events/:eventId/photos',
+    (req, res, next) => {
+        // This ensures parameters are properly passed down to the photo controller
+        next();
+    },
+    photoRouter
+);
 
 // Default route
 app.get('/', (req, res) => {
@@ -63,7 +67,7 @@ app.all(/(.*)/, (req, res, next) => {
 });
 
 // Error handling and Email sending middleware must be used after all routes
-app.use(emailSender);
+//app.use(emailSender);
 app.use(errorHandler);
 
 // Start server

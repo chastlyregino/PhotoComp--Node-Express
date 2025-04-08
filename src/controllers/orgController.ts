@@ -51,7 +51,7 @@ orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
 
         if (org) {
             try {
-                const userAdmin = await orgService.createUserAdmin(name, user.id);
+                const userAdmin = await orgService.createUserAdmin(name, user.id, user.email);
 
                 if (userAdmin) {
                     res.status(201).json({

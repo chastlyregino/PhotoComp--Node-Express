@@ -28,28 +28,29 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
         const event: Event = await eventService.addEventToOrganization(orgName, eventRequest);
         const userEvent: EventUser = await eventService.addEventUser(orgAdmin.id, event.id);
 
-        //let email
-
         const members: UserOrganizationRelationship[] = await orgService.getOrgMembers(orgName);
+        const membersEmail: string[] = members.map(member => member.email);
 
         if (members) {
-            const to = members.toString();
-            const subject = `An update from PhotoComp!`;
-            const message = `Don't miss updates on this event: ${req.body.title} - ${req.body.date}.
+            // Creates the email data.
+            const to: string = membersEmail.toString();
+            const subject: string = `An update from PhotoComp!`;
+            const message: string = `Don't miss updates on this event: ${req.body.title} - ${req.body.date}.
                 Know more by checking out the website!`;
-            const header = `A new event in ${orgName} has been created!`;
+            const header: string = `A new event in ${orgName} has been created!`;
 
-            res.locals.user.emailInfo = { to, message, header };
+            res.locals.user.emailInfo = { to, message, header, subject };
             next();
         }
 
-        return res.status(201).json({
-            status: 'success',
-            data: {
-                userEvent,
-                event,
-            },
-        });
+        //can't return if calling next
+        // return res.status(201).json({
+        //     status: 'success',
+        //     data: {
+        //         userEvent,
+        //         event,
+        //     },
+        // });
     } catch (error) {
         next(error);
     }
