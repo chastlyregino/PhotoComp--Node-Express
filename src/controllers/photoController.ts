@@ -1,20 +1,20 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-import { checkOrgAdmin} from '../middleware/OrgMiddleware';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
 
 const photoService = new PhotoService();
-export const photoRouter = Router();
+export const photoRouter = Router({ mergeParams: true });
 
 /**
  * Upload a photo to an event
- * POST /:id/events/:eventId/photos
+ * POST /events/:eventId/photos
  */
 photoRouter.post(
-    '/:id/events/:eventId/photos',
+    '/',
     checkOrgAdmin,
     handleUpload('photo'),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -64,10 +64,10 @@ photoRouter.post(
 
 /**
  * Get all photos for an event
- * GET /:id/events/:eventId/photos
+ * GET /events/:eventId/photos
  */
 photoRouter.get(
-    '/:id/events/:eventId/photos',
+    '/',
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;
@@ -88,10 +88,10 @@ photoRouter.get(
 
 /**
  * Get a download URL for a specific photo
- * GET /:id/events/:eventId/photos/:photoId/download
+ * GET /events/:eventId/photos/:photoId/download
  */
 photoRouter.get(
-    '/:id/events/:eventId/photos/:photoId/download',
+    '/:photoId/download',
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const eventId = req.params.eventId;
@@ -122,10 +122,10 @@ photoRouter.get(
 
 /**
  * Delete a photo
- * DELETE /:id/events/:eventId/photos/:photoId
+ * DELETE /events/:eventId/photos/:photoId
  */
 photoRouter.delete(
-    '/:id/events/:eventId/photos/:photoId',
+    '/:photoId',
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {

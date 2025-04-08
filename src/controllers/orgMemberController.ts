@@ -1,24 +1,24 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgService } from '../services/orgService';
-import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { UserRole } from '../models/User';
 import { UserService } from '../services/userService';
 
 const orgService = new OrgService();
 const userService = new UserService();
-export const orgMemberRouter = Router();
+export const orgMemberRouter = Router({ mergeParams: true });
 
 /**
  * Get all members of an organization
- * @route GET /organizations/:id/members
+ * @route GET /members
  */
 orgMemberRouter.get(
-    '/:id/members',
+    '/',
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const orgName: string = req.params.id;
+            const orgName: string = req.params.orgId;
 
             const members = await orgService.getOrgMembers(orgName);
             const membersWithUserDetails = await Promise.all(
@@ -52,14 +52,14 @@ orgMemberRouter.get(
 
 /**
  * Remove a member from an organization
- * @route DELETE /organizations/:id/members/:userId
+ * @route DELETE /members/:userId
  */
 orgMemberRouter.delete(
-    '/:id/members/:userId',
+    '/:userId',
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const orgName: string = req.params.id;
+            const orgName: string = req.params.orgId;
             const userId: string = req.params.userId;
             const adminId = res.locals.user.id;
 
@@ -85,14 +85,14 @@ orgMemberRouter.delete(
 
 /**
  * Update a member's role in an organization
- * @route PATCH /organizations/:id/members/:userId
+ * @route PATCH /members/:userId
  */
 orgMemberRouter.patch(
-    '/:id/members/:userId',
+    '/:userId',
     checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const orgName: string = req.params.id;
+            const orgName: string = req.params.orgId;
             const userId: string = req.params.userId;
             const { role } = req.body;
             const adminId = res.locals.user.id;
