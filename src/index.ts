@@ -45,6 +45,7 @@ organizationsRouter.use('/:orgId', checkOrgMember, orgProtectedRouter);
 // Mount member-only routes
 orgProtectedRouter.use('/events', eventRouter);
 orgProtectedRouter.use('/members', orgMemberRouter);
+orgProtectedRouter.use('/events/:eventId/photos', photoRouter);
 
 // Default route
 app.get('/', (req, res) => {
