@@ -17,8 +17,9 @@ const geocodingService = new GeocodingService();
 export const eventRouter = Router({ mergeParams: true });
 
 /*
- * Create an organization's event with optional location and weather
+ * Create an organization's event
  * POST /events
+ * Added support for address field to automatically geocode and fetch weather
  */
 eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -31,7 +32,8 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
             title: req.body.title,
             description: req.body.description,
             date: req.body.date,
-            location: req.body.location // Include optional location from the 93fc1ed version
+            location: req.body.location,
+            address: req.body.address // Include optional address field from b67dbab version
         };
 
         const event: Event = await eventService.addEventToOrganization(orgName, eventRequest);
@@ -40,11 +42,28 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
         // Email notification functionality from HEAD version
         const members: UserOrganizationRelationship[] = await orgService.getOrgMembers(orgName);
         
-        // Prepare success response
+        // Prepare response data with geocoding information if available
+        const responseData = [userEvent, event];
+        
+        // If address was provided and successfully geocoded, add info to response
+        if (eventRequest.address && event.location) {
+            responseData.push({
+                geocoding: {
+                    providedAddress: eventRequest.address,
+                    resolvedCoordinates: {
+                        latitude: event.location.latitude,
+                        longitude: event.location.longitude,
+                        formattedAddress: event.location.name
+                    }
+                }
+            });
+        }
+        
+        // Prepare success response with combined data
         const status: Status = {
-            statusCode: 201, // Changed to 201 for resource creation
+            statusCode: 201,
             status: 'success',
-            data: [userEvent, event],
+            data: responseData
         };
 
         // Add email notification if members exist
