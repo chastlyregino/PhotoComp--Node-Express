@@ -14,9 +14,9 @@ const orgService = new OrgService();
 export const orgRouter = Router();
 
 /*
-  * Get all orgs that a User is a part of 
-  * GET /organizations
-  * */
+ * Get all orgs that a User is a part of
+ * GET /organizations
+ * */
 orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = res.locals.user.info;
@@ -34,10 +34,10 @@ orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /*
-  * Create a new organization, and make the creator an Admin
-  * POST /organizations
-  * */
-orgRouter.post(`/`,  async (req: Request, res: Response, next: NextFunction) => {
+ * Create a new organization, and make the creator an Admin
+ * POST /organizations
+ * */
+orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
         const user = res.locals.user.info;
@@ -76,36 +76,35 @@ orgRouter.post(`/`,  async (req: Request, res: Response, next: NextFunction) => 
 });
 
 /*
-  * Update an organization's information
-  * POST /organizations
-  * */
+ * Update an organization's information
+ * POST /organizations
+ * */
 orgRouter.patch(`/`, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl, description, website, contactEmail } = req.body;
         const user = res.locals.user.info;
 
-            const org: OrganizationUpdateRequest = {
-                name,
-                logoUrl,
-                description,
-                website,
-                contactEmail,
-            };
+        const org: OrganizationUpdateRequest = {
+            name,
+            logoUrl,
+            description,
+            website,
+            contactEmail,
+        };
 
-            const updatedOrg = await orgService.updateOrgByName(org);
+        const updatedOrg = await orgService.updateOrgByName(org);
 
-            if (!updatedOrg) {
-                throw new AppError(`Failed to update Organization`, 400);
-            }
-
-            res.status(200).json({
-                status: 'Updated organization!',
-                data: {
-                    org: updatedOrg,
-                },
-            });
-        } catch (error) {
-            next(error);
+        if (!updatedOrg) {
+            throw new AppError(`Failed to update Organization`, 400);
         }
+
+        res.status(200).json({
+            status: 'Updated organization!',
+            data: {
+                org: updatedOrg,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
-);
+});

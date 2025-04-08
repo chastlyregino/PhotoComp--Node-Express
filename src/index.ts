@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { authRouter } from './controllers/authController';
 import { orgRouter } from './controllers/orgController';
 import { errorHandler } from './middleware/errorHandler';
+import { emailSender } from './middleware/emailSender';
 import { loggerMethodMiddleware } from './middleware/loggerMiddleware';
 import { eventRouter } from './controllers/eventController';
 import { guestRouter } from './controllers/guestController';
@@ -61,7 +62,8 @@ app.all(/(.*)/, (req, res, next) => {
     next(error);
 });
 
-// Error handling middleware must be used after all routes
+// Error handling and Email sending middleware must be used after all routes
+app.use(emailSender);
 app.use(errorHandler);
 
 // Start server

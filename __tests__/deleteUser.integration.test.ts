@@ -27,11 +27,11 @@ jest.mock('../src/services/userService', () => {
         getUserById: jest.fn(),
         login: jest.fn(),
         register: jest.fn(),
-        deleteUser: jest.fn()
+        deleteUser: jest.fn(),
     };
 
     return {
-        UserService: jest.fn().mockImplementation(() => mockUserService)
+        UserService: jest.fn().mockImplementation(() => mockUserService),
     };
 });
 
@@ -54,7 +54,7 @@ describe('Delete User Integration Tests', () => {
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
-        role: UserRole.USER
+        role: UserRole.USER,
     };
 
     beforeAll(() => {
@@ -94,12 +94,12 @@ describe('Delete User Integration Tests', () => {
             expect(mockUserService.deleteUser).toHaveBeenCalledWith('user123');
         });
 
-        it('should not allow even an admin to delete another user\'s account', async () => {
+        it("should not allow even an admin to delete another user's account", async () => {
             // Mock getUserByEmail to return the admin user
             mockUserService.getUserByEmail.mockResolvedValue({
                 ...mockUser,
                 id: 'admin456',
-                role: UserRole.ADMIN
+                role: UserRole.ADMIN,
             });
 
             const response = await request(app)
@@ -112,7 +112,7 @@ describe('Delete User Integration Tests', () => {
             expect(mockUserService.deleteUser).not.toHaveBeenCalled();
         });
 
-        it('should not allow a user to delete another user\'s account', async () => {
+        it("should not allow a user to delete another user's account", async () => {
             // Mock getUserByEmail to return the user
             mockUserService.getUserByEmail.mockResolvedValue(mockUser);
 

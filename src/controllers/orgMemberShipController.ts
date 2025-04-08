@@ -12,32 +12,25 @@ export const orgMembershipRouter = Router();
  * Apply to join an organization
  * @route POST /organizations/:id
  */
-orgMembershipRouter.post(
-    '/:id',
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const orgName: string = req.params.id;
-            const user = res.locals.user;
-            const { message } = req.body;
+orgMembershipRouter.post('/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const orgName: string = req.params.id;
+        const user = res.locals.user;
+        const { message } = req.body;
 
-            const request = await orgMembershipService.applyToOrganization(
-                orgName,
-                user.id,
-                message
-            );
+        const request = await orgMembershipService.applyToOrganization(orgName, user.id, message);
 
-            return res.status(201).json({
-                status: 'success',
-                message: 'Application submitted successfully',
-                data: {
-                    request,
-                },
-            });
-        } catch (error) {
-            next(error);
-        }
+        return res.status(201).json({
+            status: 'success',
+            message: 'Application submitted successfully',
+            data: {
+                request,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
-);
+});
 
 /**
  * Get pending membership requests for an organization

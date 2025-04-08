@@ -19,4 +19,4 @@ export function createTestApp() {
     return app;
 }
 
-export { authenticate }; 
+export { authenticate };

@@ -67,6 +67,10 @@ export const validateUserID = async (req: Request, res: Response, next: NextFunc
         res.locals.user.info = user;
         next();
     } catch (error) {
-        return next(error instanceof AppError ? error : new AppError(`User validation failed: ${(error as Error).message}`, 500));
+        return next(
+            error instanceof AppError
+                ? error
+                : new AppError(`User validation failed: ${(error as Error).message}`, 500)
+        );
     }
 };
