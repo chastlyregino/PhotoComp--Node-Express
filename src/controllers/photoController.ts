@@ -66,59 +66,53 @@ photoRouter.post(
  * Get all photos for an event
  * GET /events/:eventId/photos
  */
-photoRouter.get(
-    '/',
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const eventId = req.params.eventId;
+photoRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eventId = req.params.eventId;
 
-            const photos = await photoService.getEventPhotos(eventId);
+        const photos = await photoService.getEventPhotos(eventId);
 
-            return res.status(200).json({
-                status: 'success',
-                data: {
-                    photos,
-                },
-            });
-        } catch (error) {
-            next(error);
-        }
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                photos,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
-);
+});
 
 /**
  * Get a download URL for a specific photo
  * GET /events/:eventId/photos/:photoId/download
  */
-photoRouter.get(
-    '/:photoId/download',
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const eventId = req.params.eventId;
-            const photoId = req.params.photoId;
-            const user = res.locals.user.info;
+photoRouter.get('/:photoId/download', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eventId = req.params.eventId;
+        const photoId = req.params.photoId;
+        const user = res.locals.user.info;
 
-            // Check if user has access to the event (is a member or admin)
-            const canAccess = await photoService.validateUserEventAccess(eventId, user.id);
+        // Check if user has access to the event (is a member or admin)
+        const canAccess = await photoService.validateUserEventAccess(eventId, user.id);
 
-            if (!canAccess) {
-                throw new AppError('You do not have access to photos from this event', 403);
-            }
-
-            // Generate download URL
-            const downloadUrl = await photoService.getPhotoDownloadUrl(photoId, eventId);
-
-            return res.status(200).json({
-                status: 'success',
-                data: {
-                    downloadUrl,
-                },
-            });
-        } catch (error) {
-            next(error);
+        if (!canAccess) {
+            throw new AppError('You do not have access to photos from this event', 403);
         }
+
+        // Generate download URL
+        const downloadUrl = await photoService.getPhotoDownloadUrl(photoId, eventId);
+
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                downloadUrl,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
-);
+});
 
 /**
  * Delete a photo

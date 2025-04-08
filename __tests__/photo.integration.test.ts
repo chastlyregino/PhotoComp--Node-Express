@@ -382,7 +382,9 @@ describe('Photo Controller Integration Tests', () => {
 
             mockDynamoSend.mockResolvedValueOnce({});
 
-            const response = await request(app).delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`)
+            const response = await request(app).delete(
+                `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`
+            );
 
             // Verify response
             expect(response.statusCode).toBe(200);
