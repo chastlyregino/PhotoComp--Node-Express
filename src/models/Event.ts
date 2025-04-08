@@ -1,4 +1,6 @@
+// src/models/Event.ts (updated)
 import { v4 as uuidv4 } from 'uuid';
+import { WeatherData } from '../services/weatherService';
 
 export interface Event {
     PK: string; // EVENT#<ID>
@@ -11,6 +13,16 @@ export interface Event {
     date: string;
     createdAt: string;
     updatedAt: string;
+    
+    // New location fields
+    location?: {
+        name?: string;
+        latitude: number;
+        longitude: number;
+    };
+    
+    // Weather data
+    weather?: WeatherData;
 
     // GSI attributes
     GSI2PK: string; // ORG#<ID>
@@ -21,12 +33,22 @@ export interface EventRequest {
     title: string;
     description: string;
     date: string;
+    location?: {
+        name?: string;
+        latitude: number;
+        longitude: number;
+    };
 }
 
 export interface EventUpdateRequest {
     title?: string;
     description?: string;
     date?: string;
+    location?: {
+        name?: string;
+        latitude: number;
+        longitude: number;
+    };
 }
 
 export interface EventUser {
@@ -40,7 +62,7 @@ export interface EventUser {
 export const createEvent = (orgID: string, eventRequest: EventRequest): Event => {
     const id = uuidv4();
     const now = new Date().toISOString();
-    const date = now;
+    const date = eventRequest.date || now;
     const eventId = `EVENT#${id}`;
     return {
         PK: eventId,
@@ -52,6 +74,7 @@ export const createEvent = (orgID: string, eventRequest: EventRequest): Event =>
         date: date,
         createdAt: now,
         updatedAt: now,
+        location: eventRequest.location,
         GSI2PK: `ORG#${orgID.toUpperCase()}`,
         GSI2SK: eventId,
     };

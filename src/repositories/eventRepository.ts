@@ -70,8 +70,13 @@ export class EventRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `USER#${userID}`,
+<<<<<<< HEAD
                         SK: `EVENT#${eventID}`,
                     },
+=======
+                        SK: `EVENT#${eventID}`
+                    }
+>>>>>>> fc56c44 (repo/service/controller layers for adding weather to an event with open mateo)
                 })
             );
 
@@ -289,4 +294,39 @@ export class EventRepository {
             throw new AppError(`Failed to update Event's Publicity: ${error.message}`, 500);
         }
     }
+
+    /**
+    * Updates weather data for an event
+    * @param eventId The ID of the event
+    * @param weatherData The weather data to add
+    * @returns The updated event
+    */
+    async updateEventWeather(eventId: string, weatherData: WeatherData): Promise<Event> {
+        try {
+            const result = await dynamoDb.send(
+                new UpdateCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `EVENT#${eventId}`,
+                        SK: 'ENTITY'
+                    },
+                    UpdateExpression: 'SET weather = :weatherData, updatedAt = :updatedAt',
+                    ExpressionAttributeValues: {
+                        ':weatherData': weatherData,
+                        ':updatedAt': new Date().toISOString()
+                    },
+                    ReturnValues: 'ALL_NEW'
+                })
+            );
+
+            if (!result.Attributes) {
+                throw new AppError(`Failed to update event weather data`, 500);
+            }
+
+            return result.Attributes as Event;
+        } catch (error: any) {
+            throw new AppError(`Failed to update event weather data: ${error.message}`, 500);
+        }
+    }
 }
+
