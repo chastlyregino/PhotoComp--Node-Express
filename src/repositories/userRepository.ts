@@ -1,7 +1,8 @@
+import { AppError } from '../middleware/errorHandler';
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { User, UserRole } from '../models/User';
 import { PutCommand, QueryCommand, GetCommand, BatchWriteCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { AppError } from '../middleware/errorHandler';
+
 
 /**
  * Repository class for User-related database operations
@@ -135,11 +136,11 @@ export class UserRepository {
     }
 
     /**
-  * Delete all organization memberships for a user
-  * @param userId The ID of the user
-  * @returns True if successful
-  * @throws AppError if operation fails
-  */
+     * Delete all organization memberships for a user
+     * @param userId The ID of the user
+     * @returns True if successful
+     * @throws AppError if operation fails
+     */
     async deleteUserOrganizationMemberships(userId: string): Promise<boolean> {
         try {
             // Make sure TABLE_NAME is defined
@@ -196,6 +197,67 @@ export class UserRepository {
             throw new AppError(`Failed to delete user memberships: ${error.message}`, 500);
         }
     }
+
+    /**
+     * Delete all event attendance records for a user
+     * @param userId The ID of the user
+     * @returns True if successful
+     * @throws AppError if operation fails
+     */
+    async deleteUserEventAttendance(userId: string): Promise<boolean> {
+        try {
+            // Make sure TABLE_NAME is defined
+            if (!TABLE_NAME) {
+                throw new AppError('Table name not configured', 500);
+            }
+
+            // First get all events the user is attending
+            const params = {
+                TableName: TABLE_NAME,
+                KeyConditionExpression: 'PK = :userId AND begins_with(SK, :eventPrefix)',
+                ExpressionAttributeValues: {
+                    ':userId': `USER#${userId}`,
+                    ':eventPrefix': 'EVENT#'
+                }
+            };
+
+            const result = await dynamoDb.send(new QueryCommand(params));
+
+            // No event attendance records found - consider it a success
+            if (!result.Items || result.Items.length === 0) {
+                return true;
+            }
+
+            // Prepare batch request for delete - DynamoDB can handle 25 at a time
+            const chunks = [];
+            for (let i = 0; i < result.Items.length; i += 25) {
+                chunks.push(result.Items.slice(i, i + 25));
+            }
+
+            // Process each chunk as a batch
+            for (const chunk of chunks) {
+                const deleteRequests = chunk.map(item => ({
+                    DeleteRequest: {
+                        Key: {
+                            PK: item.PK,
+                            SK: item.SK
+                        }
+                    }
+                }));
+
+                const requestItems: Record<string, any> = {};
+                requestItems[TABLE_NAME] = deleteRequests;
+
+                await dynamoDb.send(
+                    new BatchWriteCommand({
+                        RequestItems: requestItems
+                    })
+                );
+            }
+
+            return true;
+        } catch (error: any) {
+            throw new AppError(`Failed to delete user event attendance records: ${error.message}`, 500);
+        }
+    }
 }
-
-
