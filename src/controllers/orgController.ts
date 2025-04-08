@@ -10,26 +10,14 @@ import {
 import { AppError } from '../middleware/errorHandler';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 
-const userService = new UserService();
 const orgService = new OrgService();
 export const orgRouter = Router();
 
-export const validateUserID = async (req: Request, res: Response, next: NextFunction) => {
-    const user = await userService.getUserByEmail(res.locals.user.email);
-
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
-
-    res.locals.user.info = user;
-    next();
-};
-
 /*
- * Get all orgs that a User is a part of
- * GET /organizations
- * */
-orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
+  * Get all orgs that a User is a part of 
+  * GET /organizations
+  * */
+orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = res.locals.user.info;
 
@@ -46,10 +34,10 @@ orgRouter.get(`/`, validateUserID, async (req: Request, res: Response, next: Nex
 });
 
 /*
- * Create a new organization, and make the creator an Admin
- * POST /organizations
- * */
-orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: NextFunction) => {
+  * Create a new organization, and make the creator an Admin
+  * POST /organizations
+  * */
+orgRouter.post(`/`,  async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, logoUrl } = req.body;
         const user = res.locals.user.info;
@@ -88,16 +76,13 @@ orgRouter.post(`/`, validateUserID, async (req: Request, res: Response, next: Ne
 });
 
 /*
- * Update an organization's information
- * POST /organizations
- * */
-orgRouter.patch(
-    `/:id`,
-    validateUserID,
-    checkOrgAdmin,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const { name, logoUrl, description, website, contactEmail } = req.body;
+  * Update an organization's information
+  * POST /organizations
+  * */
+orgRouter.patch(`/`, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { name, logoUrl, description, website, contactEmail } = req.body;
+        const user = res.locals.user.info;
 
             const org: OrganizationUpdateRequest = {
                 name,
