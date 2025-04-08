@@ -64,8 +64,8 @@ authRouter.delete('/users/:id', authenticate, async (req: Request, res: Response
         const userId = req.params.id;
         const requestingUserId = res.locals.user.id;
 
-        // Only allow users to delete their own account or admins to delete any account
-        if (userId !== requestingUserId && res.locals.user.role !== UserRole.ADMIN) {
+        // Only allow users to delete their own account
+        if (userId !== requestingUserId) {
             throw new AppError('Not authorized to delete this user', 403);
         }
 
