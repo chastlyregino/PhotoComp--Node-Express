@@ -308,6 +308,7 @@ describe('Photo Controller Integration Tests', () => {
         app = express();
         app.use(express.json());
         app.use(express.urlencoded({ extended: true }));
+        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
         // Mock middleware for authentication
         app.use((req, res, next) => {
@@ -381,9 +382,7 @@ describe('Photo Controller Integration Tests', () => {
 
             mockDynamoSend.mockResolvedValueOnce({});
 
-            const response = await request(app).delete(
-                `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`
-            );
+            const response = await request(app).delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}`)
 
             // Verify response
             expect(response.statusCode).toBe(200);

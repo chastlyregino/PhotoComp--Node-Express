@@ -223,6 +223,7 @@ describe('Photo Download Integration Tests', () => {
         app = express();
         app.use(express.json());
         app.use(express.urlencoded({ extended: true }));
+        app.use('/organizations/:id/events/:eventId/photos', photoRouter);
 
         // Mock middleware for authentication
         app.use((req, res, next) => {
@@ -260,7 +261,7 @@ describe('Photo Download Integration Tests', () => {
             // Default mock behavior is already set to return true for access
 
             const response = await request(app)
-                .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
+            .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
                 .expect(200);
 
             // Verify response structure
@@ -277,7 +278,7 @@ describe('Photo Download Integration Tests', () => {
             mockValidateUserEventAccess.mockResolvedValue(false);
 
             const response = await request(app)
-                .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
+            .get(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/download`)
                 .expect(403);
 
             // Verify error response
