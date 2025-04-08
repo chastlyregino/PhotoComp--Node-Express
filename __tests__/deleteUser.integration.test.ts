@@ -64,7 +64,7 @@ const mockDynamoSend = dynamoDb.send as jest.Mock;
 
 describe('Delete User Integration Tests', () => {
     let app: express.Application;
-    
+
     const mockUser = {
         PK: 'USER#user123',
         SK: 'ENTITY',
@@ -80,7 +80,7 @@ describe('Delete User Integration Tests', () => {
         GSI1PK: 'EMAIL#test@example.com',
         GSI1SK: 'ENTITY',
     };
-    
+
     const mockAdmin = {
         PK: 'USER#admin456',
         SK: 'ENTITY',
@@ -117,26 +117,18 @@ describe('Delete User Integration Tests', () => {
         it('should allow a user to delete their own account', async () => {
             // Set up a more flexible mock that responds based on the command type and parameters
             mockDynamoSend.mockImplementation((command) => {
-                // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand' && 
-                    command.input && 
-                    command.input.Key && 
-                    command.input.Key.PK === 'USER#user123') {
+                if (command.constructor && command.constructor.name === 'GetCommand') {
                     return Promise.resolve({
                         Item: mockUser
                     });
                 }
-                
-                // Check if it's a QueryCommand for user memberships
-                if (command.constructor.name === 'QueryCommand' &&
-                    command.input && 
-                    command.input.KeyConditionExpression &&
-                    command.input.KeyConditionExpression.includes('PK = :userId')) {
+
+                if (command.constructor && command.constructor.name === 'QueryCommand') {
                     return Promise.resolve({
                         Items: [] // No memberships found
                     });
                 }
-                
+
                 // For DeleteCommand or any other commands
                 return Promise.resolve({});
             });
@@ -153,25 +145,25 @@ describe('Delete User Integration Tests', () => {
         it('should allow an admin to delete any user account', async () => {
             mockDynamoSend.mockImplementation((command) => {
                 // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand' && 
-                    command.input && 
-                    command.input.Key && 
+                if (command.constructor.name === 'GetCommand' &&
+                    command.input &&
+                    command.input.Key &&
                     command.input.Key.PK === 'USER#user123') {
                     return Promise.resolve({
                         Item: mockUser
                     });
                 }
-                
+
                 // Check if it's a QueryCommand for user memberships
                 if (command.constructor.name === 'QueryCommand' &&
-                    command.input && 
+                    command.input &&
                     command.input.KeyConditionExpression &&
                     command.input.KeyConditionExpression.includes('PK = :userId')) {
                     return Promise.resolve({
                         Items: [] // No memberships found
                     });
                 }
-                
+
                 // For DeleteCommand or any other commands
                 return Promise.resolve({});
             });
@@ -203,7 +195,7 @@ describe('Delete User Integration Tests', () => {
                         Item: null // User not found
                     });
                 }
-                
+
                 return Promise.resolve({});
             });
 
@@ -224,12 +216,12 @@ describe('Delete User Integration Tests', () => {
                         Item: mockUser
                     });
                 }
-                
+
                 // Check if it's a QueryCommand for user memberships - simulate database error
                 if (command.constructor.name === 'QueryCommand') {
                     throw new Error('Database connection failed');
                 }
-                
+
                 return Promise.resolve({});
             });
 
@@ -255,35 +247,35 @@ describe('Delete User Integration Tests', () => {
         it('should delete memberships before deleting the user', async () => {
             mockDynamoSend.mockImplementation((command) => {
                 // Check if it's a GetCommand for user lookup
-                if (command.constructor.name === 'GetCommand' && 
-                    command.input && 
-                    command.input.Key && 
+                if (command.constructor.name === 'GetCommand' &&
+                    command.input &&
+                    command.input.Key &&
                     command.input.Key.PK === 'USER#user123') {
                     return Promise.resolve({
                         Item: mockUser
                     });
                 }
-                
+
                 // Check if it's a QueryCommand for user memberships
                 if (command.constructor.name === 'QueryCommand' &&
-                    command.input && 
+                    command.input &&
                     command.input.KeyConditionExpression &&
                     command.input.KeyConditionExpression.includes('PK = :userId')) {
                     return Promise.resolve({
                         Items: [
-                            { 
-                                PK: 'USER#user123', 
+                            {
+                                PK: 'USER#user123',
                                 SK: 'ORG#TESTORG'
                             }
                         ]
                     });
                 }
-                
+
                 // For BatchWriteCommand (membership deletion)
                 if (command.constructor.name === 'BatchWriteCommand') {
                     return Promise.resolve({});
                 }
-                
+
                 // For DeleteCommand or any other commands
                 return Promise.resolve({});
             });
