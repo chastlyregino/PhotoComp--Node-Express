@@ -87,10 +87,6 @@ eventRouter.patch('/:eid', checkOrgAdmin, async (req: Request, res: Response, ne
     const eventId: string = req.params.eid;
     const user = res.locals.user.info;
 
-=======
-eventRouter.get('/:id/events', async (req: Request, res: Response, next: NextFunction) => {
-    const orgID: string = req.params.id;
->>>>>>> f71589f (SMTP email sender middleware)
     try {
         const event = await eventService.findEventById(eventId);
         await eventService.findEventUserbyUser(eventId, user.id);
@@ -108,36 +104,6 @@ eventRouter.get('/:id/events', async (req: Request, res: Response, next: NextFun
     }
 });
 
-<<<<<<< HEAD
-=======
-// CURRENT function FOUND @ `orgService.ts` - `validateUserOrgAdmin(): boolean`
-// CURRENT PATCH: Changing event.isPublic attribute ONLY - CHANGE LOGIC WHEN UPDATING OTHER attributes
-eventRouter.patch(
-    '/:id/events/:eid',
-    checkOrgAdmin,
-    async (req: Request, res: Response, next: NextFunction) => {
-        const eventId: string = req.params.eid;
-        const user = res.locals.user.info;
-
-        try {
-            const event = await eventService.findEventById(eventId);
-            await eventService.findEventUserbyUser(eventId, user.id);
-
-            const updatedEvent = await eventService.updateEventPublicity(event as Event);
-
-            return res.status(200).json({
-                status: `Updating Event's publicity success!`,
-                data: {
-                    updatedEvent,
-                },
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-
->>>>>>> f71589f (SMTP email sender middleware)
 /*
  * Create an Attendance record for an event
  * POST /events/:eid
@@ -149,18 +115,19 @@ eventRouter.post(
             const eventId: string = req.params.eid;
             const member = res.locals.user as { id: string; email: string; role: string };
 
-        const userEvent: EventUser = await eventService.addEventUser(member.id, eventId);
+            const userEvent: EventUser = await eventService.addEventUser(member.id, eventId);
 
-        return res.status(201).json({
-            status: 'success',
-            data: {
-                userEvent,
-            },
-        });
-    } catch (error) {
-        next(error);
+            return res.status(201).json({
+                status: 'success',
+                data: {
+                    userEvent,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
     }
-});
+);
 
 /*
  * Remove the Attendance record for an event
@@ -173,7 +140,7 @@ eventRouter.delete(
             const eventId: string = req.params.eid;
             const member = res.locals.user as { id: string; email: string; role: string };
 
-        await eventService.removeEventUser(member.id, eventId);
+            await eventService.removeEventUser(member.id, eventId);
 
             return res.status(201).json({
                 status: 'success',
