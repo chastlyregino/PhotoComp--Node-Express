@@ -201,4 +201,69 @@ export class PhotoService {
             throw new AppError(`Failed to delete photo: ${(error as Error).message}`, 500);
         }
     }
+
+    /**
+ * Validates if a user has access to an event's photos
+ * @param eventId The event ID to check access for
+ * @param userId The user ID requesting access
+ * @returns Boolean indicating if the user has access
+ */
+    async validateUserEventAccess(eventId: string, userId: string): Promise<boolean> {
+        try {
+            // Check if the user is attending the event
+            const eventUser = await this.eventRepository.findEventUserbyUser(eventId, userId);
+            return !!eventUser; // Return true if the user is found, false otherwise
+        } catch (error) {
+            logger.error('Error validating user event access:', error);
+            return false; // Default to no access on error
+        }
+    }
+
+    /**
+     * Gets a download URL for a specific photo
+     * @param photoId The ID of the photo to download
+     * @param eventId The event ID the photo belongs to (for validation)
+     * @returns A pre-signed download URL for the photo
+     */
+    async getPhotoDownloadUrl(photoId: string, eventId: string): Promise<string> {
+        try {
+            // Get the photo to verify it exists and belongs to the right event
+            const photo = await this.photoRepository.getPhotoById(photoId);
+
+            if (!photo) {
+                throw new AppError(`Photo not found: ${photoId}`, 404);
+            }
+
+            if (photo.eventId !== eventId) {
+                throw new AppError('Photo does not belong to the specified event', 400);
+            }
+
+            // Get the S3 key from metadata or extract it from the URL
+            const s3Key = photo.metadata?.s3Key || (() => {
+                try {
+                    const urlParts = new URL(photo.url);
+                    return urlParts.pathname.substring(1); // Remove leading slash
+                } catch (error) {
+                    logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                    throw new AppError('Could not determine photo storage location', 500);
+                }
+            })();
+
+            if (!s3Key) {
+                throw new AppError('Photo storage information missing', 500);
+            }
+
+            // Generate a filename for the download
+            const filename = `photo-${photoId}.jpg`;
+
+            // Get a download URL with content-disposition header
+            return await this.s3Service.getDownloadUrl(s3Key, filename);
+        } catch (error) {
+            logger.error('Error generating photo download URL:', error);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to get photo download URL: ${(error as Error).message}`, 500);
+        }
+    }
 }
