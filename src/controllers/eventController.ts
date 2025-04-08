@@ -3,7 +3,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { EventRequest, Event, EventUser } from '../models/Event';
-import { checkOrgAdmin, checkOrgMember, validateUserID } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin} from '../middleware/OrgMiddleware';
 
 
 const eventService = new EventService();
