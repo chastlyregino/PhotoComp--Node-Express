@@ -1,5 +1,3 @@
-// Create a new file src/controllers/orgPhotosController.ts
-
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { AppError } from '../middleware/errorHandler';
