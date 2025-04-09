@@ -1,3 +1,4 @@
+// Fix for eventController.ts
 import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { OrgService } from '../services/orgService';
@@ -41,10 +42,10 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
 
         // Email notification functionality from HEAD version
         const members: UserOrganizationRelationship[] = await orgService.getOrgMembers(orgName);
-        
-        // Prepare response data with geocoding information if available
-        const responseData = [userEvent, event];
-        
+
+        // Prepare response data with separate structures for event and geocoding info
+        const responseData: Array<Event | EventUser | Record<string, any>> = [userEvent, event];
+
         // If address was provided and successfully geocoded, add info to response
         if (eventRequest.address && event.location) {
             responseData.push({
@@ -58,7 +59,7 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
                 }
             });
         }
-        
+
         // Prepare success response with combined data
         const status: Status = {
             statusCode: 201,
@@ -69,7 +70,7 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
         // Add email notification if members exist
         if (members && members.length > 0) {
             const membersEmail: string[] = members.map(member => member.email);
-            
+
             // Creates the email data.
             const to: string = membersEmail.toString();
             const subject: string = `An update from PhotoComp!`;
@@ -85,7 +86,6 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
         next(error);
     }
 });
-
 /*
  * Get the organizations events
  * GET /events
@@ -118,7 +118,7 @@ eventRouter.patch('/:eid', checkOrgAdmin, async (req: Request, res: Response, ne
         if (!event) {
             throw new AppError('Event not found', 404);
         }
-        
+
         await eventService.findEventUserbyUser(eventId, user.id);
 
         const updatedEvent = await eventService.updateEventPublicity(event as Event);
