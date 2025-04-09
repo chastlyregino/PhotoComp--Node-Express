@@ -88,6 +88,7 @@ export let createdUserAdmin: UserOrganizationRelationship = {
     role: UserRole.ADMIN,
     joinedAt: '2025-04-01T17:26:48.364Z',
     type: 'USER_ORG',
+    email: 'sample@email.com',
     GSI1PK: 'ORG#JOLLIBEE',
     GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
 };
@@ -103,6 +104,7 @@ export const existingOrgsUser: UserOrganizationRelationship[] = [
         GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
         PK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
         type: 'USER_ORG',
+        email: 'sample@email.com',
     },
     {
         GSI1PK: 'ORG#TACO BELL',
@@ -114,6 +116,7 @@ export const existingOrgsUser: UserOrganizationRelationship[] = [
         GSI1SK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
         PK: 'USER#81dfd46b-05ba-4cd0-96d8-7ea2cb0c2c70',
         type: 'USER_ORG',
+        email: 'sample2@email.com',
     },
 ];
 

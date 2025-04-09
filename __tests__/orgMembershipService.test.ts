@@ -5,18 +5,22 @@ import { EventService } from '../src/services/eventService';
 import { OrgService } from '../src/services/orgService';
 import { AppError } from '../src/middleware/errorHandler';
 import { OrganizationMembershipRequest } from '../src/models/Organizations';
+import { UserService } from '@/services/userService';
+import { User, UserRole } from '@/models/User';
 
 jest.mock('../src/repositories/orgMembershipRepository');
 jest.mock('../src/services/eventService');
 jest.mock('../src/services/orgService');
+jest.mock('../src/services/userService');
 jest.mock('../src/models/Organizations', () => {
     const original = jest.requireActual('../src/models/Organizations');
     return {
         ...original,
-        addOrganizationAdmin: jest.fn().mockImplementation((orgName, userId) => ({
+        addOrganizationAdmin: jest.fn().mockImplementation((orgName, userId, email) => ({
             userId,
             organizationName: orgName,
             role: 'ADMIN',
+            email
         })),
     };
 });
@@ -25,11 +29,13 @@ describe('OrgMembershipService', () => {
     let orgMembershipService: OrgMembershipService;
     let mockOrgMembershipRepository: jest.Mocked<OrgMembershipRepository>;
     let mockEventService: jest.Mocked<EventService>;
+    let mockUserService: jest.Mocked<UserService>;
     let mockOrgService: jest.Mocked<OrgService>;
 
     const mockOrganizationName = 'testOrg';
     const mockUserId = 'user123';
     const mockMessage = 'Please let me join your organization';
+    const mockEmail = 'sample@email.com';
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -38,6 +44,7 @@ describe('OrgMembershipService', () => {
             new OrgMembershipRepository() as jest.Mocked<OrgMembershipRepository>;
         mockEventService = new EventService() as jest.Mocked<EventService>;
         mockOrgService = new OrgService() as jest.Mocked<OrgService>;
+        mockUserService = new UserService() as jest.Mocked<UserService>;
 
         orgMembershipService = new OrgMembershipService(
             mockOrgMembershipRepository,
@@ -221,7 +228,21 @@ describe('OrgMembershipService', () => {
             userId: mockUserId,
             organizationName: mockOrganizationName,
             role: 'MEMBER',
+            email: mockEmail,
         };
+        const mockedUser: User = {
+            PK: 'USER#123',
+            SK: 'ENTITY',
+            id: '123',
+            email: mockEmail,
+            firstName: 'Existing',
+            lastName: 'User',
+            role: UserRole.USER,
+            createdAt: '2025-04-01T17:26:48.302Z',
+            updatedAt: '2025-04-01T17:26:48.302Z',
+            password: `password`,
+            type: 'USER',
+        }
 
         it('should approve the correct organization request', async () => {
             mockEventService.getAllOrganizationEvents.mockResolvedValue(mockEvents as any);
@@ -231,11 +252,13 @@ describe('OrgMembershipService', () => {
             mockOrgService.createUserOrganizationRelationship.mockResolvedValue(
                 mockMembership as any
             );
+            mockUserService.getUserById.mockResolvedValue(mockedUser);
             mockOrgMembershipRepository.deleteMembershipRequest.mockResolvedValue(true);
 
             const result = await orgMembershipService.approveRequest(
                 mockOrganizationName,
-                mockUserId
+                mockUserId,
+                //mockEmail
             );
 
             expect(mockEventService.getAllOrganizationEvents).toHaveBeenCalledWith(
