@@ -19,8 +19,8 @@ jest.mock('../src/models/Organizations', () => {
         addOrganizationAdmin: jest.fn().mockImplementation((orgName, userId, email) => ({
             userId,
             organizationName: orgName,
-            role: 'ADMIN',
-            email
+            email,
+            role: 'ADMIN'
         })),
     };
 });
@@ -49,7 +49,8 @@ describe('OrgMembershipService', () => {
         orgMembershipService = new OrgMembershipService(
             mockOrgMembershipRepository,
             mockEventService,
-            mockOrgService
+            mockOrgService,
+            mockUserService
         );
     });
 
@@ -258,7 +259,6 @@ describe('OrgMembershipService', () => {
             const result = await orgMembershipService.approveRequest(
                 mockOrganizationName,
                 mockUserId,
-                //mockEmail
             );
 
             expect(mockEventService.getAllOrganizationEvents).toHaveBeenCalledWith(
@@ -268,6 +268,7 @@ describe('OrgMembershipService', () => {
                 mockOrgMembershipRepository.getPendingRequestsByOrganization
             ).toHaveBeenCalledWith(mockOrganizationName);
             expect(mockOrgService.createUserOrganizationRelationship).toHaveBeenCalled();
+            expect(mockUserService.getUserById).toHaveBeenCalled();
             expect(mockOrgMembershipRepository.deleteMembershipRequest).toHaveBeenCalledWith(
                 mockOrganizationName,
                 mockUserId
@@ -283,6 +284,7 @@ describe('OrgMembershipService', () => {
             mockOrgService.createUserOrganizationRelationship.mockResolvedValue(
                 mockMembership as any
             );
+            mockUserService.getUserById.mockResolvedValue(mockedUser);
             mockOrgMembershipRepository.deleteMembershipRequest.mockResolvedValue(true);
 
             // Spy on the addOrganizationAdmin function to check role override
@@ -294,6 +296,7 @@ describe('OrgMembershipService', () => {
             await orgMembershipService.approveRequest(mockOrganizationName, mockUserId);
 
             expect(mockOrgService.createUserOrganizationRelationship).toHaveBeenCalled();
+            expect(mockUserService.getUserById).toHaveBeenCalled();
             const passedArg = mockOrgService.createUserOrganizationRelationship.mock.calls[0][0];
             expect(passedArg.role).toBe('MEMBER');
         });
@@ -340,12 +343,14 @@ describe('OrgMembershipService', () => {
 
             const mockError = new AppError('Database error', 500);
             mockOrgService.createUserOrganizationRelationship.mockRejectedValue(mockError);
+            mockUserService.getUserById.mockResolvedValue(mockedUser);
 
             await expect(
                 orgMembershipService.approveRequest(mockOrganizationName, mockUserId)
             ).rejects.toThrow(mockError);
 
             expect(mockOrgService.createUserOrganizationRelationship).toHaveBeenCalled();
+            expect(mockUserService.getUserById).toHaveBeenCalled();
             expect(mockOrgMembershipRepository.deleteMembershipRequest).not.toHaveBeenCalled();
         });
     });
