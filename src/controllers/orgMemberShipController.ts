@@ -84,45 +84,40 @@ orgMembershipRouter.get(
  */
 orgMembershipRouter.put(
     '/:id/requests/:userId',
-    checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
+            console.log(`put method`)
             const orgName: string = req.params.id;
             const userId: string = req.params.userId; // member userid
-
+            //console.log(`member ${userId}`)
             const result = await orgMembershipService.approveRequest(orgName, userId);
-
+            console.log(`member ${result}`)
             //gets member's email
-            const member = await userService.getUserByEmail(res.locals.user.email);
-
+            const member = await userService.getUserById(userId);
+            console.log(`member ${userId}`)
             // Prepare success response with combined data
             const status: Status = {
-                statusCode: 201,
+                statusCode: 200,
                 status: 'success',
                 data: [
                     `Membership request approved` as any,
                     result as UserOrganizationRelationship,
                 ],
             };
-
+            console.log(member)
             // Add email notification if members exist
             if (member) {
                 // Creates the email data.
                 const to: string = member.email;
                 const subject: string = `An update from PhotoComp!`;
-                const message: string = `Don't miss updates on this event: ${req.body.title} - ${req.body.date}.
+                const message: string = `You will now get updates about about ${orgName}.
                     Know more by checking out the website!`;
-                const header: string = `A new event in ${orgName} has been created!`;
+                const header: string = `Your membership application for ${orgName} has been approved!`;
 
                 res.locals.user.emailInfo = { to, message, header, subject };
             }
 
             next(status);
-            // return res.status(200).json({
-            //     status: 'success',
-            //     message: 'Membership request approved',
-            //     data: result,
-            // });
         } catch (error) {
             next(error);
         }
@@ -135,21 +130,38 @@ orgMembershipRouter.put(
  */
 orgMembershipRouter.delete(
     '/:id/requests/:userId',
-    checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const orgName: string = req.params.id;
             const userId: string = req.params.userId;
 
             const result = await orgMembershipService.denyRequest(orgName, userId);
+            //gets member's email
+            const member = await userService.getUserById(userId);
 
-            return res.status(200).json({
+            // Prepare success response with combined data
+            const status: Status = {
+                statusCode: 200,
                 status: 'success',
-                message: 'Membership request denied',
-                data: {
-                    request: result,
-                },
-            });
+                data: [
+                    `Membership request denied` as any,
+                    result,
+                ],
+            };
+            
+            // Add email notification if members exist
+            if (member) {
+                // Creates the email data.
+                const to: string = member.email;
+                const subject: string = `An update from PhotoComp!`;
+                const message: string = `Please contact ${orgName}'s admin for more info.
+                    In the meantime... You can check other organizations to apply to.`;
+                const header: string = `Your membership application for ${orgName} has been denied!`;
+
+                res.locals.user.emailInfo = { to, message, header, subject };
+            }
+
+            next(status);
         } catch (error) {
             next(error);
         }

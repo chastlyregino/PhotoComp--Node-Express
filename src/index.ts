@@ -40,6 +40,9 @@ app.use('/organizations', authenticate, validateUserID, organizationsRouter);
 organizationsRouter.use('/', orgRouter);
 organizationsRouter.use('/', orgMembershipRouter);
 
+// Routes that all authenticated users can access where emailSender is used
+organizationsRouter.use('/:id/requests/:userId', checkOrgAdmin, orgMembershipRouter, emailSender);
+
 // Create a router specifically for protected org routes
 const orgProtectedRouter = express.Router({ mergeParams: true });
 // Add organization-level photos route
