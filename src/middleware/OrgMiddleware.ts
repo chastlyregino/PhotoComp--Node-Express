@@ -10,13 +10,27 @@ const userService = new UserService();
 
 export const checkOrgAdmin = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const orgName: string = req.params.orgId;
+        // Check both possible parameter names
+        const orgName: string = req.params.orgId || req.params.id;
+
+        // Debug logging
+        console.log(`Using organization name: "${orgName}" from params`);
+
+        // Ensure we have an organization name
+        if (!orgName) {
+            return next(new AppError('Organization ID is missing in request parameters', 400));
+        }
+
         const user = res.locals.user as { id: string; email: string; role: UserRole };
 
         const userAdminOrg: UserOrganizationRelationship | null =
             await orgService.findSpecificOrgByUser(orgName, user.id);
 
-        if (!orgService.validateUserOrgAdmin(userAdminOrg as UserOrganizationRelationship)) {
+        if (!userAdminOrg) {
+            return next(new AppError('You are not a member of this organization', 403));
+        }
+
+        if (!orgService.validateUserOrgAdmin(userAdminOrg)) {
             return next(
                 new AppError(
                     'Only an Org Admin can perform this action. Please talk to your Admin for more information',
