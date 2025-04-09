@@ -113,7 +113,7 @@ This endpoint allows organization admins to update a member's role within the or
 **200 OK**
 ```json
 {
-  "status": "success",
+  "status": "success and email has been sent!",
   "message": "Member role updated successfully",
   "data": {
     "member": {
