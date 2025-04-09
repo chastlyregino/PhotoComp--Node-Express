@@ -47,10 +47,10 @@ export const checkOrgAdmin = async (req: Request, res: Response, next: NextFunct
 
 export const checkOrgMember = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const orgName: string = req.params.orgId;
+        const orgName: string = req.params.orgId || req.params.id;
         const user = res.locals.user as { id: string; email: string; role: UserRole };
 
-        console.log(`Checking organization membership for org: "${orgName}" and user: ${user.id}`);
+        // console.log(`Checking organization membership for org: "${orgName}" and user: ${user.id}`);
 
         const userMemberOrg: UserOrganizationRelationship | null =
             await orgService.findSpecificOrgByUser(orgName, user.id);

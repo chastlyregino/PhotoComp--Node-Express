@@ -318,6 +318,42 @@ export class OrgService {
     }
 
     /**
+     * Remove yourself from an organization
+     * @param orgName The name of the organization
+     * @param userId your userId
+     * @returns True if successful
+     */
+    async leaveOrganization(orgName: string, userId: string): Promise<boolean> {
+      try {
+            const member = await this.orgRepository.findSpecificOrgByUser(orgName, userId);
+
+            if (!member) {
+                throw new AppError('Member not found in this organization', 404);
+            }
+            
+            if (member.userId != userId) {
+                throw new AppError('You cannot make another member leave', 403);
+            }
+
+            if (member.role === UserRole.ADMIN) {
+                const orgMembers = await this.orgRepository.getOrgMembers(orgName);
+                const adminCount = orgMembers.filter(member => member.role === UserRole.ADMIN).length;
+                
+                if (adminCount <= 1) {
+                    throw new AppError('Cannot leave organization: You are the only admin. Please assign another admin first.', 400);
+                }
+            }
+
+            return await this.orgRepository.removeMember(orgName, userId);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to leave organization: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
      * Update a member's role in an organization
      * @param orgName The name of the organization
      * @param userId The ID of the user to update
