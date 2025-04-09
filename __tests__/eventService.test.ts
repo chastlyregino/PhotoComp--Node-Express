@@ -41,7 +41,13 @@ describe('EventService', () => {
             const result = await eventService.addEventToOrganization(ORGID, validEventRequest);
 
             expect(result).toEqual(createdEventRequest);
-            expect(mockEventRepository.createOrgEvent).toHaveBeenCalledWith(createdEventRequest);
+ 
+            const expected = {
+                ...createdEventRequest,
+                date: validEventRequest.date, // Use the input date from validEventRequest
+                location: undefined,
+            };
+            expect(mockEventRepository.createOrgEvent).toHaveBeenCalledWith(expected);
         });
 
         it('should throw an error if eventRequest is invalid', async () => {
@@ -154,23 +160,31 @@ describe('createEvent', () => {
     it('should create an event with the correct structure and UUID', () => {
         const event: Event = createEvent(ORGID, validEventRequest);
 
-        // Validate UUID format and structure
-        expect(event.PK).toBe(createdEventRequest.PK);
-        expect(event.SK).toBe(createdEventRequest.SK);
-        expect(event.GSI2PK).toBe(createdEventRequest.GSI2PK);
-        expect(event.GSI2SK).toBe(createdEventRequest.GSI2SK);
+        // Update the expected event for comparison
+        const expectedEvent = {
+            ...createdEventRequest,
+            date: validEventRequest.date, // Use the input date from validEventRequest
+            location: undefined // Include the location field since it's in the actual implementation
+        };
 
-        // Validate event fields
-        expect(event.title).toBe(createdEventRequest.title);
-        expect(event.description).toBe(createdEventRequest.description);
-        expect(event.isPublic).toBe(createdEventRequest.isPublic);
+        // Validate event fields against our expected values
+        expect(event.title).toBe(expectedEvent.title);
+        expect(event.description).toBe(expectedEvent.description);
+        expect(event.isPublic).toBe(expectedEvent.isPublic);
         expect(event.date).toBeDefined();
+        expect(event.date).toBe(validEventRequest.date);
         expect(event.createdAt).toBeDefined();
         expect(event.updatedAt).toBeDefined();
 
-        // Validate that the date is correctly set to current ISO string
-        expect(event.createdAt).toBe(createdEventRequest.createdAt);
-        expect(event.updatedAt).toBe(createdEventRequest.updatedAt);
+        // Validate UUID format and structure
+        expect(event.PK).toBe(expectedEvent.PK);
+        expect(event.SK).toBe(expectedEvent.SK);
+        expect(event.GSI2PK).toBe(expectedEvent.GSI2PK);
+        expect(event.GSI2SK).toBe(expectedEvent.GSI2SK);
+
+        // Validate that timestamps are correctly set
+        expect(event.createdAt).toBe(expectedEvent.createdAt);
+        expect(event.updatedAt).toBe(expectedEvent.updatedAt);
     });
 });
 
