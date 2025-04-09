@@ -41,7 +41,7 @@ describe('EventService', () => {
             const result = await eventService.addEventToOrganization(ORGID, validEventRequest);
 
             expect(result).toEqual(createdEventRequest);
- 
+
             const expected = {
                 ...createdEventRequest,
                 date: validEventRequest.date, // Use the input date from validEventRequest
@@ -164,7 +164,7 @@ describe('createEvent', () => {
         const expectedEvent = {
             ...createdEventRequest,
             date: validEventRequest.date, // Use the input date from validEventRequest
-            location: undefined // Include the location field since it's in the actual implementation
+            location: undefined, // Include the location field since it's in the actual implementation
         };
 
         // Validate event fields against our expected values

@@ -1,45 +1,44 @@
-
 // Mock the modules before any imports
 jest.mock('@aws-sdk/client-s3', () => ({
     S3Client: jest.fn().mockImplementation(() => ({
-        send: jest.fn().mockResolvedValue({})
+        send: jest.fn().mockResolvedValue({}),
     })),
     PutObjectCommand: jest.fn(),
     GetObjectCommand: jest.fn(),
-    DeleteObjectCommand: jest.fn()
+    DeleteObjectCommand: jest.fn(),
 }));
 
 jest.mock('@aws-sdk/s3-request-presigner', () => ({
-    getSignedUrl: jest.fn().mockResolvedValue('https://presigned-url.example.com/photo.jpg')
+    getSignedUrl: jest.fn().mockResolvedValue('https://presigned-url.example.com/photo.jpg'),
 }));
 
 // Mock DynamoDB and related modules
 jest.mock('@aws-sdk/lib-dynamodb', () => ({
     DynamoDBDocumentClient: {
         from: jest.fn().mockReturnValue({
-            send: jest.fn()
-        })
+            send: jest.fn(),
+        }),
     },
     PutCommand: jest.fn(),
     QueryCommand: jest.fn(),
     GetCommand: jest.fn(),
-    DeleteCommand: jest.fn()
+    DeleteCommand: jest.fn(),
 }));
 
 // Mock config modules
 jest.mock('../src/config/db', () => ({
     dynamoDb: {
-        send: jest.fn()
+        send: jest.fn(),
     },
-    TABLE_NAME: 'test-table'
+    TABLE_NAME: 'test-table',
 }));
 
 jest.mock('../src/config/s3', () => ({
     s3Client: {
-        send: jest.fn().mockResolvedValue({})
+        send: jest.fn().mockResolvedValue({}),
     },
     getSignedUrl: jest.fn().mockResolvedValue('https://presigned-url.example.com/photo.jpg'),
-    S3_BUCKET_NAME: 'test-bucket'
+    S3_BUCKET_NAME: 'test-bucket',
 }));
 
 // Mock the UserService
@@ -53,18 +52,18 @@ jest.mock('../src/services/userService', () => {
                         email: 'test@example.com',
                         firstName: 'Test',
                         lastName: 'User',
-                        role: 'MEMBER'
+                        role: 'MEMBER',
                     });
-                })
+                }),
             };
-        })
+        }),
     };
 });
 
 // Mock the auth middleware
 jest.mock('../src/middleware/authMiddleware', () => ({
     authenticate: (req: any, res: any, next: any) => next(),
-    authorizeAdmin: (req: any, res: any, next: any) => next()
+    authorizeAdmin: (req: any, res: any, next: any) => next(),
 }));
 
 // Mock the org middleware
@@ -78,11 +77,11 @@ jest.mock('../src/middleware/OrgMiddleware', () => ({
                 email: 'test@example.com',
                 firstName: 'Test',
                 lastName: 'User',
-                role: 'MEMBER'
-            }
+                role: 'MEMBER',
+            },
         };
         next();
-    }
+    },
 }));
 
 // Mock the PhotoService
@@ -95,14 +94,14 @@ jest.mock('../src/services/photoService', () => {
                     eventMap.set('event1', {
                         id: 'event1',
                         title: 'Test Event 1',
-                        date: '2025-04-01T00:00:00.000Z'
+                        date: '2025-04-01T00:00:00.000Z',
                     });
                     eventMap.set('event2', {
                         id: 'event2',
                         title: 'Test Event 2',
-                        date: '2025-04-02T00:00:00.000Z'
+                        date: '2025-04-02T00:00:00.000Z',
                     });
-                    
+
                     return Promise.resolve({
                         photos: [
                             {
@@ -111,7 +110,7 @@ jest.mock('../src/services/photoService', () => {
                                 url: 'https://presigned-url.example.com/photo1.jpg',
                                 uploadedBy: 'test-user-id',
                                 createdAt: '2025-04-01T00:00:00.000Z',
-                                metadata: { title: 'Photo 1' }
+                                metadata: { title: 'Photo 1' },
                             },
                             {
                                 id: 'photo2',
@@ -119,14 +118,14 @@ jest.mock('../src/services/photoService', () => {
                                 url: 'https://presigned-url.example.com/photo2.jpg',
                                 uploadedBy: 'test-user-id',
                                 createdAt: '2025-04-02T00:00:00.000Z',
-                                metadata: { title: 'Photo 2' }
-                            }
+                                metadata: { title: 'Photo 2' },
+                            },
                         ],
-                        events: eventMap
+                        events: eventMap,
                     });
-                })
+                }),
             };
-        })
+        }),
     };
 });
 
@@ -138,10 +137,10 @@ jest.mock('../src/services/orgService', () => {
                 findSpecificOrgByUser: jest.fn().mockResolvedValue({
                     userId: 'test-user-id',
                     organizationName: 'test-org',
-                    role: 'MEMBER'
-                })
+                    role: 'MEMBER',
+                }),
             };
-        })
+        }),
     };
 });
 
@@ -204,13 +203,13 @@ describe('Organization Photos Integration Tests', () => {
             expect(response.body.status).toBe('success');
             expect(response.body.data.photos).toBeDefined();
             expect(response.body.data.photos.length).toBe(2);
-            
+
             // Verify photos have event information
             expect(response.body.data.photos[0].event).toBeDefined();
             expect(response.body.data.photos[0].event.title).toBe('Test Event 1');
             expect(response.body.data.photos[1].event).toBeDefined();
             expect(response.body.data.photos[1].event.title).toBe('Test Event 2');
-            
+
             // Verify count is included
             expect(response.body.data.count).toBe(2);
         });

@@ -34,7 +34,7 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
             description: req.body.description,
             date: req.body.date,
             location: req.body.location,
-            address: req.body.address // Include optional address field for geocoding
+            address: req.body.address, // Include optional address field for geocoding
         };
 
         const event: Event = await eventService.addEventToOrganization(orgName, eventRequest);
@@ -54,9 +54,9 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
                     resolvedCoordinates: {
                         latitude: event.location.latitude,
                         longitude: event.location.longitude,
-                        formattedAddress: event.location.name
-                    }
-                }
+                        formattedAddress: event.location.name,
+                    },
+                },
             });
         }
 
@@ -64,7 +64,7 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
         const status: Status = {
             statusCode: 201,
             status: 'success',
-            data: responseData
+            data: responseData,
         };
 
         // Add email notification if members exist
@@ -109,30 +109,34 @@ eventRouter.get('/', async (req: Request, res: Response, next: NextFunction) => 
  * Update event's publicity
  * PATCH /events/:eid
  */
-eventRouter.patch('/:eid', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
-    const eventId: string = req.params.eid;
-    const user = res.locals.user.info;
+eventRouter.patch(
+    '/:eid',
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
+        const eventId: string = req.params.eid;
+        const user = res.locals.user.info;
 
-    try {
-        const event = await eventService.findEventById(eventId);
-        if (!event) {
-            throw new AppError('Event not found', 404);
+        try {
+            const event = await eventService.findEventById(eventId);
+            if (!event) {
+                throw new AppError('Event not found', 404);
+            }
+
+            await eventService.findEventUserbyUser(eventId, user.id);
+
+            const updatedEvent = await eventService.updateEventPublicity(event as Event);
+
+            return res.status(200).json({
+                status: "Updating Event's publicity success!",
+                data: {
+                    updatedEvent,
+                },
+            });
+        } catch (error) {
+            next(error);
         }
-
-        await eventService.findEventUserbyUser(eventId, user.id);
-
-        const updatedEvent = await eventService.updateEventPublicity(event as Event);
-
-        return res.status(200).json({
-            status: 'Updating Event\'s publicity success!',
-            data: {
-                updatedEvent,
-            },
-        });
-    } catch (error) {
-        next(error);
     }
-});
+);
 
 /*
  * Create an Attendance record for an event
@@ -180,83 +184,94 @@ eventRouter.delete('/:eid', async (req: Request, res: Response, next: NextFuncti
  * Refresh weather data for an event
  * POST /events/:eid/weather/refresh
  */
-eventRouter.post('/:eid/weather/refresh', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const eventId: string = req.params.eid;
+eventRouter.post(
+    '/:eid/weather/refresh',
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const eventId: string = req.params.eid;
 
-        const updatedEvent = await eventService.refreshEventWeather(eventId);
+            const updatedEvent = await eventService.refreshEventWeather(eventId);
 
-        return res.status(200).json({
-            status: 'success',
-            data: {
-                event: updatedEvent
-            }
-        });
-    } catch (error) {
-        next(error);
+            return res.status(200).json({
+                status: 'success',
+                data: {
+                    event: updatedEvent,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
     }
-});
+);
 
 /*
  * Update event location and fetch weather data
  * PATCH /events/:eid/location
  */
-eventRouter.patch('/:eid/location', checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const eventId: string = req.params.eid;
-        const { latitude, longitude, name } = req.body;
-
-        if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-            throw new AppError('Valid latitude and longitude are required', 400);
-        }
-
-        // First get the existing event
-        const event = await eventService.findEventById(eventId);
-
-        if (!event) {
-            throw new AppError('Event not found', 404);
-        }
-
-        // Update event with location data
-        event.location = {
-            latitude,
-            longitude,
-            name: name || undefined
-        };
-
-        // Update event in database
-        const updatedEvent = await eventService.updateEvent(event);
-
-        // Fetch and add weather data
+eventRouter.patch(
+    '/:eid/location',
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const weatherData = await weatherService.getWeatherForLocation(
+            const eventId: string = req.params.eid;
+            const { latitude, longitude, name } = req.body;
+
+            if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+                throw new AppError('Valid latitude and longitude are required', 400);
+            }
+
+            // First get the existing event
+            const event = await eventService.findEventById(eventId);
+
+            if (!event) {
+                throw new AppError('Event not found', 404);
+            }
+
+            // Update event with location data
+            event.location = {
                 latitude,
                 longitude,
-                event.date
-            );
+                name: name || undefined,
+            };
 
-            const eventWithWeather = await eventService.updateEventWeather(eventId, weatherData);
+            // Update event in database
+            const updatedEvent = await eventService.updateEvent(event);
 
-            return res.status(200).json({
-                status: 'success',
-                data: {
-                    event: eventWithWeather
-                }
-            });
-        } catch (weatherError) {
-            // Return updated event even if weather fetch fails
-            return res.status(200).json({
-                status: 'success',
-                message: 'Location updated but weather data could not be fetched',
-                data: {
-                    event: updatedEvent
-                }
-            });
+            // Fetch and add weather data
+            try {
+                const weatherData = await weatherService.getWeatherForLocation(
+                    latitude,
+                    longitude,
+                    event.date
+                );
+
+                const eventWithWeather = await eventService.updateEventWeather(
+                    eventId,
+                    weatherData
+                );
+
+                return res.status(200).json({
+                    status: 'success',
+                    data: {
+                        event: eventWithWeather,
+                    },
+                });
+            } catch (weatherError) {
+                // Return updated event even if weather fetch fails
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'Location updated but weather data could not be fetched',
+                    data: {
+                        event: updatedEvent,
+                    },
+                });
+            }
+        } catch (error) {
+            next(error);
         }
-    } catch (error) {
-        next(error);
     }
-});
+);
 
 /*
  * Update event location using an address and fetch weather data
@@ -288,7 +303,7 @@ eventRouter.patch(
             event.location = {
                 latitude: geocodingResult.latitude,
                 longitude: geocodingResult.longitude,
-                name: geocodingResult.displayName
+                name: geocodingResult.displayName,
             };
 
             // Update event in database
@@ -302,7 +317,10 @@ eventRouter.patch(
                     event.date
                 );
 
-                const eventWithWeather = await eventService.updateEventWeather(eventId, weatherData);
+                const eventWithWeather = await eventService.updateEventWeather(
+                    eventId,
+                    weatherData
+                );
 
                 return res.status(200).json({
                     status: 'success',
@@ -311,9 +329,9 @@ eventRouter.patch(
                         geocoding: {
                             latitude: geocodingResult.latitude,
                             longitude: geocodingResult.longitude,
-                            formattedAddress: geocodingResult.displayName
-                        }
-                    }
+                            formattedAddress: geocodingResult.displayName,
+                        },
+                    },
                 });
             } catch (weatherError) {
                 // Return updated event even if weather fetch fails
@@ -325,12 +343,13 @@ eventRouter.patch(
                         geocoding: {
                             latitude: geocodingResult.latitude,
                             longitude: geocodingResult.longitude,
-                            formattedAddress: geocodingResult.displayName
-                        }
-                    }
+                            formattedAddress: geocodingResult.displayName,
+                        },
+                    },
                 });
             }
         } catch (error) {
             next(error);
         }
-    });
+    }
+);
