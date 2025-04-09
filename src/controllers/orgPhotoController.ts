@@ -18,18 +18,23 @@ orgPhotosRouter.get(
             const orgName: string = req.params.orgId;
             const user = res.locals.user.info;
 
-            const { photos, events } = await photoService.getAllOrganizationPhotos(orgName, user.id);
+            const { photos, events } = await photoService.getAllOrganizationPhotos(
+                orgName,
+                user.id
+            );
 
             // Add event information to each photo for the response
             const photosWithEventInfo = photos.map(photo => {
                 const event = events.get(photo.eventId);
                 return {
                     ...photo,
-                    event: event ? {
-                        id: event.id,
-                        title: event.title,
-                        date: event.date
-                    } : null
+                    event: event
+                        ? {
+                              id: event.id,
+                              title: event.title,
+                              date: event.date,
+                          }
+                        : null,
                 };
             });
 
@@ -37,7 +42,7 @@ orgPhotosRouter.get(
                 status: 'success',
                 data: {
                     photos: photosWithEventInfo,
-                    count: photos.length
+                    count: photos.length,
                 },
             });
         } catch (error) {

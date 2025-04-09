@@ -13,14 +13,14 @@ export interface Event {
     date: string;
     createdAt: string;
     updatedAt: string;
-    
+
     // Location fields
     location?: {
         name?: string;
         latitude: number;
         longitude: number;
     };
-    
+
     // Weather data
     weather?: WeatherData;
 

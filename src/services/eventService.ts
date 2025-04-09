@@ -18,7 +18,7 @@ export class EventService {
 
     /**
      * Initializes the EventService with repository and service dependencies
-     * 
+     *
      * @param eventRepository - Handles database operations for events
      * @param weatherService - Provides weather forecast data from Open-Meteo API
      * @param geocodingService - Provides geocoding services to convert addresses to coordinates
@@ -35,11 +35,11 @@ export class EventService {
 
     /**
      * Creates a new event for an organization with optional weather data
-     * 
+     *
      * If location data or address is provided with the event request, this method will
      * automatically fetch and attach weather forecast data from Open-Meteo.
      * Weather fetching failures will be logged but won't prevent event creation.
-     * 
+     *
      * @param orgID - The organization ID that owns the event
      * @param eventRequest - Event details including title, description, date and optional location or address
      * @returns The created Event object with weather data if available
@@ -62,14 +62,18 @@ export class EventService {
             // If address is provided but no location, geocode the address
             if (eventRequest.address && !eventRequest.location) {
                 try {
-                    const geocodingResult = await this.geocodingService.geocodeAddress(eventRequest.address);
+                    const geocodingResult = await this.geocodingService.geocodeAddress(
+                        eventRequest.address
+                    );
                     // Add the geocoded location to the event request
                     eventRequest.location = {
                         latitude: geocodingResult.latitude,
                         longitude: geocodingResult.longitude,
-                        name: geocodingResult.displayName
+                        name: geocodingResult.displayName,
                     };
-                    logger.info(`Geocoded address "${eventRequest.address}" to coordinates [${geocodingResult.latitude}, ${geocodingResult.longitude}]`);
+                    logger.info(
+                        `Geocoded address "${eventRequest.address}" to coordinates [${geocodingResult.latitude}, ${geocodingResult.longitude}]`
+                    );
                 } catch (geocodingError) {
                     // Log the error but continue without location data
                     logger.error('Error geocoding address:', geocodingError);
@@ -84,10 +88,11 @@ export class EventService {
             const createdEvent = await this.eventRepository.createOrgEvent(event);
 
             // If location is provided, fetch and add weather data
-            if (createdEvent.location &&
+            if (
+                createdEvent.location &&
                 typeof createdEvent.location.latitude === 'number' &&
-                typeof createdEvent.location.longitude === 'number') {
-
+                typeof createdEvent.location.longitude === 'number'
+            ) {
                 try {
                     const weatherData = await this.weatherService.getWeatherForLocation(
                         createdEvent.location.latitude,
@@ -96,7 +101,10 @@ export class EventService {
                     );
 
                     // Update the event with weather data
-                    return await this.eventRepository.updateEventWeather(createdEvent.id, weatherData);
+                    return await this.eventRepository.updateEventWeather(
+                        createdEvent.id,
+                        weatherData
+                    );
                 } catch (weatherError) {
                     // Log the error but continue without weather data
                     logger.error('Error fetching weather data:', weatherError);
@@ -144,11 +152,11 @@ export class EventService {
 
     /**
      * Refreshes the weather forecast data for an existing event
-     * 
+     *
      * This method fetches the latest weather data from Open-Meteo based on
      * the event's stored location information and date. Useful for updating
      * forecasts as the event date approaches.
-     * 
+     *
      * @param eventId - The ID of the event to refresh weather data for
      * @returns The updated event with fresh weather data
      * @throws AppError if event not found, missing location data, or API errors
@@ -161,9 +169,11 @@ export class EventService {
                 throw new AppError('Event not found', 404);
             }
 
-            if (!event.location ||
+            if (
+                !event.location ||
                 typeof event.location.latitude !== 'number' ||
-                typeof event.location.longitude !== 'number') {
+                typeof event.location.longitude !== 'number'
+            ) {
                 throw new AppError('Event does not have location data', 400);
             }
 
@@ -184,7 +194,7 @@ export class EventService {
 
     /**
      * Retrieves all events for a given organization
-     * 
+     *
      * @param orgID - The organization ID to fetch events for
      * @returns A list of events for the organization
      * @throws AppError for invalid input or database errors
@@ -201,7 +211,7 @@ export class EventService {
 
     /**
      * Retrieves all public events for a given organization with pagination support
-     * 
+     *
      * @param orgID - The organization ID to fetch public events for
      * @returns Object containing events array and pagination key
      * @throws AppError for invalid input or database errors
@@ -220,7 +230,7 @@ export class EventService {
 
     /**
      * Finds an event-user relationship by event ID and user ID
-     * 
+     *
      * @param eventId - The event ID to check
      * @param userId - The user ID to check
      * @returns The event-user relationship if found
@@ -248,7 +258,7 @@ export class EventService {
 
     /**
      * Finds an event by its ID
-     * 
+     *
      * @param eventId - The ID of the event to find
      * @returns The event if found
      * @throws AppError if event not found or database errors
@@ -272,7 +282,7 @@ export class EventService {
 
     /**
      * Toggles an event's public/private status
-     * 
+     *
      * @param event - The event to update publicity for
      * @returns The updated event
      * @throws AppError if event not found or update fails
@@ -306,7 +316,7 @@ export class EventService {
 
     /**
      * Updates an entire event object in the database
-     * 
+     *
      * @param event - The event object with updated fields
      * @returns The updated event
      * @throws AppError if database operation fails
@@ -324,7 +334,7 @@ export class EventService {
 
     /**
      * Updates just the weather data for an event
-     * 
+     *
      * @param eventId - The ID of the event to update weather for
      * @param weatherData - The weather data to store with the event
      * @returns The updated event with weather data

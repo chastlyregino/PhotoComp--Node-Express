@@ -74,7 +74,6 @@ export class EventRepository {
                         PK: `USER#${userID}`,
                         SK: `EVENT#${eventID}`,
                     },
-
                 })
             );
 
@@ -300,8 +299,8 @@ export class EventRepository {
                     TableName: TABLE_NAME,
                     Item: {
                         ...event,
-                        updatedAt: new Date().toISOString()
-                    }
+                        updatedAt: new Date().toISOString(),
+                    },
                 })
             );
 
@@ -311,14 +310,12 @@ export class EventRepository {
         }
     }
 
-
-
     /**
-    * Updates weather data for an event
-    * @param eventId The ID of the event
-    * @param weatherData The weather data to add
-    * @returns The updated event
-    */
+     * Updates weather data for an event
+     * @param eventId The ID of the event
+     * @param weatherData The weather data to add
+     * @returns The updated event
+     */
     async updateEventWeather(eventId: string, weatherData: WeatherData): Promise<Event> {
         try {
             const result = await dynamoDb.send(
@@ -326,14 +323,14 @@ export class EventRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `EVENT#${eventId}`,
-                        SK: 'ENTITY'
+                        SK: 'ENTITY',
                     },
                     UpdateExpression: 'SET weather = :weatherData, updatedAt = :updatedAt',
                     ExpressionAttributeValues: {
                         ':weatherData': weatherData,
-                        ':updatedAt': new Date().toISOString()
+                        ':updatedAt': new Date().toISOString(),
                     },
-                    ReturnValues: 'ALL_NEW'
+                    ReturnValues: 'ALL_NEW',
                 })
             );
 
@@ -347,4 +344,3 @@ export class EventRepository {
         }
     }
 }
-

@@ -1,7 +1,11 @@
 import { Request, Response, Router, NextFunction } from 'express';
 import { OrgMembershipService } from '../services/orgMembershipService';
 import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
-import { OrganizationMembershipRequest } from '../models/Organizations';
+import {
+    OrganizationMembershipRequest,
+    UserOrganizationRelationship,
+} from '../models/Organizations';
+import { Status } from '../models/Response';
 import { UserService } from '../services/userService';
 
 const orgMembershipService = new OrgMembershipService();
@@ -88,11 +92,37 @@ orgMembershipRouter.put(
 
             const result = await orgMembershipService.approveRequest(orgName, userId);
 
-            return res.status(200).json({
+            //gets member's email
+            const member = await userService.getUserByEmail(res.locals.user.email);
+
+            // Prepare success response with combined data
+            const status: Status = {
+                statusCode: 201,
                 status: 'success',
-                message: 'Membership request approved',
-                data: result,
-            });
+                data: [
+                    `Membership request approved` as any,
+                    result as UserOrganizationRelationship,
+                ],
+            };
+
+            // Add email notification if members exist
+            if (member) {
+                // Creates the email data.
+                const to: string = member.email;
+                const subject: string = `An update from PhotoComp!`;
+                const message: string = `Don't miss updates on this event: ${req.body.title} - ${req.body.date}.
+                    Know more by checking out the website!`;
+                const header: string = `A new event in ${orgName} has been created!`;
+
+                res.locals.user.emailInfo = { to, message, header, subject };
+            }
+
+            next(status);
+            // return res.status(200).json({
+            //     status: 'success',
+            //     message: 'Membership request approved',
+            //     data: result,
+            // });
         } catch (error) {
             next(error);
         }
