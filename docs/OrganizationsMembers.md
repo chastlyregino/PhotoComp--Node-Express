@@ -223,3 +223,64 @@ This endpoint allows organization admins to remove a member from the organizatio
   "message": "Failed to remove member from organization"
 }
 ```
+### 7.4 Leave Organization
+
+`DELETE /organizations/:id/members/:userId/leave`
+
+This endpoint allows users to leave an organization they are a member of. Admins cannot leave if they are the last admin of the organization.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Response
+
+**200 OK**
+```json
+{
+  "status": "success",
+  "message": "Successfully left the organization"
+}
+```
+
+**400 Bad Request**
+```json
+{
+  "status": "error",
+  "message": "Cannot leave organization: You are the only admin. Please assign another admin first."
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "You cannot make another member leave"
+}
+```
+
+**401 Unauthorized**
+```json
+{
+  "status": "error",
+  "message": "You are NOT part of this Organization"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Organization not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to leave organization"
+}
+```

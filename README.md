@@ -155,6 +155,7 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /organizations/:id/members | Get organization members |
 | PUT | /organizations/:id/members/:userID | Update organization member |
 | DELETE | /organizations/:id/members/:userID | Remove organization member |
+| DELETE | /organizations/:id/members/:userID/leave | leave an organization |
 
 ---
 
