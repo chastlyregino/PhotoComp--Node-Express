@@ -25,7 +25,7 @@ This endpoint allows users with "ADMIN" role to create a new event for an organi
 **201 Created**
 ```json
 {
-  "status": "success",
+  "status": "success and email has been sent!",
   "data": {
     "event": {
       "PK": "EVENT#abcd1234",

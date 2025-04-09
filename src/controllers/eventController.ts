@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { OrgService } from '../services/orgService';
 import { EventRequest, Event, EventUser } from '../models/Event';
+import { Status } from '../models/Response';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { UserOrganizationRelationship } from '../models/Organizations';
 
@@ -30,6 +31,11 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
 
         const members: UserOrganizationRelationship[] = await orgService.getOrgMembers(orgName);
         const membersEmail: string[] = members.map(member => member.email);
+        const status: Status = {
+            statusCode: 200,
+            status: 'success',
+            data: [userEvent, event],
+        };
 
         if (members) {
             // Creates the email data.
@@ -40,17 +46,9 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
             const header: string = `A new event in ${orgName} has been created!`;
 
             res.locals.user.emailInfo = { to, message, header, subject };
-            next();
         }
 
-        //can't return if calling next
-        // return res.status(201).json({
-        //     status: 'success',
-        //     data: {
-        //         userEvent,
-        //         event,
-        //     },
-        // });
+        next(status);
     } catch (error) {
         next(error);
     }

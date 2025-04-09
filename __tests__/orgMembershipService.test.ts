@@ -20,7 +20,7 @@ jest.mock('../src/models/Organizations', () => {
             userId,
             organizationName: orgName,
             email,
-            role: 'ADMIN'
+            role: 'ADMIN',
         })),
     };
 });
@@ -243,7 +243,7 @@ describe('OrgMembershipService', () => {
             updatedAt: '2025-04-01T17:26:48.302Z',
             password: `password`,
             type: 'USER',
-        }
+        };
 
         it('should approve the correct organization request', async () => {
             mockEventService.getAllOrganizationEvents.mockResolvedValue(mockEvents as any);
@@ -258,7 +258,7 @@ describe('OrgMembershipService', () => {
 
             const result = await orgMembershipService.approveRequest(
                 mockOrganizationName,
-                mockUserId,
+                mockUserId
             );
 
             expect(mockEventService.getAllOrganizationEvents).toHaveBeenCalledWith(
