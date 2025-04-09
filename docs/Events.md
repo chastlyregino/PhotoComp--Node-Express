@@ -1,43 +1,86 @@
-## Event Management 
+# Event Management 
 
-### Create an organization Event
+## Creating an Organization Event
 
 `POST /organizations/:id/events`
 
-This endpoint allows users with "ADMIN" role to create a new event for an organization.
+This endpoint allows users with "ADMIN" role to create a new event for an organization. It now supports location data and automatic weather forecasts.
 
-#### Request Headers
+### Request Headers
 
 | Key | Value | Required |
 |-----|-------|----------|
 | Authorization | `Bearer <token>` |  Yes  |
 | Content-Type | `application/json` |  Yes  |
 
-#### Request Body
+### Request Body
 ```json
 {
   "title": "Annual Company Meetup",
   "description": "A networking event for all employees.",
-  "date": "2025-05-01T18:00:00Z" (ISO 8601 format)
+  "date": "2025-05-01T18:00:00Z",
+  "address": "123 Main St, Boston, MA 02108"
 }
 ```
-#### Response
+
+OR with direct coordinate specification:
+
+```json
+{
+  "title": "Annual Company Meetup",
+  "description": "A networking event for all employees.",
+  "date": "2025-05-01T18:00:00Z",
+  "location": {
+    "latitude": 42.3601,
+    "longitude": -71.0589,
+    "name": "Boston City Hall"
+  }
+}
+```
+
+### Response
 **201 Created**
 ```json
 {
   "status": "success and email has been sent!",
   "data": {
+    "userEvent": {
+      "PK": "USER#userId",
+      "SK": "EVENT#eventId",
+      "GSI2PK": "EVENT#eventId", 
+      "GSI2SK": "USER#userId"
+    },
     "event": {
       "PK": "EVENT#abcd1234",
       "SK": "ENTITY",
       "title": "Annual Company Meetup",
       "description": "A networking event for all employees.",
-      "visibility": "PUBLIC",
+      "isPublic": true,
       "date": "2025-05-01T18:00:00Z",
       "createdAt": "2025-04-01T15:30:00Z",
       "updatedAt": "2025-04-01T15:30:00Z",
+      "location": {
+        "latitude": 42.3601,
+        "longitude": -71.0589,
+        "name": "Boston City Hall"
+      },
+      "weather": {
+        "temperature": 18.5,
+        "weatherCode": 1,
+        "weatherDescription": "Mainly clear",
+        "windSpeed": 12.3,
+        "precipitation": 0.5
+      },
       "GSI2PK": "ORG#xyz987",
       "GSI2SK": "EVENT#abcd1234"
+    },
+    "geocoding": {
+      "providedAddress": "123 Main St, Boston, MA 02108",
+      "resolvedCoordinates": {
+        "latitude": 42.3601,
+        "longitude": -71.0589,
+        "formattedAddress": "Boston City Hall, 1 City Hall Square, Boston, MA 02203, USA"
+      }
     }
   }
 }
@@ -59,19 +102,19 @@ This endpoint allows users with "ADMIN" role to create a new event for an organi
 }
 ```
 
-### Get Organization Events
+## Get Organization Events
 
 `GET /organizations/:id/events`
 
 This endpoint retrieves all events for a specific organization that the user is a member of.
 
-#### Request Headers
+### Request Headers
 
 | Key | Value | Required |
 |-----|-------|----------|
 | Authorization | `Bearer <token>` |  Yes  |
 
-#### Response
+### Response
 **200 OK**
 ```json
 {
@@ -83,10 +126,22 @@ This endpoint retrieves all events for a specific organization that the user is 
         "SK": "ENTITY",
         "title": "Annual Company Meetup",
         "description": "A networking event for all employees.",
-        "visibility": "PUBLIC",
+        "isPublic": true,
         "date": "2025-05-01T18:00:00Z",
         "createdAt": "2025-04-01T15:30:00Z",
         "updatedAt": "2025-04-01T15:30:00Z",
+        "location": {
+          "latitude": 42.3601,
+          "longitude": -71.0589,
+          "name": "Boston City Hall"
+        },
+        "weather": {
+          "temperature": 18.5,
+          "weatherCode": 1,
+          "weatherDescription": "Mainly clear",
+          "windSpeed": 12.3,
+          "precipitation": 0.5
+        },
         "GSI2PK": "ORG#xyz987",
         "GSI2SK": "EVENT#abcd1234"
       }
@@ -103,27 +158,27 @@ This endpoint retrieves all events for a specific organization that the user is 
 }
 ```
 
-### Update Event's Publicity
+## Update Event's Publicity
 
 `PATCH /organizations/:id/events/:eventId`
 
 This endpoint allows users with "ADMIN" role to update an event's publicity status.
 
-#### Request Headers
+### Request Headers
 
 | Key | Value | Required |
 |-----|-------|----------|
 | Authorization | `Bearer <token>` |  Yes  |
 | Content-Type | application/json | Yes |
 
-#### Request Body
+### Request Body
 ```json
 {
   "isPublic": false
 }
 ```
 
-#### Response
+### Response
 
 **200 OK**
 ```json
@@ -147,50 +202,139 @@ This endpoint allows users with "ADMIN" role to update an event's publicity stat
 }
 ```
 
-**400 Bad Request**
+## Refresh Weather Data for an Event
+
+`POST /organizations/:id/events/:eid/weather/refresh`
+
+This endpoint allows organization admins to refresh the weather forecast for an event.
+
+### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+
+### Response
+
+**200 OK**
 ```json
 {
-    "status": "error",
-    "message": "No Event found!"
-}
-```
-```json
-{
-    "status": "error",
-    "message": "No User-Event found!"
+  "status": "success",
+  "data": {
+    "event": {
+      "id": "abcd1234",
+      "title": "Annual Company Meetup",
+      "weather": {
+        "temperature": 19.2,
+        "weatherCode": 2,
+        "weatherDescription": "Partly cloudy",
+        "windSpeed": 10.5,
+        "precipitation": 0
+      }
+    }
+  }
 }
 ```
 
-**401 UnAuthorized**
+## Update Event Location Using Coordinates
+
+`PATCH /organizations/:id/events/:eid/location`
+
+Updates the event location using latitude and longitude, and fetches new weather data.
+
+### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+| Content-Type | application/json | Yes |
+
+### Request Body
+
 ```json
 {
-    "status": "error",
-    "message": "You are NOT part of this Organization"
-}
-```
-```json
-{
-    "status": "error",
-    "message": "Only Admin roles can update Events"
+  "latitude": 42.3601,
+  "longitude": -71.0589,
+  "name": "Boston City Hall"
 }
 ```
 
-**500 Server Error**
+### Response
+
+**200 OK**
 ```json
 {
-    "status": "error",
-    "message": "Updating Event failed!"
+  "status": "success",
+  "data": {
+    "event": {
+      "id": "abcd1234",
+      "title": "Annual Company Meetup",
+      "location": {
+        "latitude": 42.3601,
+        "longitude": -71.0589,
+        "name": "Boston City Hall"
+      },
+      "weather": {
+        "temperature": 18.5,
+        "weatherCode": 1,
+        "weatherDescription": "Mainly clear",
+        "windSpeed": 12.3,
+        "precipitation": 0.5
+      }
+    }
+  }
 }
 ```
+
+## Update Event Location Using Address
+
+`PATCH /organizations/:id/events/:eid/location/address`
+
+Updates the event location using an address string, which is geocoded to coordinates.
+
+### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+| Content-Type | application/json | Yes |
+
+### Request Body
+
 ```json
 {
-    "status": "error",
-    "message": "Finding Event failed!"
+  "address": "123 Main St, Boston, MA 02108"
 }
 ```
+
+### Response
+
+**200 OK**
 ```json
 {
-    "status": "error",
-    "message": "Finding User-Event by User failed!"
+  "status": "success",
+  "data": {
+    "event": {
+      "id": "abcd1234",
+      "title": "Annual Company Meetup",
+      "location": {
+        "latitude": 42.3601,
+        "longitude": -71.0589,
+        "name": "Boston, Massachusetts, USA"
+      },
+      "weather": {
+        "temperature": 18.5,
+        "weatherCode": 1,
+        "weatherDescription": "Mainly clear",
+        "windSpeed": 12.3,
+        "precipitation": 0.5
+      }
+    },
+    "geocoding": {
+      "latitude": 42.3601,
+      "longitude": -71.0589,
+      "formattedAddress": "Boston, Massachusetts, USA"
+    }
+  }
 }
 ```

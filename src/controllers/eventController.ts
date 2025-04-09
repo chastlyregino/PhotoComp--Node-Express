@@ -5,9 +5,9 @@ import { EventRequest, Event, EventUser } from '../models/Event';
 import { Status } from '../models/Response';
 import { checkOrgAdmin } from '../middleware/OrgMiddleware';
 import { UserOrganizationRelationship } from '../models/Organizations';
-import { AppError } from '@/middleware/errorHandler';
-import { WeatherService } from '@/services/weatherService';
-import { GeocodingService } from '@/services/geocodingService';
+import { AppError } from '../middleware/errorHandler';
+import { WeatherService } from '../services/weatherService';
+import { GeocodingService } from '../services/geocodingService';
 
 const eventService = new EventService();
 const orgService = new OrgService();
@@ -33,7 +33,7 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
             description: req.body.description,
             date: req.body.date,
             location: req.body.location,
-            address: req.body.address // Include optional address field from b67dbab version
+            address: req.body.address // Include optional address field for geocoding
         };
 
         const event: Event = await eventService.addEventToOrganization(orgName, eventRequest);
