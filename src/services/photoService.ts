@@ -273,9 +273,7 @@ export class PhotoService {
             );
         }
     }
-<<<<<<< HEAD
-}
-=======
+
 
  /**
      * Get all photos for an organization across all events
@@ -339,4 +337,3 @@ export class PhotoService {
     }
 }
 }
->>>>>>> b2e6784 (get all photos for an event)
