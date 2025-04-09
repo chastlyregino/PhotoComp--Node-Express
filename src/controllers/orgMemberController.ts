@@ -121,3 +121,27 @@ orgMemberRouter.patch(
         }
     }
 );
+
+/**
+ * Remove a member from an organization
+ * @route DELETE /members/:userId/leave
+ */
+orgMemberRouter.delete(
+    '/:userId/leave',
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const orgName: string = req.params.orgId;
+            const user = res.locals.user;
+
+            await orgService.leaveOrganization(orgName, user.id);
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Successfully left the organization',
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
