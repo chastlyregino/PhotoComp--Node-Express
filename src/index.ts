@@ -13,6 +13,7 @@ import { authenticate } from './middleware/authMiddleware';
 import { orgMemberRouter } from './controllers/orgMemberController';
 import { orgMembershipRouter } from './controllers/orgMemberShipController';
 import { checkOrgMember, checkOrgAdmin, validateUserID } from './middleware/OrgMiddleware';
+import { orgPhotosRouter } from './controllers/orgPhotoController';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +42,9 @@ organizationsRouter.use('/', orgMembershipRouter);
 
 // Create a router specifically for protected org routes
 const orgProtectedRouter = express.Router({ mergeParams: true });
+// Add organization-level photos route
+orgProtectedRouter.use('/photos', orgPhotosRouter);
+
 organizationsRouter.use('/:orgId', checkOrgMember, orgProtectedRouter);
 
 // Mount member-only routes
