@@ -205,9 +205,10 @@ The system uses a single-table design in DynamoDB with the following structure:
 ### Organizations Events Photos Tags
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged user for photo|
-| POST | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Add a user to a photo|
+| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged users for photo|
+| POST | /organizations/:id/events/:eventId/photos/:photoId/tags | Add multiple users to a photo|
 | DELETE | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Remove a tagged user from photo|
+| GET | /users/:userId/tagged-photos | Get all photos a user is tagged in|
 
 ### Users
 | Method | Endpoint | Description |
