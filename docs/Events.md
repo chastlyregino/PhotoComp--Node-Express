@@ -338,3 +338,101 @@ Updates the event location using an address string, which is geocoded to coordin
   }
 }
 ```
+
+## Get All User Events
+`GET /users/:userId/events`
+
+This endpoint retrieves all events that a user is attending. It includes detailed event information such as title, description, date, weather data, and location.
+
+### Request Headers
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` | Yes |
+
+### Path Parameters
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| userId | string | The ID of the user whose events to retrieve |
+
+### Response
+**200 OK**
+```json
+{
+  "status": "success",
+  "events": [
+    {
+      "PK": "USER#userId",
+      "SK": "EVENT#eventId",
+      "id": "eventId",
+      "GSI2PK": "EVENT#eventId",
+      "GSI2SK": "USER#userId",
+      "event": {
+        "title": "Annual Company Meetup",
+        "description": "A networking event for all employees.",
+        "date": "2025-05-01T18:00:00Z",
+        "weather": {
+          "temperature": 18.5,
+          "weatherCode": 1,
+          "weatherDescription": "Mainly clear",
+          "windSpeed": 12.3,
+          "precipitation": 0.5
+        },
+        "location": {
+          "latitude": 42.3601,
+          "longitude": -71.0589,
+          "name": "Boston City Hall"
+        }
+      }
+    },
+    {
+      "PK": "USER#userId",
+      "SK": "EVENT#eventId2",
+      "id": "eventId2",
+      "GSI2PK": "EVENT#eventId2",
+      "GSI2SK": "USER#userId",
+      "event": {
+        "title": "Team Building Workshop",
+        "description": "Interactive workshop for team collaboration.",
+        "date": "2025-06-15T14:00:00Z",
+        "weather": {
+          "temperature": 22.3,
+          "weatherCode": 2,
+          "weatherDescription": "Partly cloudy",
+          "windSpeed": 8.5,
+          "precipitation": 0.0
+        },
+        "location": {
+          "latitude": 40.7128,
+          "longitude": -74.0060,
+          "name": "New York City"
+        }
+      }
+    }
+  ]
+}
+```
+
+**403 Forbidden (User Requesting Different User's Events)**
+```json
+{
+  "status": "error",
+  "message": "You cannot get this user's events"
+}
+```
+
+**401 Unauthorized (Missing or Invalid Token)**
+```json
+{
+  "status": "error",
+  "message": "Authentication required"
+}
+```
+
+**500 Internal Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to update event weather: Database connection failed"
+}
+```
+

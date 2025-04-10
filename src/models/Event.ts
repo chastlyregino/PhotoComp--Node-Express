@@ -57,6 +57,9 @@ export interface EventUpdateRequest {
 export interface EventUser {
     PK: string; // USER#<ID>
     SK: string; // EVENT#<ID>
+
+    id: string;
+
     // GSI attributes
     GSI2PK: string; // EVENT#<ID>
     GSI2SK: string; // USER#<ID>
@@ -89,6 +92,7 @@ export const createEventUser = (userid: string, eventid: string): EventUser => {
     return {
         PK: userId,
         SK: eventId,
+        id: eventid,  // passed in eventid 
         GSI2PK: eventId,
         GSI2SK: userId,
     };
