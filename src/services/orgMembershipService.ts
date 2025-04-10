@@ -48,6 +48,11 @@ export class OrgMembershipService {
             throw new AppError('Organization not found', 404);
         }
 
+        const member = await this.orgService.isMemberOfOrg(organizationName, userId);
+        if (member) {
+          throw new AppError('You are already a part of this organization', 400);
+        }
+
         const events = await this.eventService.getAllOrganizationEvents(organizationName);
         if (!events || events.length === 0) {
             throw new AppError('Cannot apply to an organization without any events', 400);

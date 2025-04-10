@@ -14,10 +14,12 @@ describe('OrgService Member Tests', () => {
     const orgName = 'testOrg';
     const userId = 'user123';
     const adminId = 'admin456';
+    const email= 'test@example.com';
 
     const mockMember: UserOrganizationRelationship = {
         PK: `USER#${userId}`,
         SK: `ORG#${orgName.toUpperCase()}`,
+        email,
         userId: userId,
         organizationName: orgName,
         role: UserRole.MEMBER,
@@ -30,6 +32,7 @@ describe('OrgService Member Tests', () => {
     const mockAdmin: UserOrganizationRelationship = {
         PK: `USER#${adminId}`,
         SK: `ORG#${orgName.toUpperCase()}`,
+        email,
         userId: adminId,
         organizationName: orgName,
         role: UserRole.ADMIN,

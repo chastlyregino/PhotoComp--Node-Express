@@ -388,4 +388,22 @@ export class OrgService {
             throw new AppError(`Failed to update member role: ${(error as Error).message}`, 500);
         }
     }
+
+    /**
+     * Check if a user is already a member of the organization
+     * @param orgName The name of the organization
+     * @param userId The ID of the user to check
+     * @returns true if the user is already a member of the org
+     */
+    async isMemberOfOrg(orgName: string, userId: string): Promise<Boolean> {
+      try {
+        return await this.orgRepository.findSpecificOrgByUser(orgName, userId) != null;
+      } catch (error) {
+          if (error instanceof AppError) {
+              throw error;
+          }
+          throw new AppError(`Failed to check if user is member of org: ${(error as Error).message}`, 500);
+      }
+
+    }
 }
