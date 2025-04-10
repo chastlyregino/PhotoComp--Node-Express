@@ -343,4 +343,34 @@ export class EventRepository {
             throw new AppError(`Failed to update event weather data: ${error.message}`, 500);
         }
     }
+
+    /**
+     * Gets all users attending an event
+     * @param eventId The event's ID
+     * @returns Array of user IDs in format USER#userId
+     */
+    async getEventAttendees(eventId: string): Promise<string[]> {
+        try {
+            const response = await dynamoDb.send(
+                new QueryCommand({
+                    TableName: TABLE_NAME,
+                    IndexName: 'GSI2PK-GSI2SK-INDEX',
+                    KeyConditionExpression: 'GSI2PK = :eventId AND begins_with(GSI2SK, :userPrefix)',
+                    ExpressionAttributeValues: {
+                        ':eventId': `EVENT#${eventId}`,
+                        ':userPrefix': 'USER#',
+                    },
+                })
+            );
+
+            if (!response.Items || response.Items.length === 0) {
+                return [];
+            }
+
+            // Extract the USER#userId values from GSI2SK
+            return response.Items.map(item => item.GSI2SK as string);
+        } catch (error: any) {
+            throw new AppError(`Failed to get event attendees: ${error.message}`, 500);
+        }
+    }
 }
