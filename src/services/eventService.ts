@@ -1,8 +1,6 @@
 import { EventRepository } from '../repositories/eventRepository';
 import { Event, EventRequest, EventUser, createEvent, createEventUser } from '../models/Event';
 import { AppError } from '../middleware/errorHandler';
-import { OrgService } from '../services/orgService';
-import { UserOrganizationRelationship } from '@/models/Organizations';
 import { WeatherData, WeatherService } from './weatherService';
 import { GeocodingService } from './geocodingService';
 import { logger } from '../util/logger';
@@ -134,6 +132,7 @@ export class EventService {
             throw new AppError(`Failed to create event: ${error.message}`, 500);
         }
     }
+
     /**
      * Removes a user from an event by removing an attendance record.
      *
@@ -349,5 +348,24 @@ export class EventService {
             }
             throw new AppError(`Failed to update event weather: ${error.message}`, 500);
         }
+    }
+
+    /**
+     * Gets all the events that a user is attending. 
+     *
+     * @param userID - The ID of the user for which you are grabing all events 
+     * @returns all the events for the user
+     * @throws AppError if database operation fails
+     */
+    async getAllUserEvents(userId: string):Promise<Event[]>{
+      try {
+          return await this.eventRepository.getUserEvents(userId);
+      }
+      catch (error: any) {
+          if (error instanceof AppError) {
+              throw error;
+          }
+          throw new AppError(`Failed to update event weather: ${error.message}`, 500);
+      }
     }
 }

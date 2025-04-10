@@ -353,3 +353,45 @@ eventRouter.patch(
         }
     }
 );
+
+/*
+  * Get all a User's Events 
+   * GET /users/:userId/events
+  * */
+export const getUserEvents = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.params.userId;
+        const requestingUserId = res.locals.user.id;
+
+        if (userId !== requestingUserId) {
+            throw new AppError('You cannot get this user\'s events', 403);
+        }
+
+        const events = await eventService.getAllUserEvents(userId);
+        const eventsWithDetails= await Promise.all(
+            events.map(async request => {
+                const eventDetails = await eventService.findEventById(request.id);
+                return {
+                    ...request,
+                    event: eventDetails
+                        ? {
+                              title: eventDetails.title,
+                              description: eventDetails.description,
+                              date: eventDetails.date,
+                              weather: eventDetails.weather,
+                              location: eventDetails.location
+                          }
+                        : null,
+                };
+            })
+        );
+
+
+        return res.status(200).json({
+            status: 'success',
+            events: eventsWithDetails,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
