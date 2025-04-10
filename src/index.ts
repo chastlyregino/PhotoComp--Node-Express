@@ -14,6 +14,8 @@ import { orgMemberRouter } from './controllers/orgMemberController';
 import { orgMembershipRouter } from './controllers/orgMemberShipController';
 import { checkOrgMember, checkOrgAdmin, validateUserID } from './middleware/OrgMiddleware';
 import { orgPhotosRouter } from './controllers/orgPhotoController';
+import { photoTagsRouter } from './controllers/photoTagsController';
+import { userRouter } from './controllers/userController';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +33,7 @@ app.use(loggerMethodMiddleware);
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/guests', guestRouter);
+app.use('/users', userRouter);
 
 // Organizations base router that requires authentication
 const organizationsRouter = express.Router();
@@ -60,6 +63,15 @@ orgProtectedRouter.use(
         next();
     },
     photoRouter
+);
+
+orgProtectedRouter.use(
+    '/events/:eventId/photos/:photoId/tags',
+    (req, res, next) => {
+        // This ensures parameters are properly passed down to the photo tags controller
+        next();
+    },
+    photoTagsRouter
 );
 
 // Default route
