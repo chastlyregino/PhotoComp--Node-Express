@@ -72,11 +72,21 @@ photoTagsRouter.post(
 
             if (event) {
                 const members = await orgService.getOrgMembers(event.GSI2PK.slice(4));
+                let membersEmail: string[] = [];
 
-                // Add email notification if members exist
+                // Add email notification if members is tagged
                 if (members && members.length > 0) {
-                    const membersEmail: string[] = members.map(member => member.email);
+                    for (const tag of tags) {
+                        for(const member of members) {
+                            if(member.userId === tag.userId) {
+                                membersEmail.push(member.email);
+                            }
+                        }
+                        
+                    }
 
+                    // Members that will be emailed
+                    console.log(membersEmail)
                     // Creates the email data.
                     const to: string = membersEmail.toString();
                     const subject: string = `An update from PhotoComp!`;
