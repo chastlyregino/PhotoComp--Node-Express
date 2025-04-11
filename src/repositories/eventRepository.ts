@@ -355,7 +355,8 @@ export class EventRepository {
                 new QueryCommand({
                     TableName: TABLE_NAME,
                     IndexName: 'GSI2PK-GSI2SK-INDEX',
-                    KeyConditionExpression: 'GSI2PK = :eventId AND begins_with(GSI2SK, :userPrefix)',
+                    KeyConditionExpression:
+                        'GSI2PK = :eventId AND begins_with(GSI2SK, :userPrefix)',
                     ExpressionAttributeValues: {
                         ':eventId': `EVENT#${eventId}`,
                         ':userPrefix': 'USER#',

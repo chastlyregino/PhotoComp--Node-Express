@@ -324,23 +324,28 @@ export class OrgService {
      * @returns True if successful
      */
     async leaveOrganization(orgName: string, userId: string): Promise<boolean> {
-      try {
+        try {
             const member = await this.orgRepository.findSpecificOrgByUser(orgName, userId);
 
             if (!member) {
                 throw new AppError('Member not found in this organization', 404);
             }
-            
+
             if (member.userId != userId) {
                 throw new AppError('You cannot make another member leave', 403);
             }
 
             if (member.role === UserRole.ADMIN) {
                 const orgMembers = await this.orgRepository.getOrgMembers(orgName);
-                const adminCount = orgMembers.filter(member => member.role === UserRole.ADMIN).length;
-                
+                const adminCount = orgMembers.filter(
+                    member => member.role === UserRole.ADMIN
+                ).length;
+
                 if (adminCount <= 1) {
-                    throw new AppError('Cannot leave organization: You are the only admin. Please assign another admin first.', 400);
+                    throw new AppError(
+                        'Cannot leave organization: You are the only admin. Please assign another admin first.',
+                        400
+                    );
                 }
             }
 
@@ -396,14 +401,16 @@ export class OrgService {
      * @returns true if the user is already a member of the org
      */
     async isMemberOfOrg(orgName: string, userId: string): Promise<Boolean> {
-      try {
-        return await this.orgRepository.findSpecificOrgByUser(orgName, userId) != null;
-      } catch (error) {
-          if (error instanceof AppError) {
-              throw error;
-          }
-          throw new AppError(`Failed to check if user is member of org: ${(error as Error).message}`, 500);
-      }
-
+        try {
+            return (await this.orgRepository.findSpecificOrgByUser(orgName, userId)) != null;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Failed to check if user is member of org: ${(error as Error).message}`,
+                500
+            );
+        }
     }
 }

@@ -56,7 +56,7 @@ jest.mock('../src/services/userService', () => {
                         role: 'ADMIN',
                     });
                 }),
-                getUserById: jest.fn().mockImplementation((userId) => {
+                getUserById: jest.fn().mockImplementation(userId => {
                     return Promise.resolve({
                         id: userId,
                         email: `${userId}@example.com`,
@@ -75,7 +75,7 @@ jest.mock('../src/services/eventService', () => {
     return {
         EventService: jest.fn().mockImplementation(() => {
             return {
-                findEventById: jest.fn().mockImplementation((eventId) => {
+                findEventById: jest.fn().mockImplementation(eventId => {
                     return Promise.resolve({
                         id: eventId,
                         title: 'Test Event',
@@ -124,11 +124,11 @@ jest.mock('../src/services/tagService', () => {
                         photoId: tagRequest.photoId,
                         eventId: tagRequest.eventId,
                         taggedBy,
-                        taggedAt: new Date().toISOString()
+                        taggedAt: new Date().toISOString(),
                     }));
                     return Promise.resolve(tags);
                 }),
-                getPhotoTags: jest.fn().mockImplementation((photoId) => {
+                getPhotoTags: jest.fn().mockImplementation(photoId => {
                     const tags = [
                         {
                             tag: {
@@ -137,14 +137,14 @@ jest.mock('../src/services/tagService', () => {
                                 photoId,
                                 eventId: 'test-event-id',
                                 taggedBy: 'test-admin-id',
-                                taggedAt: new Date().toISOString()
+                                taggedAt: new Date().toISOString(),
                             },
                             user: {
                                 id: 'user-1',
                                 email: 'user1@example.com',
                                 firstName: 'User',
-                                lastName: 'One'
-                            }
+                                lastName: 'One',
+                            },
                         },
                         {
                             tag: {
@@ -153,22 +153,22 @@ jest.mock('../src/services/tagService', () => {
                                 photoId,
                                 eventId: 'test-event-id',
                                 taggedBy: 'test-admin-id',
-                                taggedAt: new Date().toISOString()
+                                taggedAt: new Date().toISOString(),
                             },
                             user: {
                                 id: 'user-2',
                                 email: 'user2@example.com',
                                 firstName: 'User',
-                                lastName: 'Two'
-                            }
-                        }
+                                lastName: 'Two',
+                            },
+                        },
                     ];
                     return Promise.resolve(tags);
                 }),
                 removeTag: jest.fn().mockImplementation((userId, photoId) => {
                     return Promise.resolve(true);
                 }),
-                getUserTaggedPhotos: jest.fn().mockImplementation((userId) => {
+                getUserTaggedPhotos: jest.fn().mockImplementation(userId => {
                     const photos = [
                         {
                             id: 'photo-1',
@@ -178,8 +178,8 @@ jest.mock('../src/services/tagService', () => {
                             createdAt: new Date().toISOString(),
                             metadata: {
                                 title: 'Team Photo',
-                                description: 'Annual company picnic'
-                            }
+                                description: 'Annual company picnic',
+                            },
                         },
                         {
                             id: 'photo-2',
@@ -189,12 +189,12 @@ jest.mock('../src/services/tagService', () => {
                             createdAt: new Date().toISOString(),
                             metadata: {
                                 title: 'Award Ceremony',
-                                description: 'Employee recognition event'
-                            }
-                        }
+                                description: 'Employee recognition event',
+                            },
+                        },
                     ];
                     return Promise.resolve(photos);
-                })
+                }),
             };
         }),
     };
@@ -205,7 +205,7 @@ jest.mock('../src/repositories/photoRepository', () => {
     return {
         PhotoRepository: jest.fn().mockImplementation(() => {
             return {
-                getPhotoById: jest.fn().mockImplementation((photoId) => {
+                getPhotoById: jest.fn().mockImplementation(photoId => {
                     return Promise.resolve({
                         id: photoId,
                         eventId: 'test-event-id',
@@ -297,9 +297,11 @@ describe('Photo Tagging Integration Tests', () => {
     describe('POST /organizations/:id/events/:eventId/photos/:photoId/tags', () => {
         it('should tag multiple users in a photo', async () => {
             const userIds = ['user-1', 'user-2', 'user-3'];
-            
+
             const response = await request(app)
-                .post(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/tags`)
+                .post(
+                    `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/tags`
+                )
                 .set('Authorization', 'Bearer valid-token')
                 .send({ userIds })
                 .expect(201);
@@ -315,7 +317,9 @@ describe('Photo Tagging Integration Tests', () => {
 
         it('should return 400 if userIds array is empty', async () => {
             const response = await request(app)
-                .post(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/tags`)
+                .post(
+                    `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/tags`
+                )
                 .set('Authorization', 'Bearer valid-token')
                 .send({ userIds: [] })
                 .expect(400);
@@ -328,9 +332,11 @@ describe('Photo Tagging Integration Tests', () => {
     describe('DELETE /organizations/:id/events/:eventId/photos/:photoId/tags/:userId', () => {
         it('should remove a tag (untag a user from a photo)', async () => {
             const userIdToUntag = 'user-1';
-            
+
             const response = await request(app)
-                .delete(`/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/tags/${userIdToUntag}`)
+                .delete(
+                    `/organizations/${testOrgId}/events/${testEventId}/photos/${testPhotoId}/tags/${userIdToUntag}`
+                )
                 .set('Authorization', 'Bearer valid-token')
                 .expect(200);
 
@@ -344,7 +350,7 @@ describe('Photo Tagging Integration Tests', () => {
             // Create a separate app for user routes
             const userApp = express();
             userApp.use(express.json());
-            
+
             // Set up middleware to properly populate res.locals with user info
             userApp.use((req, res, next) => {
                 res.locals.user = {
@@ -354,10 +360,10 @@ describe('Photo Tagging Integration Tests', () => {
                 };
                 next();
             });
-            
+
             userApp.use('/users', userRouter);
             userApp.use(errorHandler);
-            
+
             const response = await request(userApp)
                 .get(`/users/${testUserId}/tagged-photos`)
                 .set('Authorization', 'Bearer valid-token')
@@ -371,11 +377,11 @@ describe('Photo Tagging Integration Tests', () => {
             expect(response.body.data.photos[1].id).toBe('photo-2');
         });
 
-        it('should return 403 if user tries to view another user\'s tagged photos', async () => {
+        it("should return 403 if user tries to view another user's tagged photos", async () => {
             // Create a separate app for user routes with different user
             const userApp = express();
             userApp.use(express.json());
-            
+
             // Set up middleware to populate res.locals with a different user
             userApp.use((req, res, next) => {
                 res.locals.user = {
@@ -385,10 +391,10 @@ describe('Photo Tagging Integration Tests', () => {
                 };
                 next();
             });
-            
+
             userApp.use('/users', userRouter);
             userApp.use(errorHandler);
-            
+
             const response = await request(userApp)
                 .get(`/users/${testUserId}/tagged-photos`)
                 .set('Authorization', 'Bearer valid-token')

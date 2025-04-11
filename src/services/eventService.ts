@@ -354,9 +354,9 @@ export class EventService {
     }
 
     /**
-     * Gets all the events that a user is attending. 
+     * Gets all the events that a user is attending.
      *
-     * @param userID - The ID of the user for which you are grabing all events 
+     * @param userID - The ID of the user for which you are grabing all events
      * @returns all the events for the user
      * @throws AppError if database operation fails
      */

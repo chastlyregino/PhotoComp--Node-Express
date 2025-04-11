@@ -274,66 +274,73 @@ export class PhotoService {
         }
     }
 
-
- /**
+    /**
      * Get all photos for an organization across all events
      * @param orgName The organization name
      * @param userId The user ID requesting the photos
      * @returns Array of photos with their associated event information
      */
- async getAllOrganizationPhotos(orgName: string, userId: string): Promise<{ photos: Photo[]; events: Map<string, EventModel> }> {
-    try {
-        // Check if the user is a member of the organization
-        const orgService = new OrgService();
-        const userOrg = await orgService.findSpecificOrgByUser(orgName, userId);
-        
-        if (!userOrg) {
-            throw new AppError('You are not a member of this organization', 403);
-        }
-        
-        // Get all events for the organization
-        const eventService = new EventService();
-        const events = await eventService.getAllOrganizationEvents(orgName);
-        
-        if (!events || events.length === 0) {
-            return { photos: [], events: new Map() };
-        }
-        
-        // Create a map of event IDs to event objects for easy reference
-        const eventMap = new Map<string, EventModel>();
-        events.forEach(event => {
-            eventMap.set(event.id, event);
-        });
-        
-        // Get photos for each event
-        const photoPromises = events.map(event => this.photoRepository.getPhotosByEvent(event.id));
-        const photoArrays = await Promise.all(photoPromises);
-        
-        // Flatten the array of photo arrays
-        let allPhotos: Photo[] = [];
-        photoArrays.forEach(photos => {
-            allPhotos = allPhotos.concat(photos);
-        });
-        
-        // Refresh pre-signed URLs for all photos
-        for (const photo of allPhotos) {
-            try {
-                if (photo?.metadata?.s3Key) {
-                    photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
-                }
-            } catch (error) {
-                logger.error(`Error refreshing pre-signed URL: ${error}`);
-                // Continue processing other photos even if one fails
+    async getAllOrganizationPhotos(
+        orgName: string,
+        userId: string
+    ): Promise<{ photos: Photo[]; events: Map<string, EventModel> }> {
+        try {
+            // Check if the user is a member of the organization
+            const orgService = new OrgService();
+            const userOrg = await orgService.findSpecificOrgByUser(orgName, userId);
+
+            if (!userOrg) {
+                throw new AppError('You are not a member of this organization', 403);
             }
+
+            // Get all events for the organization
+            const eventService = new EventService();
+            const events = await eventService.getAllOrganizationEvents(orgName);
+
+            if (!events || events.length === 0) {
+                return { photos: [], events: new Map() };
+            }
+
+            // Create a map of event IDs to event objects for easy reference
+            const eventMap = new Map<string, EventModel>();
+            events.forEach(event => {
+                eventMap.set(event.id, event);
+            });
+
+            // Get photos for each event
+            const photoPromises = events.map(event =>
+                this.photoRepository.getPhotosByEvent(event.id)
+            );
+            const photoArrays = await Promise.all(photoPromises);
+
+            // Flatten the array of photo arrays
+            let allPhotos: Photo[] = [];
+            photoArrays.forEach(photos => {
+                allPhotos = allPhotos.concat(photos);
+            });
+
+            // Refresh pre-signed URLs for all photos
+            for (const photo of allPhotos) {
+                try {
+                    if (photo?.metadata?.s3Key) {
+                        photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
+                    }
+                } catch (error) {
+                    logger.error(`Error refreshing pre-signed URL: ${error}`);
+                    // Continue processing other photos even if one fails
+                }
+            }
+
+            return { photos: allPhotos, events: eventMap };
+        } catch (error) {
+            logger.error('Error getting organization photos:', error);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Failed to get organization photos: ${(error as Error).message}`,
+                500
+            );
         }
-        
-        return { photos: allPhotos, events: eventMap };
-    } catch (error) {
-        logger.error('Error getting organization photos:', error);
-        if (error instanceof AppError) {
-            throw error;
-        }
-        throw new AppError(`Failed to get organization photos: ${(error as Error).message}`, 500);
     }
-}
 }

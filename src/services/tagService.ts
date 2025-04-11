@@ -39,24 +39,24 @@ export class TagService {
     async tagUsersInPhoto(tagRequest: TagRequest, taggedBy: string): Promise<Tag[]> {
         try {
             const { userIds, photoId, eventId } = tagRequest;
-            
+
             // Verify the photo exists and belongs to the event
             const photo = await this.photoRepository.getPhotoById(photoId);
             if (!photo) {
                 throw new AppError(`Photo not found: ${photoId}`, 404);
             }
-            
+
             if (photo.eventId !== eventId) {
                 throw new AppError('Photo does not belong to the specified event', 400);
             }
-            
+
             // Get all users attending the event
             const attendingUsers = await this.getEventAttendees(eventId);
-            
+
             // Create tags for each user who is attending the event
             const tags: Tag[] = [];
             const invalidUsers: string[] = [];
-            
+
             for (const userId of userIds) {
                 // Check if the user exists
                 const user = await this.userService.getUserById(userId);
@@ -64,35 +64,35 @@ export class TagService {
                     invalidUsers.push(`User not found: ${userId}`);
                     continue;
                 }
-                
+
                 // Check if the user is attending the event
                 const isAttending = attendingUsers.some(attendee => attendee === userId);
                 if (!isAttending) {
                     invalidUsers.push(`User ${userId} is not attending this event`);
                     continue;
                 }
-                
+
                 // Check if the user is already tagged in this photo
                 const existingTag = await this.tagRepository.getTagByUserAndPhoto(userId, photoId);
                 if (existingTag) {
                     continue; // Skip this user as they're already tagged
                 }
-                
+
                 // Create the tag
                 const tag = createTag(userId, photoId, eventId, taggedBy);
                 tags.push(tag);
             }
-            
+
             // Create all tags in a batch operation if there are any to create
             if (tags.length > 0) {
                 await this.tagRepository.batchCreateTags(tags);
             }
-            
+
             // If there were invalid users, log them but don't fail the operation
             if (invalidUsers.length > 0) {
                 logger.warn(`Some users could not be tagged: ${invalidUsers.join(', ')}`);
             }
-            
+
             return tags;
         } catch (error) {
             if (error instanceof AppError) {
@@ -128,18 +128,18 @@ export class TagService {
         try {
             // Get all tags for the user
             const tags = await this.tagRepository.getTagsByUser(userId);
-            
+
             if (tags.length === 0) {
                 return [];
             }
-            
+
             // Get the photo details for each tag
             const photoPromises = tags.map(tag => this.photoRepository.getPhotoById(tag.photoId));
             const photos = await Promise.all(photoPromises);
-            
+
             // Filter out any null results and refresh pre-signed URLs
             const validPhotos = photos.filter(photo => photo !== null) as Photo[];
-            
+
             // Refresh pre-signed URLs for all photos
             for (const photo of validPhotos) {
                 try {
@@ -151,13 +151,16 @@ export class TagService {
                     // Continue processing other photos even if one fails
                 }
             }
-            
+
             return validPhotos;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(`Failed to get user tagged photos: ${(error as Error).message}`, 500);
+            throw new AppError(
+                `Failed to get user tagged photos: ${(error as Error).message}`,
+                500
+            );
         }
     }
 
@@ -170,27 +173,29 @@ export class TagService {
         try {
             // Get all tags for the photo
             const tags = await this.tagRepository.getTagsByPhoto(photoId);
-            
+
             if (tags.length === 0) {
                 return [];
             }
-            
+
             // Get user details for each tag
             const taggedUsers = await Promise.all(
                 tags.map(async tag => {
                     const user = await this.userService.getUserById(tag.userId);
                     return {
                         tag,
-                        user: user ? {
-                            id: user.id,
-                            email: user.email,
-                            firstName: user.firstName,
-                            lastName: user.lastName
-                        } : null
+                        user: user
+                            ? {
+                                  id: user.id,
+                                  email: user.email,
+                                  firstName: user.firstName,
+                                  lastName: user.lastName,
+                              }
+                            : null,
                     };
                 })
             );
-            
+
             return taggedUsers.filter(item => item.user !== null);
         } catch (error) {
             if (error instanceof AppError) {
@@ -210,11 +215,11 @@ export class TagService {
         try {
             // Verify the tag exists
             const tag = await this.tagRepository.getTagByUserAndPhoto(userId, photoId);
-            
+
             if (!tag) {
                 throw new AppError(`User is not tagged in this photo`, 404);
             }
-            
+
             // Delete the tag
             return await this.tagRepository.deleteTag(userId);
         } catch (error) {

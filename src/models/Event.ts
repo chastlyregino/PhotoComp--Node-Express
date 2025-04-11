@@ -92,7 +92,7 @@ export const createEventUser = (userid: string, eventid: string): EventUser => {
     return {
         PK: userId,
         SK: eventId,
-        id: eventid,  // passed in eventid 
+        id: eventid, // passed in eventid
         GSI2PK: eventId,
         GSI2SK: userId,
     };
