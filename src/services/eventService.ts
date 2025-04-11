@@ -6,6 +6,8 @@ import { UserOrganizationRelationship } from '@/models/Organizations';
 import { WeatherData, WeatherService } from './weatherService';
 import { GeocodingService } from './geocodingService';
 import { logger } from '../util/logger';
+import { PhotoRepository } from '@/repositories/photoRepository';
+import { S3Service } from './s3Service';
 
 /**
  * Service class for handling event-related operations including CRUD operations,
@@ -348,6 +350,78 @@ export class EventService {
                 throw error;
             }
             throw new AppError(`Failed to update event weather: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Deletes an event and all associated resources (attendance records, photos)
+     * @param orgName The organization name
+     * @param eventId The ID of the event to delete
+     * @param adminId The ID of the admin requesting deletion
+     * @returns True if the deletion was successful
+     * @throws AppError if any step of the deletion process fails
+     */
+    async deleteEvent(orgName: string, eventId: string, adminId: string): Promise<boolean> {
+        try {
+            // Verify the event exists and belongs to the organization
+            const event = await this.findEventById(eventId);
+
+            if (!event) {
+                throw new AppError('Event not found', 404);
+            }
+
+            // Check that the event belongs to the organization
+            const organizationId = event.GSI2PK;
+            const expectedOrgId = `ORG#${orgName.toUpperCase()}`;
+
+            if (organizationId !== expectedOrgId) {
+                throw new AppError('Event does not belong to this organization', 403);
+            }
+
+            // 1. Get all photos for the event (we need this before deleting the event)
+            const photoRepository = new PhotoRepository();
+            const s3Service = new S3Service();
+            const photos = await photoRepository.getPhotosByEvent(eventId);
+
+            // 2. Delete all attendance records for the event
+            await this.eventRepository.deleteAllEventAttendance(eventId);
+
+            // 3. Delete all photos from S3 and the database
+            for (const photo of photos) {
+                try {
+                    // Delete the photo file from S3 if we have the key
+                    const s3Key = photo.metadata?.s3Key ||
+                        (() => {
+                            try {
+                                const urlParts = new URL(photo.url);
+                                return urlParts.pathname.substring(1); // Remove leading slash
+                            } catch (error) {
+                                logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                                return null;
+                            }
+                        })();
+
+                    if (s3Key) {
+                        await s3Service.deleteFile(s3Key);
+                    }
+
+                    // Delete the photo record from the database
+                    await photoRepository.deletePhoto(photo.id);
+                } catch (error) {
+                    // Log the error but continue with other photos
+                    logger.error(`Error deleting photo ${photo.id}:`, error);
+                }
+            }
+
+            // 4. Finally, delete the event itself
+            const result = await this.eventRepository.deleteEvent(eventId);
+
+            return result;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to delete event: ${(error as Error).message}`, 500);
         }
     }
 }
