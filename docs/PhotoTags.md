@@ -118,7 +118,7 @@ This endpoint allows organization admins to tag multiple users in a photo. Only 
 **201 Created**
 ```json
 {
-  "status": "success",
+  "status": "success and email has been sent!",
   "message": "Tagged 3 users in photo",
   "data": {
     "tags": [
