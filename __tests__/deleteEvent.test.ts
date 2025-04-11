@@ -1,5 +1,3 @@
-// __tests__/deleteEvent.test.ts
-
 // Mock the modules before any imports
 jest.mock('@aws-sdk/client-s3', () => ({
     S3Client: jest.fn().mockImplementation(() => ({
