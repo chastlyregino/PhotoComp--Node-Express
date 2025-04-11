@@ -373,9 +373,7 @@ export class EventRepository {
             throw new AppError(`Failed to get event attendees: ${error.message}`, 500);
         }
     }
-<<<<<<< HEAD
-}
-=======
+
 
     /**
  * Deletes an event from the database
@@ -427,4 +425,4 @@ export class EventRepository {
         }
     }
 }
->>>>>>> 40e3957 (repo/serv/controller delete methods)
+

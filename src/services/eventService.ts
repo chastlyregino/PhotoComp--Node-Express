@@ -353,24 +353,25 @@ export class EventService {
     }
 
     /**
-<<<<<<< HEAD
      * Gets all the events that a user is attending. 
      *
      * @param userID - The ID of the user for which you are grabing all events 
      * @returns all the events for the user
      * @throws AppError if database operation fails
      */
-    async getAllUserEvents(userId: string):Promise<Event[]>{
-      try {
-          return await this.eventRepository.getUserEvents(userId);
-      }
-      catch (error: any) {
-          if (error instanceof AppError) {
-              throw error;
-          }
-          throw new AppError(`Failed to update event weather: ${error.message}`, 500);
-      }
-=======
+    async getAllUserEvents(userId: string): Promise<Event[]> {
+        try {
+            return await this.eventRepository.getUserEvents(userId);
+        }
+        catch (error: any) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to update event weather: ${error.message}`, 500);
+        }
+    }
+
+    /**
      * Deletes an event and all associated resources (attendance records, photos)
      * @param orgName The organization name
      * @param eventId The ID of the event to delete
@@ -456,6 +457,5 @@ export class EventService {
             }
             throw new AppError(`Failed to delete event: ${(error as Error).message}`, 500);
         }
->>>>>>> 40e3957 (repo/serv/controller delete methods)
     }
 }
