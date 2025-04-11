@@ -14,7 +14,7 @@ describe('OrgService Member Tests', () => {
     const orgName = 'testOrg';
     const userId = 'user123';
     const adminId = 'admin456';
-    const email= 'test@example.com';
+    const email = 'test@example.com';
 
     const mockMember: UserOrganizationRelationship = {
         PK: `USER#${userId}`,
@@ -110,7 +110,7 @@ describe('OrgService Member Tests', () => {
     });
 
     describe('updateMemberRole', () => {
-        it('should update a member\'s role successfully', async () => {
+        it("should update a member's role successfully", async () => {
             mockOrgRepository.findSpecificOrgByUser.mockResolvedValue(mockMember);
             const updatedMember = { ...mockMember, role: UserRole.ADMIN };
             mockOrgRepository.updateMemberRole.mockResolvedValue(updatedMember);
@@ -161,7 +161,10 @@ describe('OrgService Member Tests', () => {
 
         it('should allow an admin to leave if other admins exist', async () => {
             mockOrgRepository.findSpecificOrgByUser.mockResolvedValue(mockAdmin);
-            mockOrgRepository.getOrgMembers.mockResolvedValue([mockAdmin, { ...mockMember, role: UserRole.ADMIN }]);
+            mockOrgRepository.getOrgMembers.mockResolvedValue([
+                mockAdmin,
+                { ...mockMember, role: UserRole.ADMIN },
+            ]);
             mockOrgRepository.removeMember.mockResolvedValue(true);
 
             const result = await orgService.leaveOrganization(orgName, adminId);
@@ -177,7 +180,10 @@ describe('OrgService Member Tests', () => {
             mockOrgRepository.getOrgMembers.mockResolvedValue([mockAdmin, mockMember]);
 
             await expect(orgService.leaveOrganization(orgName, adminId)).rejects.toThrow(
-                new AppError('Cannot leave organization: You are the only admin. Please assign another admin first.', 400)
+                new AppError(
+                    'Cannot leave organization: You are the only admin. Please assign another admin first.',
+                    400
+                )
             );
 
             expect(mockOrgRepository.findSpecificOrgByUser).toHaveBeenCalledWith(orgName, adminId);

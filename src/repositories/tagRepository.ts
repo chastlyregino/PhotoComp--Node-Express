@@ -1,6 +1,12 @@
 import { dynamoDb, TABLE_NAME } from '../config/db';
 import { Tag } from '../models/Tag';
-import { PutCommand, QueryCommand, GetCommand, DeleteCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+    PutCommand,
+    QueryCommand,
+    GetCommand,
+    DeleteCommand,
+    BatchWriteCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../util/logger';
 
@@ -17,7 +23,7 @@ export class TagRepository {
                     TableName: TABLE_NAME,
                     Item: tag,
                     // Add a conditional expression to prevent duplicates
-                    ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)'
+                    ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)',
                 })
             );
             return tag;
@@ -46,14 +52,14 @@ export class TagRepository {
             for (const chunk of chunks) {
                 const putRequests = chunk.map(tag => ({
                     PutRequest: {
-                        Item: tag
-                    }
+                        Item: tag,
+                    },
                 }));
 
                 const params = {
                     RequestItems: {
-                        [TABLE_NAME as string]: putRequests
-                    }
+                        [TABLE_NAME as string]: putRequests,
+                    },
                 };
 
                 await dynamoDb.send(new BatchWriteCommand(params));
@@ -79,8 +85,8 @@ export class TagRepository {
                     KeyConditionExpression: 'PK = :pk AND SK = :sk',
                     ExpressionAttributeValues: {
                         ':pk': `TAG#${userId}`,
-                        ':sk': 'ENTITY'
-                    }
+                        ':sk': 'ENTITY',
+                    },
                 })
             );
 
@@ -104,8 +110,8 @@ export class TagRepository {
                     IndexName: 'GSI1PK-GSI1SK-INDEX',
                     KeyConditionExpression: 'GSI1PK = :pk',
                     ExpressionAttributeValues: {
-                        ':pk': `PHOTO#${photoId}`
-                    }
+                        ':pk': `PHOTO#${photoId}`,
+                    },
                 })
             );
 
@@ -129,8 +135,8 @@ export class TagRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `TAG#${userId}`,
-                        SK: 'ENTITY'
-                    }
+                        SK: 'ENTITY',
+                    },
                 })
             );
             return true;
@@ -154,8 +160,8 @@ export class TagRepository {
                     TableName: TABLE_NAME,
                     Key: {
                         PK: `TAG#${userId}`,
-                        SK: 'ENTITY'
-                    }
+                        SK: 'ENTITY',
+                    },
                 })
             );
 
@@ -165,12 +171,12 @@ export class TagRepository {
             }
 
             const tag = userTag.Item as Tag;
-            
+
             // Check if this tag is for the specified photo
             if (tag.photoId === photoId) {
                 return tag;
             }
-            
+
             return null;
         } catch (error: any) {
             logger.error('Error checking tag existence:', error);

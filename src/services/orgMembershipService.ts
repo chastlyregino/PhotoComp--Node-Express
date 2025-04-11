@@ -50,7 +50,7 @@ export class OrgMembershipService {
 
         const member = await this.orgService.isMemberOfOrg(organizationName, userId);
         if (member) {
-          throw new AppError('You are already a part of this organization', 400);
+            throw new AppError('You are already a part of this organization', 400);
         }
 
         const events = await this.eventService.getAllOrganizationEvents(organizationName);

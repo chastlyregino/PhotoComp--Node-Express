@@ -86,15 +86,15 @@ orgMembershipRouter.put(
     '/:id/requests/:userId',
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            console.log(`put method`)
+            console.log(`put method`);
             const orgName: string = req.params.id;
             const userId: string = req.params.userId; // member userid
             //console.log(`member ${userId}`)
             const result = await orgMembershipService.approveRequest(orgName, userId);
-            console.log(`member ${result}`)
+            console.log(`member ${result}`);
             //gets member's email
             const member = await userService.getUserById(userId);
-            console.log(`member ${userId}`)
+            console.log(`member ${userId}`);
             // Prepare success response with combined data
             const status: Status = {
                 statusCode: 200,
@@ -104,7 +104,7 @@ orgMembershipRouter.put(
                     result as UserOrganizationRelationship,
                 ],
             };
-            console.log(member)
+            console.log(member);
             // Add email notification if members exist
             if (member) {
                 // Creates the email data.
@@ -143,12 +143,9 @@ orgMembershipRouter.delete(
             const status: Status = {
                 statusCode: 200,
                 status: 'success',
-                data: [
-                    `Membership request denied` as any,
-                    result,
-                ],
+                data: [`Membership request denied` as any, result],
             };
-            
+
             // Add email notification if members exist
             if (member) {
                 // Creates the email data.

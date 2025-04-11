@@ -127,7 +127,10 @@ describe('OrgMembershipService', () => {
 
         it('should throw errors if the member is a part of the organization', async () => {
             const mockOrg = { name: mockOrganizationName, isPublic: true } as any;
-            const preExistingUserError = new AppError('You are already a part of this organization', 400);
+            const preExistingUserError = new AppError(
+                'You are already a part of this organization',
+                400
+            );
 
             mockOrgService.findOrgByName.mockResolvedValue(mockOrg);
             mockOrgService.isMemberOfOrg.mockResolvedValue(true);
@@ -141,13 +144,13 @@ describe('OrgMembershipService', () => {
             ).rejects.toThrow(preExistingUserError);
 
             expect(mockOrgService.findOrgByName).toHaveBeenCalledWith(mockOrganizationName);
-            expect(mockOrgService.isMemberOfOrg).toHaveBeenCalledWith( 
-              mockOrganizationName, mockUserId
+            expect(mockOrgService.isMemberOfOrg).toHaveBeenCalledWith(
+                mockOrganizationName,
+                mockUserId
             );
             expect(mockEventService.getAllOrganizationEvents).not.toHaveBeenCalled();
             expect(mockOrgMembershipRepository.createMembershipRequest).not.toHaveBeenCalled();
         });
-
 
         it('should throw errors from the repository', async () => {
             const mockOrg = { name: mockOrganizationName, isPublic: true } as any;

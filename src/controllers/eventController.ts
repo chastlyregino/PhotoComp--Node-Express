@@ -364,11 +364,11 @@ export const getUserEvents = async (req: Request, res: Response, next: NextFunct
         const requestingUserId = res.locals.user.id;
 
         if (userId !== requestingUserId) {
-            throw new AppError('You cannot get this user\'s events', 403);
+            throw new AppError("You cannot get this user's events", 403);
         }
 
         const events = await eventService.getAllUserEvents(userId);
-        const eventsWithDetails= await Promise.all(
+        const eventsWithDetails = await Promise.all(
             events.map(async request => {
                 const eventDetails = await eventService.findEventById(request.id);
                 return {
@@ -379,7 +379,7 @@ export const getUserEvents = async (req: Request, res: Response, next: NextFunct
                               description: eventDetails.description,
                               date: eventDetails.date,
                               weather: eventDetails.weather,
-                              location: eventDetails.location
+                              location: eventDetails.location,
                           }
                         : null,
                 };

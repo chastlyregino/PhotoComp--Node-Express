@@ -24,7 +24,7 @@ describe('EventService', () => {
         eventService = new EventService(mockEventRepository);
     });
 
-     describe('User Events', () => {
+    describe('User Events', () => {
         const userId = 'test-user-id';
         const mockEvents: Event[] = [
             {
@@ -42,15 +42,15 @@ describe('EventService', () => {
                 location: {
                     latitude: 42.3601,
                     longitude: -71.0589,
-                    name: 'Boston City Hall'
+                    name: 'Boston City Hall',
                 },
                 weather: {
                     temperature: 18.5,
                     weatherCode: 1,
                     weatherDescription: 'Mainly clear',
                     windSpeed: 12.3,
-                    precipitation: 0.5
-                }
+                    precipitation: 0.5,
+                },
             },
             {
                 PK: 'EVENT#event2',
@@ -63,8 +63,8 @@ describe('EventService', () => {
                 createdAt: '2025-04-02T00:00:00Z',
                 updatedAt: '2025-04-02T00:00:00Z',
                 GSI2PK: 'ORG#test-org',
-                GSI2SK: 'EVENT#event2'
-            }
+                GSI2SK: 'EVENT#event2',
+            },
         ];
 
         it('should successfully get all user events', async () => {
@@ -73,7 +73,7 @@ describe('EventService', () => {
             const result = await eventService.getAllUserEvents(userId);
 
             expect(mockEventRepository.getUserEvents).toHaveBeenCalledWith(userId);
-            
+
             expect(result).toEqual(mockEvents);
             expect(result.length).toBe(2);
             expect(result[0].title).toBe('Company Retreat');
@@ -86,13 +86,15 @@ describe('EventService', () => {
             const result = await eventService.getAllUserEvents(userId);
 
             expect(mockEventRepository.getUserEvents).toHaveBeenCalledWith(userId);
-            
+
             expect(result).toEqual([]);
             expect(result.length).toBe(0);
         });
 
         it('should handle repository errors gracefully', async () => {
-            mockEventRepository.getUserEvents.mockRejectedValue(new Error('Database connection failed'));
+            mockEventRepository.getUserEvents.mockRejectedValue(
+                new Error('Database connection failed')
+            );
 
             await expect(eventService.getAllUserEvents(userId)).rejects.toThrow(
                 'Failed to update event weather: Database connection failed'

@@ -19,4 +19,4 @@ userRouter.get('/:userId/tagged-photos', getUserTaggedPhotos);
  * Get all events users is or has attended
  * @route GET /users/:userId/events
  */
-userRouter.get( '/:userId/events', getUserEvents);
+userRouter.get('/:userId/events', getUserEvents);

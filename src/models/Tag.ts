@@ -4,7 +4,7 @@ export interface Tag {
     // Primary keys
     PK: string; // TAG#<UserID>
     SK: string; // ENTITY
-    
+
     // Attributes
     id: string;
     userId: string;
@@ -12,7 +12,7 @@ export interface Tag {
     eventId: string;
     taggedBy: string; // ID of the user who created the tag
     taggedAt: string; // ISO timestamp
-    
+
     // GSI for querying tags by photo
     GSI1PK: string; // PHOTO#<PhotoID>
     GSI1SK: string; // TAG#<UserID>
@@ -32,7 +32,7 @@ export const createTag = (
 ): Tag => {
     const id = uuidv4();
     const now = new Date().toISOString();
-    
+
     return {
         PK: `TAG#${userId}`,
         SK: 'ENTITY',
@@ -43,6 +43,6 @@ export const createTag = (
         taggedBy,
         taggedAt: now,
         GSI1PK: `PHOTO#${photoId}`,
-        GSI1SK: `TAG#${userId}`
+        GSI1SK: `TAG#${userId}`,
     };
 };
