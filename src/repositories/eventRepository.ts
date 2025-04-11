@@ -373,4 +373,58 @@ export class EventRepository {
             throw new AppError(`Failed to get event attendees: ${error.message}`, 500);
         }
     }
+<<<<<<< HEAD
 }
+=======
+
+    /**
+ * Deletes an event from the database
+ * @param eventId The ID of the event to delete
+ * @returns True if the deletion was successful
+ * @throws AppError if the database operation fails
+ */
+    async deleteEvent(eventId: string): Promise<boolean> {
+        try {
+            await dynamoDb.send(
+                new DeleteCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `EVENT#${eventId}`,
+                        SK: 'ENTITY',
+                    },
+                })
+            );
+            return true;
+        } catch (error: any) {
+            throw new AppError(`Failed to delete event: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Deletes all attendance records for an event
+     * @param eventId The ID of the event
+     * @returns True if the operation was successful
+     * @throws AppError if the database operation fails
+     */
+    async deleteAllEventAttendance(eventId: string): Promise<boolean> {
+        try {
+            // First get all users attending the event
+            const attendees = await this.getEventAttendees(eventId);
+
+            if (attendees.length === 0) {
+                return true; // No attendance records to delete
+            }
+
+            // Delete each attendance record
+            for (const attendeeId of attendees) {
+                const userId = attendeeId.split('#')[1]; // Extract user ID from USER#id format
+                await this.removeAttendingEventRecord(userId, eventId);
+            }
+
+            return true;
+        } catch (error: any) {
+            throw new AppError(`Failed to delete event attendance records: ${error.message}`, 500);
+        }
+    }
+}
+>>>>>>> 40e3957 (repo/serv/controller delete methods)

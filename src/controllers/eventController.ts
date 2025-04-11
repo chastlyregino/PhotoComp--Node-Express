@@ -1,4 +1,3 @@
-// Fix for eventController.ts
 import { Request, Response, NextFunction, Router } from 'express';
 import { EventService } from '../services/eventService';
 import { OrgService } from '../services/orgService';
@@ -86,6 +85,7 @@ eventRouter.post('/', checkOrgAdmin, async (req: Request, res: Response, next: N
         next(error);
     }
 });
+
 /*
  * Get the organizations events
  * GET /events
@@ -355,9 +355,9 @@ eventRouter.patch(
 );
 
 /*
-  * Get all a User's Events 
-   * GET /users/:userId/events
-  * */
+ * Get all a User's Events 
+ * GET /users/:userId/events
+ */
 export const getUserEvents = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.params.userId;
@@ -386,7 +386,6 @@ export const getUserEvents = async (req: Request, res: Response, next: NextFunct
             })
         );
 
-
         return res.status(200).json({
             status: 'success',
             events: eventsWithDetails,
@@ -394,4 +393,30 @@ export const getUserEvents = async (req: Request, res: Response, next: NextFunct
     } catch (error) {
         next(error);
     }
-}
+};
+
+/*
+ * Delete an event and all associated resources
+ * DELETE /events/:eid/admin
+ */
+eventRouter.delete(
+    '/:eid/admin',
+    checkOrgAdmin,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const orgName: string = req.params.orgId;
+            const eventId: string = req.params.eid;
+            const admin = res.locals.user as { id: string; email: string; role: string };
+
+            // Delete the event and all associated resources (attendance, photos)
+            await eventService.deleteEvent(orgName, eventId, admin.id);
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Event deleted successfully'
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
