@@ -4,7 +4,7 @@ import { AppError } from '../middleware/errorHandler';
 import { WeatherData, WeatherService } from './weatherService';
 import { GeocodingService } from './geocodingService';
 import { logger } from '../util/logger';
-import { PhotoRepository } from '@/repositories/photoRepository';
+import { PhotoRepository } from '../repositories/photoRepository';
 import { S3Service } from './s3Service';
 
 /**
