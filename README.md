@@ -167,11 +167,8 @@ The system uses a single-table design in DynamoDB with the following structure:
 | PATCH | /organizations/:id/events/:eventId | Update an event's publicity |
 | DELETE | /organizations/:id/events/:eventId/admin | Delete an event and all associated resources |
 
-<<<<<<< HEAD
-- [ ] TODO: Implement DELETE /organization/:id/events/:eventID 
-=======
 - [ ] TODO: Implement SendMemberANotification for NEW event at organization
->>>>>>> 3bc4650 (update docs)
+
 
 ---
 
