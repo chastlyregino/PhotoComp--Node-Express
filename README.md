@@ -165,8 +165,13 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /organizations/:id/events | Get organizations events|
 | POST | /organizations/:id/events | Create a new organization event|
 | PATCH | /organizations/:id/events/:eventId | Update an event's publicity |
+| DELETE | /organizations/:id/events/:eventId/admin | Delete an event and all associated resources |
 
+<<<<<<< HEAD
 - [ ] TODO: Implement DELETE /organization/:id/events/:eventID 
+=======
+- [ ] TODO: Implement SendMemberANotification for NEW event at organization
+>>>>>>> 3bc4650 (update docs)
 
 ---
 
@@ -221,6 +226,25 @@ The system uses a single-table design in DynamoDB with the following structure:
 |--------|----------|-------------|
 | GET | /organizations/:id/events/:eventId/attendants | Get all events attendants |
 | DELETE | /organizations/:id/events/:eventId/attendants/:userId | Remove an event attendant|
+
+
+### Organizations Events Photos Tags
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged users for photo|
+| POST | /organizations/:id/events/:eventId/photos/:photoId/tags | Add multiple users to a photo|
+| DELETE | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Remove a tagged user from photo|
+| GET | /users/:userId/tagged-photos | Get all photos a user is tagged in|
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /users/:userId | Get all the user's information|
+| PUT | /users/:userId | Update the user's information |
+| DELETE | /users/:userId | Delete the user account |
+| GET | /users/:userId/organizations | Get all the user's organizations |
+| GET | /users/:userId/events | Get all the user's events  |
+| GET | /users/:userId/photos | Get all the user's photos  |
 
 
 > For more details please check `docs/`
