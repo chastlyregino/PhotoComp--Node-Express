@@ -59,7 +59,7 @@ photoTagsRouter.post(
             };
 
             const tags = await tagService.tagUsersInPhoto(tagRequest, admin.id);
-            console.log(tags)
+            console.log(tags);
             // Prepare success response with combined data
             const status: Status = {
                 statusCode: 201,
@@ -77,16 +77,15 @@ photoTagsRouter.post(
                 // Add email notification if members is tagged
                 if (members && members.length > 0) {
                     for (const tag of tags) {
-                        for(const member of members) {
-                            if(member.userId === tag.userId) {
+                        for (const member of members) {
+                            if (member.userId === tag.userId) {
                                 membersEmail.push(member.email);
                             }
                         }
-                        
                     }
 
                     // Members that will be emailed
-                    console.log(membersEmail)
+                    console.log(membersEmail);
                     // Creates the email data.
                     const to: string = membersEmail.toString();
                     const subject: string = `An update from PhotoComp!`;
