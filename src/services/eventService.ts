@@ -406,24 +406,40 @@ export class EventService {
             // 3. Delete all photos from S3 and the database
             for (const photo of photos) {
                 try {
-                    // Delete the photo file from S3 if we have the key
+                    // Get the S3 key from metadata or extract it from the URL
                     const s3Key = photo.metadata?.s3Key ||
                         (() => {
                             try {
+                                // Parse the URL and extract the path
                                 const urlParts = new URL(photo.url);
+                                // For pre-signed URLs, we need to carefully extract just the path
+                                // without query parameters
                                 return urlParts.pathname.substring(1); // Remove leading slash
                             } catch (error) {
-                                logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                                logger.error(`Error parsing photo URL for photo ${photo.id}: ${photo.url}`, error);
                                 return null;
                             }
                         })();
 
                     if (s3Key) {
-                        await s3Service.deleteFile(s3Key);
+                        try {
+                            await s3Service.deleteFile(s3Key);
+                            logger.info(`Successfully deleted photo file from S3: ${s3Key}`);
+                        } catch (s3Error) {
+                            // Check the error type before accessing properties
+                            const errorMessage = s3Error instanceof Error
+                                ? s3Error.message
+                                : 'Unknown error';
+                            logger.error(`Error deleting photo file from S3 for photo ${photo.id}: ${errorMessage}`);
+                            // Consider whether to retry or propagate the error
+                        }
+                    } else {
+                        logger.warn(`No S3 key found for photo ${photo.id} - S3 file might not be deleted`);
                     }
 
                     // Delete the photo record from the database
                     await photoRepository.deletePhoto(photo.id);
+                    logger.info(`Successfully deleted photo record from database: ${photo.id}`);
                 } catch (error) {
                     // Log the error but continue with other photos
                     logger.error(`Error deleting photo ${photo.id}:`, error);
