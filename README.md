@@ -165,8 +165,8 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /organizations/:id/events | Get organizations events|
 | POST | /organizations/:id/events | Create a new organization event|
 | PATCH | /organizations/:id/events/:eventId | Update an event's publicity |
+| DELETE | /organizations/:id/events/:eventId/admin | Delete an event and all associated resources |
 
-- [ ] TODO: Implement DELETE /organization/:id/events/:eventID 
 - [ ] TODO: Implement SendMemberANotification for NEW event at organization
 
 ---
@@ -222,4 +222,3 @@ The system uses a single-table design in DynamoDB with the following structure:
 
 
 > For more details please check `docs/`
-

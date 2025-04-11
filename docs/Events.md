@@ -202,6 +202,60 @@ This endpoint allows users with "ADMIN" role to update an event's publicity stat
 }
 ```
 
+## Delete an Event
+
+`DELETE /organizations/:id/events/:eventId/admin`
+
+This endpoint allows organization admins to delete an event and all associated resources (attendance records, photos).
+
+### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | `Bearer <token>` |  Yes  |
+
+### Response
+
+**200 OK**
+```json
+{
+  "status": "success",
+  "message": "Event deleted successfully"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Only an Org Admin can perform this action. Please talk to your Admin for more information"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Event does not belong to this organization"
+}
+```
+
+**404 Not Found**
+```json
+{
+  "status": "error",
+  "message": "Event not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+  "status": "error",
+  "message": "Failed to delete event: [specific error message]"
+}
+```
+
 ## Refresh Weather Data for an Event
 
 `POST /organizations/:id/events/:eid/weather/refresh`
