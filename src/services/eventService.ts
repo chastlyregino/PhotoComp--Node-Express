@@ -6,6 +6,7 @@ import { GeocodingService } from './geocodingService';
 import { logger } from '../util/logger';
 import { PhotoRepository } from '../repositories/photoRepository';
 import { S3Service } from './s3Service';
+import { TagRepository } from '../repositories/tagRepository';
 
 /**
  * Service class for handling event-related operations including CRUD operations,
@@ -372,13 +373,13 @@ export class EventService {
     }
 
     /**
-     * Deletes an event and all associated resources (attendance records, photos)
-     * @param orgName The organization name
-     * @param eventId The ID of the event to delete
-     * @param adminId The ID of the admin requesting deletion
-     * @returns True if the deletion was successful
-     * @throws AppError if any step of the deletion process fails
-     */
+  * Deletes an event and all associated resources (attendance records, photos, and tags)
+  * @param orgName The organization name
+  * @param eventId The ID of the event to delete
+  * @param adminId The ID of the admin requesting deletion
+  * @returns True if the deletion was successful
+  * @throws AppError if any step of the deletion process fails
+  */
     async deleteEvent(orgName: string, eventId: string, adminId: string): Promise<boolean> {
         try {
             // Verify the event exists and belongs to the organization
@@ -399,12 +400,13 @@ export class EventService {
             // 1. Get all photos for the event (we need this before deleting the event)
             const photoRepository = new PhotoRepository();
             const s3Service = new S3Service();
+            const tagRepository = new TagRepository();
             const photos = await photoRepository.getPhotosByEvent(eventId);
 
             // 2. Delete all attendance records for the event
             await this.eventRepository.deleteAllEventAttendance(eventId);
 
-            // 3. Delete all photos from S3 and the database
+            // 3. Delete all photos from S3 and the database, including their tags
             for (const photo of photos) {
                 try {
                     // Get the S3 key from metadata or extract it from the URL
@@ -422,6 +424,27 @@ export class EventService {
                             }
                         })();
 
+                    // 3.1 Delete tags for this photo
+                    try {
+                        // Get all tags for this photo
+                        const photoTags = await tagRepository.getTagsByPhoto(photo.id);
+
+                        // Delete each tag
+                        for (const tag of photoTags) {
+                            try {
+                                await tagRepository.deleteTag(tag.userId);
+                                logger.info(`Successfully deleted tag for user ${tag.userId} from photo ${photo.id}`);
+                            } catch (tagError) {
+                                logger.error(`Error deleting tag for user ${tag.userId} from photo ${photo.id}:`, tagError);
+                                // Continue with other tags even if one fails
+                            }
+                        }
+                    } catch (tagsError) {
+                        logger.error(`Error retrieving or deleting tags for photo ${photo.id}:`, tagsError);
+                        // Continue with photo deletion even if tags deletion fails
+                    }
+
+                    // 3.2 Delete the photo file from S3
                     if (s3Key) {
                         try {
                             await s3Service.deleteFile(s3Key);
@@ -438,7 +461,7 @@ export class EventService {
                         logger.warn(`No S3 key found for photo ${photo.id} - S3 file might not be deleted`);
                     }
 
-                    // Delete the photo record from the database
+                    // 3.3 Delete the photo record from the database
                     await photoRepository.deletePhoto(photo.id);
                     logger.info(`Successfully deleted photo record from database: ${photo.id}`);
                 } catch (error) {
