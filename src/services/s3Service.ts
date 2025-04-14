@@ -2,6 +2,7 @@ import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../util/logger';
 import { S3Repository } from '../repositories/s3Repository';
+import { PhotoSizes } from '../models/Photo';
 
 export class S3Service {
     private s3Repository: S3Repository;
@@ -69,6 +70,37 @@ export class S3Service {
     }
 
     /**
+     * Uploads multiple resized images to S3
+     * @param buffers Object containing buffers for different sizes
+     * @param s3Keys Object containing S3 keys for different sizes
+     * @param contentType The content type of the files
+     * @returns Object containing the S3 keys for all uploaded files
+     */
+    async uploadResizedImages(
+        buffers: Record<string, Buffer>,
+        s3Keys: Record<string, string>,
+        contentType: string
+    ): Promise<Record<string, string>> {
+        try {
+            // Prepare array of file objects for upload
+            const files = Object.entries(buffers).map(([size, buffer]) => ({
+                buffer,
+                key: s3Keys[size],
+                contentType,
+            }));
+            
+            // Upload all files to S3
+            await this.s3Repository.uploadMultipleFiles(files);
+            
+            // Return the S3 keys
+            return s3Keys;
+        } catch (error) {
+            logger.error('Error uploading resized images to S3:', error);
+            throw new AppError(`Failed to upload resized images to S3: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
      * Gets a pre-signed URL for accessing a file in S3
      * @param s3Key The S3 key of the file
      * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
@@ -76,6 +108,39 @@ export class S3Service {
      */
     async getLogoPreSignedUrl(s3Key: string, expiresIn: number = 3600): Promise<string> {
         return this.s3Repository.getPreSignedUrl(s3Key, expiresIn);
+    }
+
+    /**
+     * Gets pre-signed URLs for multiple files in S3
+     * @param s3Keys Object mapping size names to S3 keys
+     * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
+     * @returns Object mapping size names to pre-signed URLs
+     */
+    async getMultiplePreSignedUrls(
+        s3Keys: Record<string, string>,
+        expiresIn: number = 3600
+    ): Promise<PhotoSizes> {
+        try {
+            // Get all key values from the s3Keys object
+            const keyArray = Object.values(s3Keys);
+            
+            // Get all pre-signed URLs
+            const urlMap = await this.s3Repository.getMultiplePreSignedUrls(keyArray, expiresIn);
+            
+            // Rebuild the object with the size names and URLs
+            const result: PhotoSizes = { original: '' };
+            
+            for (const [size, key] of Object.entries(s3Keys)) {
+                if (urlMap[key]) {
+                    result[size as keyof PhotoSizes] = urlMap[key];
+                }
+            }
+            
+            return result;
+        } catch (error) {
+            logger.error('Error getting multiple pre-signed URLs:', error);
+            throw new AppError(`Failed to get multiple pre-signed URLs: ${(error as Error).message}`, 500);
+        }
     }
 
     /**
@@ -99,5 +164,13 @@ export class S3Service {
      */
     async deleteFile(s3Key: string): Promise<void> {
         return this.s3Repository.deleteFile(s3Key);
+    }
+
+    /**
+     * Deletes multiple files from S3
+     * @param s3Keys Array of S3 keys to delete
+     */
+    async deleteMultipleFiles(s3Keys: string[]): Promise<void> {
+        return this.s3Repository.deleteMultipleFiles(s3Keys);
     }
 }
