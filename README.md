@@ -86,11 +86,12 @@ This document outlines the API endpoints for the PhotoComp platform, designed fo
 | SK          | string | Static value: `"ENTITY"` |
 | id          | string | Unique identifier for the photo |
 | eventId     | string | ID of the event the photo belongs to |
-| url         | string | Pre-signed URL for accessing the photo |
+| url         | string | Pre-signed URL for accessing the original photo |
+| urls        | object | Object containing URLs for different photo sizes (thumbnail, medium, large, original) |
 | createdAt   | string | Timestamp when the photo was uploaded (ISO 8601) |
 | updatedAt   | string | Timestamp when the photo was last updated (ISO 8601) |
 | uploadedBy  | string | User ID of the uploader |
-| metadata    | object | Optional metadata (title, description, size, etc.) |
+| metadata    | object | Photo metadata (title, description, dimensions, size, etc.) |
 | GSI2PK      | string | Event ID (`EVENT#<ID>`) |
 | GSI2SK      | string | Photo ID (`PHOTO#<ID>`) |
 
@@ -189,60 +190,7 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /organizations/:id/events/:eventId/photos | Get all photos for an event |
 | POST | /organizations/:id/events/:eventId/photos | Upload a photo to an event |
 | DELETE | /organizations/:id/events/:eventId/photos/:photoId | Delete a photo |
-| GET | /organizations/:id/events/:eventId/photos/:photoId/download | Get a download URL for a specific photo |
-| GET | /organizations/:id/photos | Get all photos across all organization events |
+| GET | /organizations/:id/events/:eventId/photos/:photoId/download?size=original | Get a download URL for a specific photo size |
+| GET | /organizations/:id/photos?size=medium | Get all photos across all organization events with preferred size |
 
---- 
-
-### Users
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| DELETE | /api/auth/users/:userId | Delete the user account |
-| GET | /users/:userId/events | Get all the user's events  |
-| GET | /users/:userId/tagged-photos | Get all photos a user is tagged in|
-
-- [ ] TODO: GET `/users/:userId` - Get all the user's information
-- [ ] TODO: PUT `/users/:userId` - Update the user's information 
-- [ ] TODO: GET `/users/:userId/organizations` - Get all the user's organizations 
-
---- 
-
-### Organizations Events Photos Tags
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged users for photo|
-| POST | /organizations/:id/events/:eventId/photos/:photoId/tags | Add multiple users to a photo|
-| DELETE | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Remove a tagged user from photo|
-
---- 
-
-- [ ] TODO: Implement following endpoints 
-
-### Organizations Events Member Attendance
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /organizations/:id/events/:eventId/attendants | Get all events attendants |
-| DELETE | /organizations/:id/events/:eventId/attendants/:userId | Remove an event attendant|
-
-
-### Organizations Events Photos Tags
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged users for photo|
-| POST | /organizations/:id/events/:eventId/photos/:photoId/tags | Add multiple users to a photo|
-| DELETE | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Remove a tagged user from photo|
-| GET | /users/:userId/tagged-photos | Get all photos a user is tagged in|
-
-### Users
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /users/:userId | Get all the user's information|
-| PUT | /users/:userId | Update the user's information |
-| DELETE | /users/:userId | Delete the user account |
-| GET | /users/:userId/organizations | Get all the user's organizations |
-| GET | /users/:userId/events | Get all the user's events  |
-| GET | /users/:userId/photos | Get all the user's photos  |
-
-
-> For more details please check `docs/`
-
+---
