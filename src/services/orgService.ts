@@ -52,12 +52,9 @@ export class OrgService {
         try {
             await this.validateUrl(createOrg.logoUrl);
 
+            // Change this condition to check only for name
             if (!createOrg.name) {
-                throw new AppError('Name and logoUrl are required', 400);
-            }
-            // Check required fields
-            if (!createOrg.name || !createOrg.logoUrl) {
-                throw new AppError('Name and logoUrl are required', 400);
+                throw new AppError('Organization name is required', 400);
             }
 
             const existingOrg = await this.findOrgByName(createOrg.name);
@@ -429,6 +426,7 @@ export class OrgService {
         mimeType: string
     ): Promise<OrganizationCreateRequest | null> {
         try {
+            // Check only for name
             if (!createOrgRequest.name) {
                 throw new AppError('Organization name is required', 400);
             }

@@ -9,7 +9,7 @@ import {
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
-import { handleLogoUpload } from '@/middleware/orgLogoUploadMiddleware';
+import { handleLogoUpload } from '../middleware/orgLogoUploadMiddleware';
 
 const orgService = new OrgService();
 export const orgRouter = Router();
