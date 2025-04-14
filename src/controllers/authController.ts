@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { UserService } from '../services/userService';
-import { AuthRequest, RegisterRequest, UserRole } from '../models/User';
+import { AuthRequest, RegisterRequest, UserRole, PasswordChangeRequest } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/authMiddleware';
 
@@ -118,3 +118,49 @@ authRouter.post('/login', async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 });
+
+/**
+ * Change user password
+ * @route PATCH /api/auth/password
+ */
+authRouter.patch(
+    '/password',
+    authenticate,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Validate request body
+            const { currentPassword, newPassword } = req.body;
+            const userId = res.locals.user.id;
+
+            if (!currentPassword || !newPassword) {
+                throw new AppError('Current password and new password are required', 400);
+            }
+
+            // Validate new password strength
+            if (newPassword.length < 8) {
+                throw new AppError('New password must be at least 8 characters long', 400);
+            }
+
+            // Ensure new password is different from current
+            if (currentPassword === newPassword) {
+                throw new AppError('New password must be different from current password', 400);
+            }
+
+            const passwordChangeRequest: PasswordChangeRequest = {
+                userId,
+                currentPassword,
+                newPassword,
+            };
+
+            // Update the password
+            await userService.changePassword(passwordChangeRequest);
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Password changed successfully',
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);

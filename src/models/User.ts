@@ -33,6 +33,12 @@ export interface RegisterRequest extends AuthRequest {
     lastName: string;
 }
 
+export interface PasswordChangeRequest {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+}
+
 export const createUserFromRegister = (registerRequest: RegisterRequest): User => {
     const id = uuidv4();
     const now = new Date().toISOString();
