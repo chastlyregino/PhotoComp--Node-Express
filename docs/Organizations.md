@@ -4,28 +4,21 @@
 
 `POST /organizations`
 
-This endpoint allows users to create a new organizations. All new user-organizations are registered with the "USER" role by default and are given an "ADMIN" role. All new organizations are registered as a default "PUBLIC".
+This endpoint allows users to create a new organization. All new user-organizations are registered with the "USER" role by default and are given an "ADMIN" role. All new organizations are registered as "PUBLIC" by default.
 
 #### Request Headers
 
 | Key | Value | Required |
 |-----|-------|----------|
-| Content-Type | application/json | Yes |
+| Content-Type | multipart/form-data | Yes |
 | Authorization | Bearer your-jwt-token | Yes |
 
 #### Request Body
 
-```json
-{
-    "name": "Taco Bell",
-    "logoUrl": "https://example.com/logo.jpg"
-}
-```
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| name | string | Yes | Unique org name |
-| logoUrl | string | Yes | Valid URL to logo image |
+| name | string | Yes | Unique organization name |
+| logo | file | Yes | Logo image file (max 5MB, image files only) |
 | description | string | No | Optional description of the organization |
 | website | string | No | Optional website URL |
 | contactEmail | string | No | Optional contact email |
@@ -61,13 +54,19 @@ This endpoint allows users to create a new organizations. All new user-organizat
 ```json
 {
     "status": "error",
-    "message": "Name and logoUrl are required"
+    "message": "Name and logo file are required"
 }
 ```
 ```json
 {
     "status": "error",
-    "message": "Invalid URL"
+    "message": "File size limit exceeded. Maximum size is 5MB"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Only image files are allowed for logos"
 }
 ```
 
@@ -206,33 +205,24 @@ This endpoint allows users to get all organizations they created and are a membe
 
 `PATCH /organizations`
 
-This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of.
+This endpoint allows users with "ADMIN" role to update an existing organization that they are a part of. The logo file is optional for updates.
 
 #### Request Headers
 
 | Key | Value | Required |
 |-----|-------|----------|
-| Content-Type | application/json | Yes |
+| Content-Type | multipart/form-data | Yes |
+| Authorization | Bearer your-jwt-token | Yes |
 
 #### Request Body
-
-```json
-{
-    "name": "Culvers",
-    "description": "Butter Burgers",
-    "contactEmail": "culvers@culvers.com",
-    "website": "https://www.culvers.com/",
-    "logoUrl": "https://styleguide.culvers.com/brand-styles/logo-usage"
-}
-```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | name | string | Yes | Existing org name |
+| logo | file | No | New logo image file (if changing logo) |
 | description | string | No | Org description |
 | contactEmail | string | No | Org contact email|
 | website | string | No | Valid URL of website |
-| logoUrl | string | No | Valid URL of logo |
 
 #### Response
 
@@ -252,21 +242,13 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
             "updatedAt": "2025-04-02T22:51:11.640Z",
             "type": "ORGANIZATION",
             "isPublic": true,
-            "logoUrl": "https://styleguide.culvers.com/brand-styles/logo-usage",
+            "logoUrl": "https://presigned-url.amazonaws.com/logo.jpg",
             "website": "https://www.culvers.com/",
             "contactEmail": "culvers@culvers.com",
             "GSI1PK": "CUL",
             "GSI1SK": "ORG#CULVERS"
         }
     }
-}
-```
-
-**204 No Content**
-```json
-{
-    "status": "error",
-    "message": "No organizations found!"
 }
 ```
 
@@ -289,8 +271,20 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
     "message": "No Organizations found!"
 }
 ```
+```json
+{
+    "status": "error",
+    "message": "File size limit exceeded. Maximum size is 5MB"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Only image files are allowed for logos"
+}
+```
 
-**401 UnAuthorized**
+**401 Unauthorized**
 ```json
 {
     "status": "error",
@@ -300,7 +294,7 @@ This endpoint allows users with "ADMIN" role to update an existing organization 
 ```json
 {
     "status": "error",
-    "message": "Only Admin roles can updated Organizations"
+    "message": "Only Admin roles can update Organizations"
 }
 ```
 
