@@ -1,5 +1,3 @@
-// src/middleware/emailSender.ts
-
 import { sendMail } from '../util/mailService';
 import { Status } from '../models/Response';
 import { Request, Response, NextFunction } from 'express';
