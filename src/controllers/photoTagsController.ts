@@ -49,7 +49,10 @@ photoTagsRouter.post(
             const admin = res.locals.user.info;
 
             if (!Array.isArray(userIds) || userIds.length === 0) {
-                throw new AppError('A list of user IDs is required', 400);
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'A list of user IDs is required'
+                });
             }
 
             const tagRequest: TagRequest = {
@@ -60,49 +63,69 @@ photoTagsRouter.post(
 
             const tags = await tagService.tagUsersInPhoto(tagRequest, admin.id);
             console.log(tags);
-            // Prepare success response with combined data
-            const status: Status = {
-                statusCode: 201,
-                status: 'success',
-                data: [`Tagged ${tags.length} users in photo` as any, tags],
-            };
-
-            // Get event details
+            
+            // Get event details for email
             const event = await eventService.findEventById(eventId);
 
+            // Check if we should try to send emails
             if (event) {
-                const members = await orgService.getOrgMembers(event.GSI2PK.slice(4));
-                let membersEmail: string[] = [];
+                try {
+                    const members = await orgService.getOrgMembers(event.GSI2PK.slice(4));
+                    let membersEmail: string[] = [];
 
-                // Add email notification if members is tagged
-                if (members && members.length > 0) {
-                    for (const tag of tags) {
-                        for (const member of members) {
-                            if (member.userId === tag.userId) {
-                                membersEmail.push(member.email);
+                    // Add email notification if members are tagged
+                    if (members && members.length > 0) {
+                        for (const tag of tags) {
+                            for (const member of members) {
+                                if (member.userId === tag.userId) {
+                                    membersEmail.push(member.email);
+                                }
                             }
                         }
+
+                        // Only set up email if there are members to email
+                        if (membersEmail.length > 0) {
+                            // Creates the email data
+                            const to: string = membersEmail.toString();
+                            const subject: string = `An update from PhotoComp!`;
+                            const message: string = `You have been tagged to a photo in the event ${event.title} in org ${event.GSI2PK.slice(4)}.
+                            Know more by checking out the website!`;
+                            const header: string = `You have been tagged in a photo!`;
+
+                            // Initialize emailInfo if not exists
+                            res.locals.user.emailInfo = { to, message, header, subject };
+                            
+                            // Create status object for email sender
+                            const status: Status = {
+                                statusCode: 201,
+                                status: 'success',
+                                message: `Tagged ${tags.length} users in photo`,
+                                data: tags
+                            };
+                            
+                            // Pass to email sender middleware
+                            return emailSender(status, req, res, next);
+                        }
                     }
-
-                    // Members that will be emailed
-                    console.log(membersEmail);
-                    // Creates the email data.
-                    const to: string = membersEmail.toString();
-                    const subject: string = `An update from PhotoComp!`;
-                    const message: string = `You have been tagged to a photo in the event ${event.title} in org ${event.GSI2PK.slice(4)}.
-                    Know more by checking out the website!`;
-                    const header: string = `You have been tagged in a photo!`;
-
-                    res.locals.user.emailInfo = { to, message, header, subject };
+                } catch (error) {
+                    // If there's an error getting members, just continue to the success response
+                    console.error('Error getting members for email notifications:', error);
                 }
             }
-
-            next(status);
+            
+            // Default response without email sending
+            return res.status(201).json({
+                status: 'success',
+                message: `Tagged ${tags.length} users in photo`,
+                data: {
+                    tags
+                }
+            });
+            
         } catch (error) {
             next(error);
         }
-    },
-    emailSender
+    }
 );
 
 /**
