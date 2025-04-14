@@ -9,6 +9,7 @@ import {
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 import { checkOrgAdmin, validateUserID } from '../middleware/OrgMiddleware';
+import { handleLogoUpload } from '@/middleware/orgLogoUploadMiddleware';
 
 const orgService = new OrgService();
 export const orgRouter = Router();
@@ -37,74 +38,120 @@ orgRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
  * Create a new organization, and make the creator an Admin
  * POST /organizations
  * */
-orgRouter.post(`/`, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { name, logoUrl } = req.body;
-        const user = res.locals.user.info;
+orgRouter.post(`/`,
+    handleLogoUpload('logo'), // Add middleware for logo file upload
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { name, description, website, contactEmail } = req.body;
+            const user = res.locals.user.info;
 
-        const organization: OrganizationCreateRequest = {
-            name,
-            logoUrl,
-        };
-
-        const org = await orgService.createOrg(organization, user.id);
-
-        if (org) {
-            try {
-                const userAdmin = await orgService.createUserAdmin(name, user.id, user.email);
-
-                if (userAdmin) {
-                    res.status(201).json({
-                        status: 'Created organization!',
-                        data: {
-                            user: userAdmin.userId,
-                            org: org.name,
-                            logoUrl: org.logoUrl, // Return the pre-signed URL
-                            logoS3Key: org.logoS3Key, // Return the S3 key for reference
-                        },
-                    });
-                }
-            } catch (error: any) {
-                throw new AppError(`User Organization not created`, 400);
+            // Check if logo file was uploaded
+            if (!req.file) {
+                throw new AppError('Logo file is required', 400);
             }
-        } else {
-            throw new AppError(`Organization not created`, 400);
+
+            // Prepare organization request without logoUrl (will be generated from file)
+            const organizationRequest: Omit<OrganizationCreateRequest, 'logoUrl'> = {
+                name,
+                description,
+                website,
+                contactEmail
+            };
+
+            // Use the new method that handles file uploads
+            const org = await orgService.createOrgWithFileUpload(
+                organizationRequest,
+                user.id,
+                req.file.buffer,
+                req.file.mimetype
+            );
+
+            if (org) {
+                try {
+                    const userAdmin = await orgService.createUserAdmin(name, user.id, user.email);
+
+                    if (userAdmin) {
+                        res.status(201).json({
+                            status: 'Created organization!',
+                            data: {
+                                user: userAdmin.userId,
+                                org: org.name,
+                                logoUrl: org.logoUrl, // Return the pre-signed URL
+                                logoS3Key: org.logoS3Key, // Return the S3 key for reference
+                            },
+                        });
+                    }
+                } catch (error: any) {
+                    throw new AppError(`User Organization not created`, 400);
+                }
+            } else {
+                throw new AppError(`Organization not created`, 400);
+            }
+        } catch (error) {
+            next(error);
         }
-    } catch (error) {
-        next(error);
-    }
-});
+    });
 
 /*
  * Update an organization's information
- * POST /organizations
+ * PATCH /organizations
  * */
-orgRouter.patch(`/`, checkOrgAdmin, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { name, logoUrl, description, website, contactEmail } = req.body;
-        const user = res.locals.user.info;
+orgRouter.patch(`/`,
+    checkOrgAdmin,
+    handleLogoUpload('logo'),  // Add middleware for logo file upload (optional)
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { name, description, website, contactEmail } = req.body;
+            const user = res.locals.user.info;
 
-        const org: OrganizationUpdateRequest = {
-            name,
-            logoUrl,
-            description,
-            website,
-            contactEmail,
-        };
+            if (!name) {
+                throw new AppError(`You need to specify the Organization name.`, 400);
+            }
 
-        const updatedOrg = await orgService.updateOrgByName(org);
+            // Validate URLs if provided
+            await orgService.validateUrl(website);
 
-        if (!updatedOrg) {
-            throw new AppError(`Failed to update Organization`, 400);
+            const existingOrg = await orgService.findOrgByName(name);
+
+            if (!existingOrg) {
+                throw new AppError(`No Organizations found!`, 400);
+            }
+
+            let logoUrl = existingOrg.logoUrl;
+            let logoS3Key = existingOrg.logoS3Key;
+
+            // Handle logo file upload if provided
+            if (req.file) {
+                const logoData = await orgService.updateOrgLogoWithFile(
+                    name,
+                    req.file.buffer,
+                    req.file.mimetype
+                );
+                logoUrl = logoData.logoUrl;
+                logoS3Key = logoData.logoS3Key;
+            }
+
+            const org: OrganizationUpdateRequest = {
+                name,
+                logoUrl,
+                description,
+                website,
+                contactEmail,
+            };
+
+            const updatedOrg = await orgService.updateOrgByName(org);
+
+            if (!updatedOrg) {
+                throw new AppError(`Failed to update Organization`, 400);
+            }
+
+            res.status(200).json({
+                status: 'Updated organization!',
+                data: {
+                    org: updatedOrg,
+                },
+            });
+        } catch (error) {
+            next(error);
         }
-
-        res.status(200).json({
-            status: 'Updated organization!',
-            data: {
-                org: updatedOrg,
-            },
-        });
-    } catch (error) {
-        next(error);
-    }
-});
+    });

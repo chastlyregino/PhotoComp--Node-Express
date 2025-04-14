@@ -413,4 +413,117 @@ export class OrgService {
             );
         }
     }
+
+    /**
+ * Creates an organization with a logo uploaded as a file
+ * @param createOrgRequest The organization data
+ * @param userId The ID of the user creating the organization
+ * @param logoFile The logo file buffer
+ * @param mimeType The mimetype of the file
+ * @returns The created organization
+ */
+    async createOrgWithFileUpload(
+        createOrgRequest: Omit<OrganizationCreateRequest, 'logoUrl'>,
+        userId: string,
+        logoFile: Buffer,
+        mimeType: string
+    ): Promise<OrganizationCreateRequest | null> {
+        try {
+            if (!createOrgRequest.name) {
+                throw new AppError('Organization name is required', 400);
+            }
+
+            const existingOrg = await this.findOrgByName(createOrgRequest.name);
+
+            if (existingOrg) {
+                throw new AppError(`Organization name already in use!`, 409);
+            }
+
+            // Upload logo to S3 using buffer
+            const logoS3Key = await this.s3Service.uploadLogoFromBuffer(
+                logoFile,
+                createOrgRequest.name,
+                mimeType
+            );
+
+            // Get pre-signed URL for the logo
+            const preSignedUrl = await this.s3Service.getLogoPreSignedUrl(logoS3Key);
+
+            // Create the complete organization data with S3 key and pre-signed URL
+            const organizationData = {
+                ...createOrgRequest,
+                logoUrl: preSignedUrl,
+                logoS3Key: logoS3Key,
+            };
+
+            // Create the organization with the updated data
+            const org = createOrganization(organizationData, userId);
+
+            try {
+                const createdOrg = await this.orgRepository.createOrg(org);
+                return organizationData;
+            } catch (error) {
+                if (error instanceof AppError) {
+                    throw error;
+                }
+                throw new AppError(
+                    `Organization creation failed: DB! ${(error as Error).message}`,
+                    500
+                );
+            }
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Organization creation failed: Model! ${(error as Error).message}`,
+                500
+            );
+        }
+    }
+
+    /**
+ * Updates an organization's logo with a file upload
+ * @param orgName The name of the organization
+ * @param logoFile The logo file buffer
+ * @param mimeType The mimetype of the file
+ * @returns The updated S3 key and pre-signed URL
+ */
+    async updateOrgLogoWithFile(
+        orgName: string,
+        logoFile: Buffer,
+        mimeType: string
+    ): Promise<{ logoUrl: string; logoS3Key: string }> {
+        try {
+            // Find the existing organization
+            const existingOrg = await this.findOrgByName(orgName);
+
+            if (!existingOrg) {
+                throw new AppError(`Organization not found`, 404);
+            }
+
+            // Upload the new logo
+            const logoS3Key = await this.s3Service.uploadLogoFromBuffer(
+                logoFile,
+                orgName,
+                mimeType
+            );
+
+            // Get pre-signed URL for the logo
+            const preSignedUrl = await this.s3Service.getLogoPreSignedUrl(logoS3Key);
+
+            return {
+                logoUrl: preSignedUrl,
+                logoS3Key: logoS3Key
+            };
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                `Failed to update organization logo: ${(error as Error).message}`,
+                500
+            );
+        }
+    }
 }
