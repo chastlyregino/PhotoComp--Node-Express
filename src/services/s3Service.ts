@@ -88,10 +88,10 @@ export class S3Service {
                 key: s3Keys[size],
                 contentType,
             }));
-            
+
             // Upload all files to S3
             await this.s3Repository.uploadMultipleFiles(files);
-            
+
             // Return the S3 keys
             return s3Keys;
         } catch (error) {
@@ -123,19 +123,19 @@ export class S3Service {
         try {
             // Get all key values from the s3Keys object
             const keyArray = Object.values(s3Keys);
-            
+
             // Get all pre-signed URLs
             const urlMap = await this.s3Repository.getMultiplePreSignedUrls(keyArray, expiresIn);
-            
+
             // Rebuild the object with the size names and URLs
             const result: PhotoSizes = { original: '' };
-            
+
             for (const [size, key] of Object.entries(s3Keys)) {
                 if (urlMap[key]) {
                     result[size as keyof PhotoSizes] = urlMap[key];
                 }
             }
-            
+
             return result;
         } catch (error) {
             logger.error('Error getting multiple pre-signed URLs:', error);
@@ -172,5 +172,38 @@ export class S3Service {
      */
     async deleteMultipleFiles(s3Keys: string[]): Promise<void> {
         return this.s3Repository.deleteMultipleFiles(s3Keys);
+    }
+    /**
+ * Uploads a logo file directly to S3
+ * @param fileBuffer The buffer containing logo file data
+ * @param organizationName The name of the organization (used for creating the S3 key)
+ * @param mimeType The mimetype of the file
+ * @returns The S3 key where the logo was uploaded
+ */
+    async uploadLogoFromBuffer(
+        fileBuffer: Buffer,
+        organizationName: string,
+        mimeType: string
+    ): Promise<string> {
+        try {
+            // Extract file extension from mimetype
+            const fileExtension = mimeType.split('/')[1] || 'jpg';
+
+            // Sanitize organization name for use in S3 key
+            const sanitizedOrgName = organizationName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+
+            // Generate a unique key for the S3 object
+            const s3Key = `logos/${sanitizedOrgName}/${uuidv4()}.${fileExtension}`;
+
+            // Upload to S3 using the repository
+            return await this.s3Repository.uploadFile(fileBuffer, s3Key, mimeType);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+
+            logger.error('Error uploading logo to S3:', error);
+            throw new AppError(`Failed to upload logo to S3: ${(error as Error).message}`, 500);
+        }
     }
 }
