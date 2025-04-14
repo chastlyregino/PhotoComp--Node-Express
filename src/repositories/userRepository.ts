@@ -7,6 +7,7 @@ import {
     GetCommand,
     BatchWriteCommand,
     DeleteCommand,
+    UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 
 /**
@@ -93,6 +94,46 @@ export class UserRepository {
             return result.Item as User;
         } catch (error: any) {
             throw new AppError(`Failed to get user by ID: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Update a user's password
+     * @param userId The ID of the user
+     * @param newPassword The new hashed password
+     * @returns Boolean indicating success
+     * @throws AppError if operation fails
+     */
+    async updateUserPassword(userId: string, newPassword: string): Promise<boolean> {
+        try {
+            const now = new Date().toISOString();
+            
+            const result = await dynamoDb.send(
+                new UpdateCommand({
+                    TableName: TABLE_NAME,
+                    Key: {
+                        PK: `USER#${userId}`,
+                        SK: 'ENTITY',
+                    },
+                    UpdateExpression: 'SET #password = :password, updatedAt = :updatedAt',
+                    ExpressionAttributeNames: {
+                        '#password': 'password',
+                    },
+                    ExpressionAttributeValues: {
+                        ':password': newPassword,
+                        ':updatedAt': now,
+                    },
+                    ReturnValues: 'UPDATED_NEW',
+                })
+            );
+
+            if (!result.Attributes) {
+                throw new AppError('Failed to update password', 500);
+            }
+
+            return true;
+        } catch (error: any) {
+            throw new AppError(`Failed to update password: ${error.message}`, 500);
         }
     }
 

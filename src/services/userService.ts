@@ -1,5 +1,5 @@
 import { UserRepository } from '../repositories/userRepository';
-import { User, RegisterRequest, createUserFromRegister, AuthRequest } from '../models/User';
+import { User, RegisterRequest, createUserFromRegister, AuthRequest, PasswordChangeRequest } from '../models/User';
 import { AppError } from '../middleware/errorHandler';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -93,6 +93,43 @@ export class UserService {
                 throw error;
             }
             throw new AppError(`Login failed: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
+     * Change user password
+     * @param passwordChangeRequest Request with user ID, current password and new password
+     * @returns Boolean indicating success
+     */
+    async changePassword(passwordChangeRequest: PasswordChangeRequest): Promise<boolean> {
+        const { userId, currentPassword, newPassword } = passwordChangeRequest;
+
+        try {
+            // Get the user to make sure they exist
+            const user = await this.userRepository.getUserById(userId);
+            if (!user) {
+                throw new AppError('User not found', 404);
+            }
+
+            // Verify current password
+            const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+            if (!isCurrentPasswordValid) {
+                throw new AppError('Current password is incorrect', 401);
+            }
+
+            // Hash the new password
+            const salt = await bcrypt.genSalt(10);
+            const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+            // Update the password in the database
+            const updated = await this.userRepository.updateUserPassword(userId, hashedNewPassword);
+
+            return updated;
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to change password: ${(error as Error).message}`, 500);
         }
     }
 
