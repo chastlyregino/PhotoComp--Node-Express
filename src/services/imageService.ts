@@ -19,6 +19,7 @@ interface ResizeOptions {
 /**
  * Service for processing and resizing images
  * Uses the Sharp library to manipulate images efficiently
+ * Implements smart resizing to avoid quality loss from upscaling
  */
 export class ImageService {
     // Define standard sizes for different use cases
@@ -51,29 +52,51 @@ export class ImageService {
 
     /**
      * Resize an image to different dimensions
+     * Only downscales (never upscales) to prevent quality loss
      * @param buffer The original image buffer
      * @param options Resize options
+     * @param originalWidth Original image width to prevent upscaling
      * @returns Promise with the resized image buffer
      */
-    async resizeImage(buffer: Buffer, options: ResizeOptions): Promise<Buffer> {
+    async resizeImage(
+        buffer: Buffer, 
+        options: ResizeOptions, 
+        originalWidth: number
+    ): Promise<Buffer> {
         try {
             const { width, height, fit = 'cover', quality = 85 } = options;
             
+            // Get original image metadata
+            const metadata = await sharp(buffer).metadata();
+            const originalFormat = metadata.format;
+            
+            // Calculate target width - never upscale
+            // If requested width is larger than original, use original width instead
+            const targetWidth = width && width < originalWidth ? width : originalWidth;
+            
+            // Prepare the resize operation
             let resizer = sharp(buffer).resize({
-                width,
-                height,
-                fit,
-                withoutEnlargement: true, // Don't enlarge images smaller than target dimensions
+                width: targetWidth,
+                height, // Height will adapt based on aspect ratio if not specified
+                fit
             });
             
             // Apply appropriate compression based on format
-            const metadata = await sharp(buffer).metadata();
-            
-            if (metadata.format === 'jpeg' || metadata.format === 'jpg') {
+            if (originalFormat === 'jpeg' || originalFormat === 'jpg') {
                 resizer = resizer.jpeg({ quality });
-            } else if (metadata.format === 'png') {
-                resizer = resizer.png({ quality: Math.min(quality, 100) });
-            } else if (metadata.format === 'webp') {
+            } else if (originalFormat === 'png') {
+                // For PNG files, we'll convert to JPEG if no transparency is detected
+                // This can dramatically reduce file size for web display
+                const { hasAlpha } = metadata;
+                
+                if (hasAlpha) {
+                    // Keep as PNG with quality setting if it has transparency
+                    resizer = resizer.png({ quality: Math.min(quality, 100) });
+                } else {
+                    // Convert to JPEG if no transparency - much smaller file size
+                    resizer = resizer.jpeg({ quality });
+                }
+            } else if (originalFormat === 'webp') {
                 resizer = resizer.webp({ quality });
             } else {
                 // Default to jpeg for other formats
@@ -88,7 +111,8 @@ export class ImageService {
     }
 
     /**
-     * Generate multiple sizes of an image
+     * Generate multiple sizes of an image, but only sizes smaller than the original
+     * This prevents quality loss from upscaling
      * @param buffer The original image buffer
      * @param baseKey The base S3 key without extension
      * @param fileExtension The file extension
@@ -99,63 +123,92 @@ export class ImageService {
         baseKey: string,
         fileExtension: string
     ): Promise<{
-        buffers: {
-            original: Buffer;
-            thumbnail: Buffer;
-            medium: Buffer;
-            large: Buffer;
-        };
-        s3Keys: {
-            original: string;
-            thumbnail: string;
-            medium: string;
-            large: string;
-        };
-        dimensions: {
-            original: { width: number; height: number };
-            thumbnail: { width: number; height: number };
-            medium: { width: number; height: number };
-            large: { width: number; height: number };
-        };
+        buffers: Record<string, Buffer>;
+        s3Keys: Record<string, string>;
+        dimensions: Record<string, { width: number; height: number }>;
     }> {
         try {
             // Get original image info
             const imageInfo = await this.getImageInfo(buffer);
+            const originalWidth = imageInfo.width;
             
-            // Define S3 keys for each size
-            const s3Keys = {
-                original: `${baseKey}.${fileExtension}`,
-                thumbnail: `${baseKey}_thumbnail.${fileExtension}`,
-                medium: `${baseKey}_medium.${fileExtension}`,
-                large: `${baseKey}_large.${fileExtension}`,
-            };
+            // Determine final file extension based on format
+            let finalExtension = fileExtension;
+            // If the original image format can be detected, use that for more accurate extension
+            if (imageInfo.format && imageInfo.format !== 'unknown') {
+                finalExtension = imageInfo.format;
+            }
             
-            // Create thumbnail
-            const thumbnailBuffer = await this.resizeImage(buffer, ImageService.SIZES.THUMBNAIL);
-            const thumbnailInfo = await this.getImageInfo(thumbnailBuffer);
+            // Initialize output containers
+            const buffers: Record<string, Buffer> = {};
+            const s3Keys: Record<string, string> = {};
+            const dimensions: Record<string, { width: number; height: number }> = {};
             
-            // Create medium size
-            const mediumBuffer = await this.resizeImage(buffer, ImageService.SIZES.MEDIUM);
-            const mediumInfo = await this.getImageInfo(mediumBuffer);
+            // Always include the original image
+            buffers['original'] = buffer;
+            s3Keys['original'] = `${baseKey}.${finalExtension}`;
+            dimensions['original'] = { width: imageInfo.width, height: imageInfo.height };
             
-            // Create large size
-            const largeBuffer = await this.resizeImage(buffer, ImageService.SIZES.LARGE);
-            const largeInfo = await this.getImageInfo(largeBuffer);
+            logger.info(`Original image dimensions: ${imageInfo.width}x${imageInfo.height}, ${imageInfo.size} bytes`);
+            
+            // Only create thumbnail if original is larger than thumbnail size
+            if (originalWidth > ImageService.SIZES.THUMBNAIL.width) {
+                const thumbnailBuffer = await this.resizeImage(
+                    buffer, 
+                    ImageService.SIZES.THUMBNAIL, 
+                    originalWidth
+                );
+                const thumbnailInfo = await this.getImageInfo(thumbnailBuffer);
+                
+                buffers['thumbnail'] = thumbnailBuffer;
+                s3Keys['thumbnail'] = `${baseKey}_thumbnail.${finalExtension}`;
+                dimensions['thumbnail'] = { width: thumbnailInfo.width, height: thumbnailInfo.height };
+                
+                logger.info(`Thumbnail dimensions: ${thumbnailInfo.width}x${thumbnailInfo.height}, ${thumbnailInfo.size} bytes`);
+            } else {
+                logger.info(`Original image (${originalWidth}px) smaller than thumbnail size (${ImageService.SIZES.THUMBNAIL.width}px) - skipping thumbnail`);
+            }
+            
+            // Only create medium size if original is larger than medium size
+            if (originalWidth > ImageService.SIZES.MEDIUM.width) {
+                const mediumBuffer = await this.resizeImage(
+                    buffer, 
+                    ImageService.SIZES.MEDIUM, 
+                    originalWidth
+                );
+                const mediumInfo = await this.getImageInfo(mediumBuffer);
+                
+                buffers['medium'] = mediumBuffer;
+                s3Keys['medium'] = `${baseKey}_medium.${finalExtension}`;
+                dimensions['medium'] = { width: mediumInfo.width, height: mediumInfo.height };
+                
+                logger.info(`Medium dimensions: ${mediumInfo.width}x${mediumInfo.height}, ${mediumInfo.size} bytes`);
+            } else {
+                logger.info(`Original image (${originalWidth}px) smaller than medium size (${ImageService.SIZES.MEDIUM.width}px) - skipping medium`);
+            }
+            
+            // Only create large size if original is larger than large size
+            if (originalWidth > ImageService.SIZES.LARGE.width) {
+                const largeBuffer = await this.resizeImage(
+                    buffer, 
+                    ImageService.SIZES.LARGE, 
+                    originalWidth
+                );
+                const largeInfo = await this.getImageInfo(largeBuffer);
+                
+                buffers['large'] = largeBuffer;
+                s3Keys['large'] = `${baseKey}_large.${finalExtension}`;
+                dimensions['large'] = { width: largeInfo.width, height: largeInfo.height };
+                
+                logger.info(`Large dimensions: ${largeInfo.width}x${largeInfo.height}, ${largeInfo.size} bytes`);
+            } else {
+                logger.info(`Original image (${originalWidth}px) smaller than large size (${ImageService.SIZES.LARGE.width}px) - skipping large`);
+            }
             
             return {
-                buffers: {
-                    original: buffer,
-                    thumbnail: thumbnailBuffer,
-                    medium: mediumBuffer,
-                    large: largeBuffer,
-                },
+                buffers,
                 s3Keys,
-                dimensions: {
-                    original: { width: imageInfo.width, height: imageInfo.height },
-                    thumbnail: { width: thumbnailInfo.width, height: thumbnailInfo.height },
-                    medium: { width: mediumInfo.width, height: mediumInfo.height },
-                    large: { width: largeInfo.width, height: largeInfo.height },
-                }
+                dimensions
             };
         } catch (error) {
             logger.error('Error generating image sizes:', error);
