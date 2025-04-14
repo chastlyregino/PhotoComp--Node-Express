@@ -1,5 +1,4 @@
-
-## Authentication Requirements
+# Authentication Requirements
 Most API endpoints require authentication using a JWT token passed in the request header:
 
 ```
@@ -97,7 +96,7 @@ This endpoint allows users to create a new account. All new users are registered
 }
 ```
 
-### 1.2 Login
+### Login
 
 `POST /api/auth/login`
 
@@ -168,6 +167,148 @@ This endpoint authenticates a user and returns a JWT token.
     "message": "Login failed"
 }
 ```
+
+### Change Password
+
+`PATCH /api/auth/password`
+
+This endpoint allows authenticated users to change their password.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Content-Type | application/json | Yes |
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Request Body
+
+```json
+{
+    "currentPassword": "OldPassword123",
+    "newPassword": "NewPassword456"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| currentPassword | string | Yes | User's current password |
+| newPassword | string | Yes | New password (minimum 8 characters) |
+
+#### Response
+
+**200 OK**
+```json
+{
+    "status": "success",
+    "message": "Password changed successfully"
+}
+```
+
+**400 Bad Request**
+```json
+{
+    "status": "error",
+    "message": "Current password and new password are required"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "New password must be at least 8 characters long"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "New password must be different from current password"
+}
+```
+
+**401 Unauthorized**
+```json
+{
+    "status": "error",
+    "message": "Current password is incorrect"
+}
+```
+```json
+{
+    "status": "error",
+    "message": "Authentication required"
+}
+```
+
+**404 Not Found**
+```json
+{
+    "status": "error",
+    "message": "User not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+    "status": "error",
+    "message": "Failed to change password"
+}
+```
+
+### Delete User Account
+
+`DELETE /api/auth/users/:id`
+
+This endpoint allows users to delete their own account.
+
+#### Request Headers
+
+| Key | Value | Required |
+|-----|-------|----------|
+| Authorization | Bearer your-jwt-token | Yes |
+
+#### Response
+
+**200 OK**
+```json
+{
+    "status": "success",
+    "message": "User deleted successfully"
+}
+```
+
+**401 Unauthorized**
+```json
+{
+    "status": "error",
+    "message": "Authentication required"
+}
+```
+
+**403 Forbidden**
+```json
+{
+    "status": "error",
+    "message": "Not authorized to delete this user"
+}
+```
+
+**404 Not Found**
+```json
+{
+    "status": "error",
+    "message": "User not found"
+}
+```
+
+**500 Server Error**
+```json
+{
+    "status": "error",
+    "message": "Failed to delete user"
+}
+```
+
 ## JWT Token
 
 The JWT token contains the following payload:
@@ -218,6 +359,5 @@ The JWT token contains the following payload:
 - Authentication is required for all endpoints except registration and login
 - Email addresses must be properly formatted
 - Passwords must be at least 8 characters long
-- logoUrl must be a valid URL can perform this action. Please talk to your Admin for more information"
-`
-
+- New passwords must be different from current passwords when changing
+- Users can only delete their own accounts
