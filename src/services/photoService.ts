@@ -1,29 +1,33 @@
 import { PhotoRepository } from '../repositories/photoRepository';
 import { S3Service } from './s3Service';
-import { Photo, createPhoto } from '../models/Photo';
+import { Photo, createPhoto, PhotoSizes } from '../models/Photo';
 import { AppError } from '../middleware/errorHandler';
 import { EventService } from './eventService';
 import { logger } from '../util/logger';
 import { EventRepository } from '../repositories/eventRepository';
 import { Event as EventModel } from '../models/Event';
 import { OrgService } from './orgService';
+import { ImageService } from './imageService';
 
 export class PhotoService {
     private photoRepository: PhotoRepository;
     private s3Service: S3Service;
     private eventService: EventService;
     private eventRepository: EventRepository;
+    private imageService: ImageService;
 
     constructor(
         photoRepository: PhotoRepository = new PhotoRepository(),
         s3Service: S3Service = new S3Service(),
         eventService: EventService = new EventService(),
-        eventRepository: EventRepository = new EventRepository()
+        eventRepository: EventRepository = new EventRepository(),
+        imageService: ImageService = new ImageService()
     ) {
         this.photoRepository = photoRepository;
         this.s3Service = s3Service;
         this.eventService = eventService;
         this.eventRepository = eventRepository;
+        this.imageService = imageService;
     }
 
     /**
@@ -57,22 +61,47 @@ export class PhotoService {
                 throw new AppError(`Event not found: ${eventId}`, 404);
             }
 
-            // Create the S3 key using a structured pattern
+            // Create the base S3 key using a structured pattern
             const fileExtension = mimeType.split('/')[1] || 'jpg';
-            const s3Key = `photos/${eventId}/${photoId}.${fileExtension}`;
+            const baseS3Key = `photos/${eventId}/${photoId}`;
 
-            // Upload the file to S3
-            await this.s3Service.uploadFileBuffer(fileBuffer, s3Key, mimeType);
+            // Get original image info
+            const imageInfo = await this.imageService.getImageInfo(fileBuffer);
 
-            // Add S3 key to metadata
-            const updatedMetadata = metadata || {};
-            updatedMetadata.s3Key = s3Key;
+            // Generate different sizes of the image
+            const {
+                buffers,
+                s3Keys,
+                dimensions
+            } = await this.imageService.generateImageSizes(fileBuffer, baseS3Key, fileExtension);
 
-            // Generate a pre-signed URL for accessing the photo
-            const photoUrl = await this.s3Service.getLogoPreSignedUrl(s3Key);
+            // Upload all sizes to S3
+            await this.s3Service.uploadResizedImages(buffers, s3Keys, mimeType);
+
+            // Generate pre-signed URLs for all sizes
+            const urls = await this.s3Service.getMultiplePreSignedUrls(s3Keys);
+
+            // Add S3 keys and dimensions to metadata
+            const updatedMetadata = {
+                ...(metadata || {}),
+                width: imageInfo.width,
+                height: imageInfo.height,
+                size: imageInfo.size,
+                mimeType: mimeType,
+                s3Key: s3Keys.original, // Keep original s3Key for backward compatibility
+                s3Keys: s3Keys // Store all S3 keys
+            };
 
             // Create and save the photo record
-            const photo = createPhoto(photoId, eventId, photoUrl, uploadedBy, updatedMetadata);
+            const photo = createPhoto(
+                photoId, 
+                eventId, 
+                urls.original, // Keep original URL for backward compatibility
+                uploadedBy,
+                urls, // Add URLs for all sizes
+                updatedMetadata
+            );
+
             await this.photoRepository.createPhoto(photo);
 
             return photo;
@@ -111,13 +140,17 @@ export class PhotoService {
                 // Refresh pre-signed URLs for all photos
                 for (const photo of photos) {
                     try {
-                        if (photo?.metadata?.s3Key) {
-                            // If we have the S3 key stored directly, use it
-                            photo.url = await this.s3Service.getLogoPreSignedUrl(
-                                photo.metadata.s3Key
-                            );
+                        // Check if the photo has the new urls structure
+                        if (photo.metadata?.s3Keys) {
+                            // Generate fresh pre-signed URLs for all sizes
+                            photo.urls = await this.s3Service.getMultiplePreSignedUrls(photo.metadata.s3Keys);
+                            // Update the main URL to be the original for backward compatibility
+                            photo.url = photo.urls.original;
+                        } else if (photo?.metadata?.s3Key) {
+                            // Legacy photo - just update the main URL
+                            photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
                         } else if (photo?.url) {
-                            // Otherwise, try to extract it from the URL
+                            // Very old format - try to extract the key from the URL
                             try {
                                 const urlParts = new URL(photo.url);
                                 const s3Key = urlParts.pathname.substring(1); // Remove leading slash
@@ -149,7 +182,7 @@ export class PhotoService {
     }
 
     /**
-     * Delete a photo
+     * Delete a photo and all its sizes
      * @param photoId The ID of the photo to delete
      * @param eventId The event ID the photo belongs to (for validation)
      */
@@ -166,34 +199,44 @@ export class PhotoService {
                 throw new AppError('Photo does not belong to the specified event', 400);
             }
 
-            // Delete the photo from the database
+            // Collect all S3 keys that need to be deleted
+            const s3KeysToDelete: string[] = [];
+
+            // Add all sizes from the new format if available
+            if (photo.metadata?.s3Keys) {
+                Object.values(photo.metadata.s3Keys).forEach(key => {
+                    if (key) s3KeysToDelete.push(key);
+                });
+            } 
+            // Add the legacy S3 key if available
+            else if (photo.metadata?.s3Key) {
+                s3KeysToDelete.push(photo.metadata.s3Key);
+            }
+            // Try to extract the key from the URL as a last resort
+            else if (photo.url) {
+                try {
+                    const urlParts = new URL(photo.url);
+                    const s3Key = urlParts.pathname.substring(1); // Remove leading slash
+                    if (s3Key) s3KeysToDelete.push(s3Key);
+                } catch (error) {
+                    logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                }
+            }
+
+            // Delete the photo from the database first
             await this.photoRepository.deletePhoto(photoId);
 
-            // If we have the S3 key stored directly, use it
-            // Otherwise, extract it from the URL
-            const s3Key =
-                photo.metadata?.s3Key ||
-                (() => {
-                    try {
-                        const urlParts = new URL(photo.url);
-                        return urlParts.pathname.substring(1); // Remove leading slash
-                    } catch (error) {
-                        logger.error(`Error parsing photo URL: ${photo.url}`, error);
-                        return null;
-                    }
-                })();
-
-            if (s3Key) {
-                // Delete the file from S3
+            // Delete all the files from S3
+            if (s3KeysToDelete.length > 0) {
                 try {
-                    await this.s3Service.deleteFile(s3Key);
-                    logger.info(`Deleted photo file from S3: ${s3Key}`);
+                    await this.s3Service.deleteMultipleFiles(s3KeysToDelete);
+                    logger.info(`Deleted photo files from S3: ${s3KeysToDelete.join(', ')}`);
                 } catch (error) {
-                    logger.error(`Error deleting photo file from S3: ${error}`);
-                    // Continue with database deletion even if S3 deletion fails
+                    logger.error(`Error deleting photo files from S3: ${error}`);
+                    // Continue even if S3 deletion fails, as the database record is already deleted
                 }
             } else {
-                logger.warn(`Could not determine S3 key for photo: ${photoId}`);
+                logger.warn(`Could not determine S3 keys for photo: ${photoId}`);
             }
         } catch (error) {
             logger.error('Error deleting photo:', error);
@@ -225,9 +268,14 @@ export class PhotoService {
      * Gets a download URL for a specific photo
      * @param photoId The ID of the photo to download
      * @param eventId The event ID the photo belongs to (for validation)
+     * @param size The size of the photo to download (default: 'original')
      * @returns A pre-signed download URL for the photo
      */
-    async getPhotoDownloadUrl(photoId: string, eventId: string): Promise<string> {
+    async getPhotoDownloadUrl(
+        photoId: string, 
+        eventId: string, 
+        size: 'original' | 'thumbnail' | 'medium' | 'large' = 'original'
+    ): Promise<string> {
         try {
             // Get the photo to verify it exists and belongs to the right event
             const photo = await this.photoRepository.getPhotoById(photoId);
@@ -240,25 +288,33 @@ export class PhotoService {
                 throw new AppError('Photo does not belong to the specified event', 400);
             }
 
-            // Get the S3 key from metadata or extract it from the URL
-            const s3Key =
-                photo.metadata?.s3Key ||
-                (() => {
-                    try {
-                        const urlParts = new URL(photo.url);
-                        return urlParts.pathname.substring(1); // Remove leading slash
-                    } catch (error) {
-                        logger.error(`Error parsing photo URL: ${photo.url}`, error);
-                        throw new AppError('Could not determine photo storage location', 500);
-                    }
-                })();
+            // Get the appropriate S3 key based on the requested size
+            let s3Key: string | undefined;
+            
+            if (photo.metadata?.s3Keys && photo.metadata.s3Keys[size]) {
+                // Use the requested size if available
+                s3Key = photo.metadata.s3Keys[size];
+            } else if (photo.metadata?.s3Key) {
+                // Fall back to the original key for legacy photos
+                s3Key = photo.metadata.s3Key;
+            } else if (photo.url) {
+                // Try to extract from URL as last resort
+                try {
+                    const urlParts = new URL(photo.url);
+                    s3Key = urlParts.pathname.substring(1); // Remove leading slash
+                } catch (error) {
+                    logger.error(`Error parsing photo URL: ${photo.url}`, error);
+                    throw new AppError('Could not determine photo storage location', 500);
+                }
+            }
 
             if (!s3Key) {
                 throw new AppError('Photo storage information missing', 500);
             }
 
             // Generate a filename for the download
-            const filename = `photo-${photoId}.jpg`;
+            const sizeSuffix = size !== 'original' ? `_${size}` : '';
+            const filename = `photo-${photoId}${sizeSuffix}.jpg`;
 
             // Get a download URL with content-disposition header
             return await this.s3Service.getDownloadUrl(s3Key, filename);
@@ -322,7 +378,14 @@ export class PhotoService {
             // Refresh pre-signed URLs for all photos
             for (const photo of allPhotos) {
                 try {
-                    if (photo?.metadata?.s3Key) {
+                    // Check if the photo has the new urls structure
+                    if (photo.metadata?.s3Keys) {
+                        // Generate fresh pre-signed URLs for all sizes
+                        photo.urls = await this.s3Service.getMultiplePreSignedUrls(photo.metadata.s3Keys);
+                        // Update the main URL to be the original for backward compatibility
+                        photo.url = photo.urls.original;
+                    } else if (photo?.metadata?.s3Key) {
+                        // Legacy photo - just update the main URL
                         photo.url = await this.s3Service.getLogoPreSignedUrl(photo.metadata.s3Key);
                     }
                 } catch (error) {

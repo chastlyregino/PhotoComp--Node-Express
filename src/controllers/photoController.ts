@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { PhotoService } from '../services/photoService';
 import { PhotoUploadRequest } from '../models/Photo';
-import { checkOrgAdmin } from '../middleware/OrgMiddleware';
+import { checkOrgAdmin, checkOrgMember } from '../middleware/OrgMiddleware';
 import { handleUpload } from '../middleware/uploadMiddleware';
 import { AppError } from '../middleware/errorHandler';
 import { v4 as uuidv4 } from 'uuid';
@@ -92,6 +92,13 @@ photoRouter.get('/:photoId/download', async (req: Request, res: Response, next: 
         const eventId = req.params.eventId;
         const photoId = req.params.photoId;
         const user = res.locals.user.info;
+        
+        // Optional size parameter (defaults to 'original' if not provided)
+        const size = req.query.size as 'original' | 'thumbnail' | 'medium' | 'large' || 'original';
+        
+        if (!['original', 'thumbnail', 'medium', 'large'].includes(size)) {
+            throw new AppError('Invalid size parameter. Must be one of: original, thumbnail, medium, large', 400);
+        }
 
         // Check if user has access to the event (is a member or admin)
         const canAccess = await photoService.validateUserEventAccess(eventId, user.id);
@@ -100,13 +107,14 @@ photoRouter.get('/:photoId/download', async (req: Request, res: Response, next: 
             throw new AppError('You do not have access to photos from this event', 403);
         }
 
-        // Generate download URL
-        const downloadUrl = await photoService.getPhotoDownloadUrl(photoId, eventId);
+        // Generate download URL for the requested size
+        const downloadUrl = await photoService.getPhotoDownloadUrl(photoId, eventId, size);
 
         return res.status(200).json({
             status: 'success',
             data: {
                 downloadUrl,
+                size,
             },
         });
     } catch (error) {

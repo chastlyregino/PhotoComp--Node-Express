@@ -31,6 +31,33 @@ export class S3Repository {
     }
 
     /**
+     * Uploads multiple files to S3
+     * @param files Object containing buffers with their corresponding keys and content types
+     * @returns Object with the uploaded keys
+     */
+    async uploadMultipleFiles(
+        files: Array<{
+            buffer: Buffer;
+            key: string;
+            contentType: string;
+        }>
+    ): Promise<string[]> {
+        try {
+            const uploadPromises = files.map(file =>
+                this.uploadFile(file.buffer, file.key, file.contentType)
+            );
+            
+            const results = await Promise.all(uploadPromises);
+            logger.info(`Uploaded ${results.length} files to S3`);
+            
+            return results;
+        } catch (error) {
+            logger.error('Error uploading multiple files to S3:', error);
+            throw new AppError(`Failed to upload multiple files to S3: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
      * Generates a pre-signed URL for accessing an S3 object
      * @param key The S3 key of the object
      * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
@@ -49,6 +76,40 @@ export class S3Repository {
             logger.error('Error generating pre-signed URL:', error);
             throw new AppError(
                 `Failed to generate pre-signed URL: ${(error as Error).message}`,
+                500
+            );
+        }
+    }
+
+    /**
+     * Generates multiple pre-signed URLs for accessing S3 objects
+     * @param keys Array of S3 keys
+     * @param expiresIn The expiration time in seconds (default: 3600 = 1 hour)
+     * @returns Object mapping keys to their pre-signed URLs
+     */
+    async getMultiplePreSignedUrls(
+        keys: string[],
+        expiresIn: number = 3600
+    ): Promise<Record<string, string>> {
+        try {
+            const urlPromises = keys.map(async key => ({
+                key,
+                url: await this.getPreSignedUrl(key, expiresIn),
+            }));
+            
+            const results = await Promise.all(urlPromises);
+            
+            // Convert array of results to object mapping
+            const urlMap: Record<string, string> = {};
+            for (const result of results) {
+                urlMap[result.key] = result.url;
+            }
+            
+            return urlMap;
+        } catch (error) {
+            logger.error('Error generating multiple pre-signed URLs:', error);
+            throw new AppError(
+                `Failed to generate multiple pre-signed URLs: ${(error as Error).message}`,
                 500
             );
         }
@@ -100,6 +161,24 @@ export class S3Repository {
         } catch (error) {
             logger.error('Error deleting file from S3:', error);
             throw new AppError(`Failed to delete file from S3: ${(error as Error).message}`, 500);
+        }
+    }
+
+    /**
+     * Deletes multiple files from S3
+     * @param keys Array of S3 keys to delete
+     */
+    async deleteMultipleFiles(keys: string[]): Promise<void> {
+        try {
+            const deletePromises = keys.map(key => this.deleteFile(key));
+            await Promise.all(deletePromises);
+            logger.info(`Deleted ${keys.length} files from S3`);
+        } catch (error) {
+            logger.error('Error deleting multiple files from S3:', error);
+            throw new AppError(
+                `Failed to delete multiple files from S3: ${(error as Error).message}`,
+                500
+            );
         }
     }
 }
