@@ -193,4 +193,56 @@ The system uses a single-table design in DynamoDB with the following structure:
 | GET | /organizations/:id/events/:eventId/photos/:photoId/download?size=original | Get a download URL for a specific photo size |
 | GET | /organizations/:id/photos?size=medium | Get all photos across all organization events with preferred size |
 
----
+--- 
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| DELETE | /api/auth/users/:userId | Delete the user account |
+| GET | /users/:userId/events | Get all the user's events  |
+| GET | /users/:userId/tagged-photos | Get all photos a user is tagged in|
+
+- [ ] TODO: GET `/users/:userId` - Get all the user's information
+- [ ] TODO: PUT `/users/:userId` - Update the user's information 
+- [ ] TODO: GET `/users/:userId/organizations` - Get all the user's organizations 
+
+--- 
+
+### Organizations Events Photos Tags
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged users for photo|
+| POST | /organizations/:id/events/:eventId/photos/:photoId/tags | Add multiple users to a photo|
+| DELETE | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Remove a tagged user from photo|
+
+--- 
+
+- [ ] TODO: Implement following endpoints 
+
+### Organizations Events Member Attendance
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /organizations/:id/events/:eventId/attendants | Get all events attendants |
+| DELETE | /organizations/:id/events/:eventId/attendants/:userId | Remove an event attendant|
+
+
+### Organizations Events Photos Tags
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /organizations/:id/events/:eventId/photos/:photoId/tags | Get all tagged users for photo|
+| POST | /organizations/:id/events/:eventId/photos/:photoId/tags | Add multiple users to a photo|
+| DELETE | /organizations/:id/events/:eventId/photos/:photoId/tags/:userId | Remove a tagged user from photo|
+| GET | /users/:userId/tagged-photos | Get all photos a user is tagged in|
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /users/:userId | Get all the user's information|
+| PUT | /users/:userId | Update the user's information |
+| DELETE | /users/:userId | Delete the user account |
+| GET | /users/:userId/organizations | Get all the user's organizations |
+| GET | /users/:userId/events | Get all the user's events  |
+| GET | /users/:userId/photos | Get all the user's photos  |
+
+
+> For more details please check `docs/`
