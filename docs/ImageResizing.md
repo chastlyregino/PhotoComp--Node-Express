@@ -2,11 +2,20 @@
 
 ## Overview
 
-The PhotoComp API automatically generates multiple sizes of each uploaded photo to optimize display in different contexts and prevent pixelation when smaller images are displayed in larger containers. This feature ensures that photos always look their best at any display size while minimizing bandwidth usage.
+The PhotoComp API automatically generates multiple sizes of each uploaded photo to optimize display in different contexts and improve performance. This feature ensures that photos always look their best at any display size while minimizing bandwidth usage and load times.
+
+## How It Works
+
+When a photo is uploaded, the ImageService:
+1. Analyzes the original image to get dimensions and format information
+2. Creates multiple size variants based on the original image
+3. Only creates smaller sizes (never upscales) to maintain quality
+4. Stores all sizes in S3 with appropriate naming
+5. Generates pre-signed URLs for all sizes
 
 ## Image Sizes
 
-When a photo is uploaded, the system automatically creates the following sizes:
+The system creates the following size variants:
 
 | Size | Width | Quality | Use Case |
 |------|-------|---------|----------|
@@ -15,11 +24,19 @@ When a photo is uploaded, the system automatically creates the following sizes:
 | large | 1600px | 90% | Full-screen views, high-quality displays |
 | original | Unchanged | 100% | Maximum quality, downloads, archival |
 
-All resized images maintain their original aspect ratio and are never upscaled beyond their original dimensions.
+All resized images maintain their original aspect ratio. **Important**: Images are never upscaled beyond their original dimensions - if an original image is smaller than a defined size, that size variant is not created.
+
+## Smart Format Handling
+
+The system includes intelligent format handling:
+- JPEGs are optimized with appropriate quality settings
+- PNGs with transparency are preserved as PNG
+- PNGs without transparency may be converted to JPEG for better compression
+- Original format information is preserved for accurate file extensions
 
 ## Photo Model
 
-The photo model has been extended to include URLs for all available sizes:
+The Photo model includes URLs and metadata for all available sizes:
 
 ```json
 {
@@ -37,7 +54,15 @@ The photo model has been extended to include URLs for all available sizes:
     "description": "Team building activities",
     "width": 3000,
     "height": 2000,
-    "size": 5242880
+    "size": 5242880,
+    "mimeType": "image/jpeg",
+    "s3Key": "photos/event-id-456/photo-id-123.jpg",
+    "s3Keys": {
+      "original": "photos/event-id-456/photo-id-123.jpg",
+      "thumbnail": "photos/event-id-456/photo-id-123_thumbnail.jpg",
+      "medium": "photos/event-id-456/photo-id-123_medium.jpg",
+      "large": "photos/event-id-456/photo-id-123_large.jpg"
+    }
   },
   "createdAt": "2025-04-05T14:30:00Z",
   "uploadedBy": "user-id-789"
@@ -120,16 +145,54 @@ When downloading a photo, you can specify which size you want to download.
 
 ## Backward Compatibility
 
-The system handles both new multi-size images and legacy single-size images transparently:
+The system maintains backward compatibility with older photos:
 
-- For legacy photos, all operations will use the original single URL
-- For new photos, the system will provide all available sizes
-- If a requested size isn't available, the system falls back to the original
+- For legacy photos with only a single URL, that URL is used for all size requests
+- For photos with the new multi-size structure, all available sizes are provided
+- If a requested size isn't available (e.g., original image was smaller), the system automatically falls back to the appropriate size
 
-## Implementation Notes
+## Implementation Details
 
-- Images are resized during upload using the Sharp library
-- Original aspect ratio is always preserved
-- Images are never upscaled to prevent quality loss
-- All sizes use appropriate compression to minimize file size while maintaining quality
-- Metadata includes original dimensions for layout planning
+### ImageService Methods
+
+The ImageService class provides several methods for handling image processing:
+
+- `getImageInfo(buffer)`: Analyzes an image buffer to extract format, dimensions, and size information
+- `resizeImage(buffer, options, originalWidth)`: Creates resized versions with specific dimensions and quality settings
+- `generateImageSizes(buffer, baseKey, fileExtension)`: Processes an image into multiple sizes and prepares S3 keys
+
+### Quality Settings and Format Decisions
+
+The service intelligently handles different image formats:
+
+- JPEG files maintain their format with quality settings based on the size variant
+- PNG files with transparency keep their format to preserve transparency
+- PNG files without transparency may be converted to JPEG for better compression
+- Format detection is automatic based on analyzing the uploaded image
+
+### Size Generation Logic
+
+The service only generates size variants that are smaller than the original:
+
+```javascript
+// Example size generation logic
+if (originalWidth > ImageService.SIZES.THUMBNAIL.width) {
+  // Generate thumbnail size
+} else {
+  // Skip thumbnail generation - original is already small enough
+}
+
+// Similar logic for medium and large sizes
+```
+
+This ensures optimal quality and prevents unnecessary processing or storage for smaller images.
+
+### Error Handling
+
+The service includes robust error handling for:
+- Invalid image formats
+- Processing failures
+- S3 storage issues
+- Metadata extraction problems
+
+All errors are logged and propagated appropriately to provide clear feedback to users.
