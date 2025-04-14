@@ -194,8 +194,9 @@ describe(`Negative org tests`, () => {
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
 
         await expect(orgServiceWithMock.createOrg(org, userId)).rejects.toThrow(
-            `Name and logoUrl are required`
+            `Organization name is required`
         );
+        
 
         // S3 upload should never be called since we fail the name validation first
         expect(s3Service.uploadLogoFromUrl).not.toHaveBeenCalled();
