@@ -16,7 +16,18 @@ export const guestRouter = Router();
  * */
 guestRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const lastEvaluatedKey = req.query.lastEvaluatedKey || undefined;
+        let lastEvaluatedKey = undefined;
+
+        if (req.query.lastEvaluatedKey && req.query.lastEvaluatedKey !== 'undefined') {
+            try {
+                const decodedKey = decodeURIComponent(req.query.lastEvaluatedKey as string);
+                if (decodedKey) {
+                    lastEvaluatedKey = JSON.parse(decodedKey);
+                }
+            } catch (parseError) {
+                console.error("Error parsing lastEvaluatedKey:", parseError);
+            }
+        }
 
         const { orgs, newLastEvaluatedKey } = await orgService.findAllPublicOrgs(
             lastEvaluatedKey as Record<string, any>

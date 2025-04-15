@@ -159,48 +159,39 @@ export class OrgRepository {
     }
 
     async findAllPublicOrgs(
-        lastEvaluatedKey: Record<string, any> | undefined
-    ): Promise<{ orgs: Organization[]; newLastEvaluatedKey: Record<string, any> | null }> {
-        try {
-            let publicOrgs: Organization[] = [];
-            let newlastEvaluatedKey: Record<string, any> | undefined = lastEvaluatedKey;
+    lastEvaluatedKey?: Record<string, any>
+): Promise<{ orgs: Organization[]; newLastEvaluatedKey: Record<string, any> | null }> {
+    try {
+        const queryParams: any = {
+            TableName: TABLE_NAME,
+            IndexName: 'GSI1PK-GSI1SK-INDEX',
+            KeyConditionExpression: 'GSI1PK = :orgKey and begins_with(GSI1SK, :orgName)',
+            ExpressionAttributeValues: {
+                ':orgKey': `ORG`,
+                ':orgName': `ORG#`,
+            },
+            Limit: 9,
+        };
 
-            // Keep querying until we have at least 9 public organizations or no more data
-            while (publicOrgs.length < 9) {
-                const result: any = await dynamoDb.send(
-                    new QueryCommand({
-                        TableName: TABLE_NAME,
-                        IndexName: 'GSI1PK-GSI1SK-INDEX',
-                        KeyConditionExpression:
-                            'GSI1PK = :orgKey and begins_with(GSI1SK, :orgName)',
-                        ExpressionAttributeValues: {
-                            ':orgKey': `ORG`,
-                            ':orgName': `ORG#`,
-                        },
-                        Limit: 15,
-                        ExclusiveStartKey: newlastEvaluatedKey || undefined,
-                    })
-                );
-
-                // Append only public organizations
-                const fetchedOrgs = result.Items as Organization[];
-                publicOrgs.push(...fetchedOrgs.filter(org => org.isPublic));
-
-                // no more data to paginate
-                if (!result.LastEvaluatedKey) break;
-
-                newlastEvaluatedKey = result.LastEvaluatedKey;
-            }
-
-            // Return exactly 9 public organizations (or less if there aren't enough)
-            return {
-                orgs: publicOrgs.slice(0, 9),
-                newLastEvaluatedKey: newlastEvaluatedKey || null,
-            };
-        } catch (error: any) {
-            throw new AppError(`Failed to find organizations: ${error.message}`, 500);
+        if (lastEvaluatedKey && 
+            lastEvaluatedKey.PK && 
+            lastEvaluatedKey.SK && 
+            lastEvaluatedKey.GSI1PK && 
+            lastEvaluatedKey.GSI1SK) {
+            queryParams.ExclusiveStartKey = lastEvaluatedKey;
         }
+
+        const result: any = await dynamoDb.send(new QueryCommand(queryParams));
+
+        return {
+            orgs: result.Items as Organization[],
+            newLastEvaluatedKey: result.LastEvaluatedKey || null
+        };
+    } catch (error: any) {
+        console.error("findAllPublicOrgs error:", error);
+        throw new AppError(`Failed to find organizations: ${error.message}`, 500);
     }
+}
 
     /**
      * Get all members of an organization
