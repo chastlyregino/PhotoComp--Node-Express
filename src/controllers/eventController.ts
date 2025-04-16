@@ -8,7 +8,7 @@ import { UserOrganizationRelationship } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 import { WeatherService } from '../services/weatherService';
 import { GeocodingService } from '../services/geocodingService';
-import { TagService } from '@/services/tagService';
+import { TagService } from '../services/tagService';
 
 const eventService = new EventService();
 const orgService = new OrgService();
