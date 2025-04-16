@@ -107,7 +107,7 @@ export class TagService {
      * @param eventId The event ID
      * @returns Array of user IDs
      */
-    private async getEventAttendees(eventId: string): Promise<string[]> {
+    async getEventAttendees(eventId: string): Promise<string[]> {
         try {
             // This method would need to be implemented in the EventRepository
             // For now, we'll assume it exists and returns user IDs

@@ -8,11 +8,13 @@ import { UserOrganizationRelationship } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 import { WeatherService } from '../services/weatherService';
 import { GeocodingService } from '../services/geocodingService';
+import { TagService } from '@/services/tagService';
 
 const eventService = new EventService();
 const orgService = new OrgService();
 const weatherService = new WeatherService();
 const geocodingService = new GeocodingService();
+const tagService = new TagService();
 
 export const eventRouter = Router({ mergeParams: true });
 
@@ -174,6 +176,27 @@ eventRouter.delete('/:eid', async (req: Request, res: Response, next: NextFuncti
         return res.status(201).json({
             status: 'success',
             message: 'Attendance removed successfully',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/*
+ * Get all attendees of an event
+ * GET /events/:eid
+ */
+eventRouter.get('/:eid', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eventId: string = req.params.eid;
+
+        const attendees = await tagService.getEventAttendees(eventId);
+
+        return res.status(201).json({
+            status: 'success',
+            data: {
+                attendees
+            },
         });
     } catch (error) {
         next(error);
