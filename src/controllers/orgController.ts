@@ -95,6 +95,7 @@ orgRouter.post(`/`,
 /*
  * Update an organization's information
  * PATCH /organizations
+ * remove admin
  * */
 orgRouter.patch(`/:id`,
     handleLogoUpload('logo'),  // Add middleware for logo file upload (optional)
