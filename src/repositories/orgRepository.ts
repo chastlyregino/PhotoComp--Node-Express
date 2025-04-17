@@ -16,8 +16,16 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { AppError } from '../middleware/errorHandler';
 import { UserRole } from '../models/User';
+import { S3Service } from '../services/s3Service';
+import { logger } from '../util/logger';
 
 export class OrgRepository {
+    private s3Service: S3Service;
+
+    constructor() {
+        this.s3Service = new S3Service();
+    }
+
     async createOrg(org: Organization): Promise<OrganizationCreateRequest> {
         try {
             await dynamoDb.send(
@@ -70,7 +78,19 @@ export class OrgRepository {
                 return null;
             }
 
-            return result.Item as Organization;
+            // Refresh the presigned URL for the logo if an S3 key exists
+            const org = result.Item as Organization;
+            if (org.logoS3Key) {
+                try {
+                    org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                    logger.debug(`Refreshed logo URL for organization ${org.name}`);
+                } catch (error) {
+                    logger.error(`Error refreshing logo URL for org ${org.name}:`, error);
+                    // If we can't generate a new URL, at least keep the existing one
+                }
+            }
+
+            return org;
         } catch (error: any) {
             throw new AppError(`Failed to find organization by name: ${error.message}`, 500);
         }
@@ -118,7 +138,23 @@ export class OrgRepository {
                 return [];
             }
 
-            return result.Items as Organization[];
+            // Generate fresh pre-signed URLs for all organization logos
+            const orgs = result.Items as Organization[];
+            for (const org of orgs) {
+                if (org.logoS3Key) {
+                    try {
+                        // Generate a new pre-signed URL for the logo
+                        org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                        logger.debug(`Refreshed logo URL for organization ${org.name} in findOrgsByUser`);
+                    } catch (error) {
+                        // Log the error but continue processing other organizations
+                        logger.error(`Error refreshing logo URL for org ${org.name || org.id}:`, error);
+                        // If we can't generate a new URL, at least keep the existing one
+                    }
+                }
+            }
+
+            return orgs;
         } catch (error: any) {
             throw new AppError(`Failed to find organization by id: ${error.message}`, 500);
         }
@@ -204,9 +240,25 @@ export class OrgRepository {
         }
 
         const result: any = await dynamoDb.send(new QueryCommand(queryParams));
+        
+        // Generate fresh presigned URLs for all organization logos
+        const orgs = result.Items as Organization[];
+        for (const org of orgs) {
+            if (org.logoS3Key) {
+                try {
+                    // Generate a new pre-signed URL for the logo
+                    org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                    logger.debug(`Refreshed logo URL for organization ${org.name} in findAllPublicOrgs`);
+                } catch (error) {
+                    // Log the error but continue processing other organizations
+                    logger.error(`Error refreshing logo URL for org ${org.name || org.id}:`, error);
+                    // If we can't generate a new URL, at least keep the existing one
+                }
+            }
+        }
 
         return {
-            orgs: result.Items as Organization[],
+            orgs: orgs,
             newLastEvaluatedKey: result.LastEvaluatedKey || null
         };
     } catch (error: any) {
