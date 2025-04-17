@@ -97,7 +97,6 @@ orgRouter.post(`/`,
  * PATCH /organizations
  * */
 orgRouter.patch(`/:id`,
-    checkOrgAdmin,
     handleLogoUpload('logo'),  // Add middleware for logo file upload (optional)
     async (req: Request, res: Response, next: NextFunction) => {
         try {
