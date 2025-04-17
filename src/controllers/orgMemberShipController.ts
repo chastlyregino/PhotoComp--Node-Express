@@ -42,7 +42,6 @@ orgMembershipRouter.post('/:id', async (req: Request, res: Response, next: NextF
  */
 orgMembershipRouter.get(
     '/:id/requests',
-    checkOrgAdmin,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const orgName: string = req.params.id;
