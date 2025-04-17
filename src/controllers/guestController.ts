@@ -2,9 +2,12 @@ import { Request, Response, Router, NextFunction } from 'express';
 import { OrgService } from '../services/orgService';
 import { AppError } from '../middleware/errorHandler';
 import { EventService } from '../services/eventService';
+import { S3Service } from '../services/s3Service';
+import { logger } from '../util/logger';
 
 const orgService = new OrgService();
 const eventService = new EventService();
+const s3Service = new S3Service();
 
 export const guestRouter = Router();
 
@@ -36,6 +39,22 @@ guestRouter.get(`/`, async (req: Request, res: Response, next: NextFunction) => 
         if (!orgs || orgs.length === 0) {
             throw new AppError(`No organizations found!`, 204);
         }
+
+        // Refresh all logo pre-signed URLs for the frontend
+        for (const org of orgs) {
+            if (org.logoS3Key) {
+                try {
+                    // Generate a new pre-signed URL for the logo
+                    org.logoUrl = await s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                    logger.debug(`Refreshed logo URL for organization ${org.name} in guest route`);
+                } catch (error) {
+                    // Log the error but continue processing other organizations
+                    logger.error(`Error refreshing logo URL for org ${org.name || org.id}:`, error);
+                    // If we can't generate a new URL, at least keep the existing one
+                }
+            }
+        }
+
         return res.status(200).json({
             message: `Here are all organizations!`,
             data: {
