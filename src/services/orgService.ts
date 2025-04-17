@@ -11,6 +11,7 @@ import {
 } from '../models/Organizations';
 import { AppError } from '../middleware/errorHandler';
 import { UserRole } from '../models/User';
+import { logger } from '../util/logger';
 
 export class OrgService {
     private orgRepository: OrgRepository;
@@ -52,7 +53,7 @@ export class OrgService {
         try {
             await this.validateUrl(createOrg.logoUrl);
 
-            // Change this condition to check only for name
+            // Check if name is provided
             if (!createOrg.name) {
                 throw new AppError('Organization name is required', 400);
             }
@@ -130,7 +131,19 @@ export class OrgService {
 
     async findOrgByName(name: string): Promise<Organization | null> {
         try {
-            return await this.orgRepository.findOrgByName(name);
+            const org = await this.orgRepository.findOrgByName(name);
+            
+            // If organization exists and has a logoS3Key, refresh the pre-signed URL
+            if (org && org.logoS3Key) {
+                try {
+                    org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                } catch (error) {
+                    logger.error(`Error refreshing logo URL for org ${name}:`, error);
+                    // Continue even if URL refresh fails - better to have an expired URL than no org data
+                }
+            }
+            
+            return org;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
@@ -177,9 +190,10 @@ export class OrgService {
                 if (org.logoS3Key) {
                     try {
                         org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                        logger.debug(`Refreshed logo URL for org ${org.name || 'unknown'}`);
                     } catch (error) {
                         // Log the error but continue processing other organizations
-                        console.error(`Error getting pre-signed URL for ${org.name}:`, error);
+                        logger.error(`Error getting pre-signed URL for ${org.name || 'unknown'}:`, error);
                     }
                 }
             }
@@ -228,12 +242,27 @@ export class OrgService {
         lastEvaluatedKey?: Record<string, any>
     ): Promise<{ orgs: Organization[]; newLastEvaluatedKey: Record<string, any> | null }> {
         try {
-            return await this.orgRepository.findAllPublicOrgs(lastEvaluatedKey);
+            const result = await this.orgRepository.findAllPublicOrgs(lastEvaluatedKey);
+            
+            // Generate fresh pre-signed URLs for all public organization logos
+            for (const org of result.orgs) {
+                if (org.logoS3Key) {
+                    try {
+                        org.logoUrl = await this.s3Service.getLogoPreSignedUrl(org.logoS3Key);
+                        logger.debug(`Refreshed logo URL for public org ${org.name || 'unknown'}`);
+                    } catch (error) {
+                        // Log the error but continue processing other organizations
+                        logger.error(`Error refreshing logo URL for public org ${org.name || 'unknown'}:`, error);
+                    }
+                }
+            }
+            
+            return result;
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(`Updating Organization failed! ${(error as Error).message}`, 500);
+            throw new AppError(`Finding public organizations failed! ${(error as Error).message}`, 500);
         }
     }
 
@@ -412,13 +441,13 @@ export class OrgService {
     }
 
     /**
- * Creates an organization with a logo uploaded as a file
- * @param createOrgRequest The organization data
- * @param userId The ID of the user creating the organization
- * @param logoFile The logo file buffer
- * @param mimeType The mimetype of the file
- * @returns The created organization
- */
+     * Creates an organization with a logo uploaded as a file
+     * @param createOrgRequest The organization data
+     * @param userId The ID of the user creating the organization
+     * @param logoFile The logo file buffer
+     * @param mimeType The mimetype of the file
+     * @returns The created organization
+     */
     async createOrgWithFileUpload(
         createOrgRequest: Omit<OrganizationCreateRequest, 'logoUrl'>,
         userId: string,
@@ -481,12 +510,12 @@ export class OrgService {
     }
 
     /**
- * Updates an organization's logo with a file upload
- * @param orgName The name of the organization
- * @param logoFile The logo file buffer
- * @param mimeType The mimetype of the file
- * @returns The updated S3 key and pre-signed URL
- */
+     * Updates an organization's logo with a file upload
+     * @param orgName The name of the organization
+     * @param logoFile The logo file buffer
+     * @param mimeType The mimetype of the file
+     * @returns The updated S3 key and pre-signed URL
+     */
     async updateOrgLogoWithFile(
         orgName: string,
         logoFile: Buffer,
