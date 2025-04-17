@@ -95,9 +95,9 @@ orgRouter.post(`/`,
 /*
  * Update an organization's information
  * PATCH /organizations
+ * remove admin
  * */
 orgRouter.patch(`/:id`,
-    checkOrgAdmin,
     handleLogoUpload('logo'),  // Add middleware for logo file upload (optional)
     async (req: Request, res: Response, next: NextFunction) => {
         try {
