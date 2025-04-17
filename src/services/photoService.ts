@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { PhotoRepository } from '../repositories/photoRepository';
 import { S3Service } from './s3Service';
 import { Photo, createPhoto, PhotoSizes } from '../models/Photo';
@@ -30,20 +31,77 @@ export class PhotoService {
         this.imageService = imageService;
     }
 
-    /**
+     /**
      * Upload a photo for an event
-     * @param photoId The unique ID for the photo
+     * Enhanced to handle either a single file or multiple files within the same request
+     * 
+     * @param photoId The unique ID for the photo (or null if batch upload)
      * @param eventId The event ID the photo belongs to
      * @param fileBuffer The file buffer containing the photo data
      * @param mimeType The MIME type of the photo
      * @param uploadedBy The user ID of who uploaded the photo
      * @param metadata Additional metadata for the photo
-     * @returns The created photo object
+     * @returns The created photo object or array of photo objects
      */
-    async uploadPhoto(
-        photoId: string,
+     async uploadPhoto(
+        photoId: string | null,
         eventId: string,
-        fileBuffer: Buffer,
+        fileBuffer: Buffer | Buffer[],
+        mimeType: string | string[],
+        uploadedBy: string,
+        metadata?: {
+            title?: string;
+            description?: string;
+            size?: number;
+            mimeType?: string;
+            s3Key?: string;
+        }
+    ): Promise<Photo | Photo[]> {
+        try {
+            // Verify that the event exists
+            const event = await this.eventService.findEventById(eventId);
+            if (!event) {
+                throw new AppError(`Event not found: ${eventId}`, 404);
+            }
+
+            // Check if we're handling a single file or multiple files
+            if (!Array.isArray(fileBuffer)) {
+                // Single file upload - use existing logic
+                const id = photoId || uuidv4();
+                const singleMimeType = Array.isArray(mimeType) ? mimeType[0] : mimeType;
+                return await this.processSinglePhoto(id, eventId, fileBuffer, singleMimeType, uploadedBy, metadata);
+            } else {
+                // Multiple file upload - process each file
+                const photoPromises: Promise<Photo>[] = [];
+                
+                for (let i = 0; i < fileBuffer.length; i++) {
+                    const id = uuidv4(); // Generate a new ID for each photo
+                    const buffer = fileBuffer[i];
+                    const mime = Array.isArray(mimeType) ? mimeType[i] : mimeType;
+                    
+                    // Use the same metadata for all photos in the batch
+                    photoPromises.push(this.processSinglePhoto(id, eventId, buffer, mime, uploadedBy, metadata));
+                }
+                
+                return await Promise.all(photoPromises);
+            }
+        } catch (error) {
+            logger.error('Error uploading photo:', error);
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(`Failed to upload photo: ${(error as Error).message}`, 500);
+        }
+    }
+    
+    /**
+     * Process a single photo upload
+     * Helper method to keep code DRY
+     */
+    private async processSinglePhoto(
+        id: string,
+        eventId: string,
+        buffer: Buffer,
         mimeType: string,
         uploadedBy: string,
         metadata?: {
@@ -54,64 +112,49 @@ export class PhotoService {
             s3Key?: string;
         }
     ): Promise<Photo> {
-        try {
-            // Verify that the event exists
-            const event = await this.eventService.findEventById(eventId);
-            if (!event) {
-                throw new AppError(`Event not found: ${eventId}`, 404);
-            }
+        // Create the base S3 key using a structured pattern
+        const fileExtension = mimeType.split('/')[1] || 'jpg';
+        const baseS3Key = `photos/${eventId}/${id}`;
 
-            // Create the base S3 key using a structured pattern
-            const fileExtension = mimeType.split('/')[1] || 'jpg';
-            const baseS3Key = `photos/${eventId}/${photoId}`;
+        // Get original image info
+        const imageInfo = await this.imageService.getImageInfo(buffer);
 
-            // Get original image info
-            const imageInfo = await this.imageService.getImageInfo(fileBuffer);
+        // Generate different sizes of the image
+        const {
+            buffers,
+            s3Keys,
+            dimensions
+        } = await this.imageService.generateImageSizes(buffer, baseS3Key, fileExtension);
 
-            // Generate different sizes of the image
-            const {
-                buffers,
-                s3Keys,
-                dimensions
-            } = await this.imageService.generateImageSizes(fileBuffer, baseS3Key, fileExtension);
+        // Upload all sizes to S3
+        await this.s3Service.uploadResizedImages(buffers, s3Keys, mimeType);
 
-            // Upload all sizes to S3
-            await this.s3Service.uploadResizedImages(buffers, s3Keys, mimeType);
+        // Generate pre-signed URLs for all sizes
+        const urls = await this.s3Service.getMultiplePreSignedUrls(s3Keys);
 
-            // Generate pre-signed URLs for all sizes
-            const urls = await this.s3Service.getMultiplePreSignedUrls(s3Keys);
+        // Add S3 keys and dimensions to metadata
+        const updatedMetadata = {
+            ...(metadata || {}),
+            width: imageInfo.width,
+            height: imageInfo.height,
+            size: imageInfo.size,
+            mimeType: mimeType,
+            s3Key: s3Keys.original, // Keep original s3Key for backward compatibility
+            s3Keys: s3Keys // Store all S3 keys
+        };
 
-            // Add S3 keys and dimensions to metadata
-            const updatedMetadata = {
-                ...(metadata || {}),
-                width: imageInfo.width,
-                height: imageInfo.height,
-                size: imageInfo.size,
-                mimeType: mimeType,
-                s3Key: s3Keys.original, // Keep original s3Key for backward compatibility
-                s3Keys: s3Keys // Store all S3 keys
-            };
+        // Create and save the photo record
+        const photo = createPhoto(
+            id, 
+            eventId, 
+            urls.original, // Keep original URL for backward compatibility
+            uploadedBy,
+            urls, // Add URLs for all sizes
+            updatedMetadata
+        );
 
-            // Create and save the photo record
-            const photo = createPhoto(
-                photoId, 
-                eventId, 
-                urls.original, // Keep original URL for backward compatibility
-                uploadedBy,
-                urls, // Add URLs for all sizes
-                updatedMetadata
-            );
-
-            await this.photoRepository.createPhoto(photo);
-
-            return photo;
-        } catch (error) {
-            logger.error('Error uploading photo:', error);
-            if (error instanceof AppError) {
-                throw error;
-            }
-            throw new AppError(`Failed to upload photo: ${(error as Error).message}`, 500);
-        }
+        await this.photoRepository.createPhoto(photo);
+        return photo;
     }
 
     /**
