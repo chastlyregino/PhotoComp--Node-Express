@@ -27,7 +27,7 @@ export const logoUploadMiddleware = multer({
 export const handleLogoUpload = (fieldName: string) => {
     return (req: Request, res: Response, next: NextFunction) => {
         const upload = logoUploadMiddleware.single(fieldName);
-
+        console.log(`inside upload`);
         upload(req, res, err => {
             if (err) {
                 if (err instanceof multer.MulterError) {
@@ -40,6 +40,7 @@ export const handleLogoUpload = (fieldName: string) => {
                 }
                 return next(err);
             }
+            console.log(`before next`);
             next();
         });
     };

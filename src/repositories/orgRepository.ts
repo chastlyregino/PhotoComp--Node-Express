@@ -126,6 +126,35 @@ export class OrgRepository {
 
     async updateOrgByName(org: Organization): Promise<OrganizationUpdateRequest | null> {
         try {
+            const updateExpressions = [];
+            const expressionAttributeNames: Record<string, string> = {};
+            const expressionAttributeValues: Record<string, any> = {};
+    
+            if (org.description !== undefined && org.description.trim() !== '') {
+                updateExpressions.push('#description = :description');
+                expressionAttributeNames['#description'] = 'description';
+                expressionAttributeValues[':description'] = org.description;
+            }
+    
+            if (org.logoUrl !== undefined && org.logoUrl.trim() !== '') {
+                updateExpressions.push('logoUrl = :logoUrl');
+                expressionAttributeValues[':logoUrl'] = org.logoUrl;
+            }
+    
+            if (org.website !== undefined && org.website.trim() !== '') {
+                updateExpressions.push('website = :website');
+                expressionAttributeValues[':website'] = org.website;
+            }
+    
+            if (org.contactEmail !== undefined && org.contactEmail.trim() !== '') {
+                updateExpressions.push('contactEmail = :contactEmail');
+                expressionAttributeValues[':contactEmail'] = org.contactEmail;
+            }
+    
+            if (updateExpressions.length === 0) {
+                throw new AppError('No valid fields provided to update', 400);
+            }
+    
             const updatedOrg = await dynamoDb.send(
                 new UpdateCommand({
                     TableName: TABLE_NAME,
@@ -133,30 +162,23 @@ export class OrgRepository {
                         PK: org.PK,
                         SK: org.SK,
                     },
-                    UpdateExpression:
-                        'SET #description = :description, logoUrl = :logoUrl, website = :website, contactEmail = :contactEmail',
-                    ExpressionAttributeNames: {
-                        '#description': 'description',
-                    },
-                    ExpressionAttributeValues: {
-                        ':description': org.description,
-                        ':logoUrl': org.logoUrl,
-                        ':website': org.website,
-                        ':contactEmail': org.contactEmail,
-                    },
+                    UpdateExpression: 'SET ' + updateExpressions.join(', '),
+                    ExpressionAttributeNames: expressionAttributeNames,
+                    ExpressionAttributeValues: expressionAttributeValues,
                     ReturnValues: 'ALL_NEW',
                 })
             );
-
+    
             if (!updatedOrg.Attributes) {
                 throw new AppError('Organization not updated', 400);
             }
-
+    
             return org;
         } catch (error: any) {
             throw new AppError(`Failed to update organization: ${error.message}`, 500);
         }
     }
+    
 
     async findAllPublicOrgs(
     lastEvaluatedKey?: Record<string, any>

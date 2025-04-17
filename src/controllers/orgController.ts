@@ -96,43 +96,40 @@ orgRouter.post(`/`,
  * Update an organization's information
  * PATCH /organizations
  * */
-orgRouter.patch(`/`,
+orgRouter.patch(`/:id`,
     checkOrgAdmin,
     handleLogoUpload('logo'),  // Add middleware for logo file upload (optional)
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { name, description, website, contactEmail } = req.body;
+            const { description, website, contactEmail } = req.body;
             const user = res.locals.user.info;
-
-            if (!name) {
-                throw new AppError(`You need to specify the Organization name.`, 400);
-            }
+            const orgName: string = req.params.orgId || req.params.id;
 
             // Validate URLs if provided
             await orgService.validateUrl(website);
 
-            const existingOrg = await orgService.findOrgByName(name);
+            const existingOrg = await orgService.findOrgByName(orgName);
 
             if (!existingOrg) {
                 throw new AppError(`No Organizations found!`, 400);
             }
-
+            console.log(`found org`);
             let logoUrl = existingOrg.logoUrl;
             let logoS3Key = existingOrg.logoS3Key;
 
             // Handle logo file upload if provided
             if (req.file) {
                 const logoData = await orgService.updateOrgLogoWithFile(
-                    name,
+                    orgName,
                     req.file.buffer,
                     req.file.mimetype
                 );
                 logoUrl = logoData.logoUrl;
                 logoS3Key = logoData.logoS3Key;
             }
-
+            console.log(`after logo file`);
             const org: OrganizationUpdateRequest = {
-                name,
+                name: orgName,
                 logoUrl,
                 description,
                 website,
@@ -140,11 +137,11 @@ orgRouter.patch(`/`,
             };
 
             const updatedOrg = await orgService.updateOrgByName(org);
-
+            console.log(`after update`);
             if (!updatedOrg) {
                 throw new AppError(`Failed to update Organization`, 400);
             }
-
+            console.log(`before res`)
             res.status(200).json({
                 status: 'Updated organization!',
                 data: {

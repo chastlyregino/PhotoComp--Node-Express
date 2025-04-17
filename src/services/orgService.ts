@@ -25,7 +25,7 @@ export class OrgService {
     }
 
     async validateUrl(url: string | undefined): Promise<void> {
-        if (url !== undefined) {
+        if (url !== undefined && url.length !== 0) {
             try {
                 new URL(url);
             } catch (error) {
