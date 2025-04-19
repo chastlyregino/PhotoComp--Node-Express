@@ -1,0 +1,10 @@
+version: 0.2
+phase:
+  installl:
+      runtime-versions:
+        nodejs: 18
+      commands:
+        - npm install
+artifacts:
+  files:
+    -"**/*"
