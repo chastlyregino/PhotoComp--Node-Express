@@ -1,7 +1,7 @@
 version: 0.2
 os: linux
 files:
-  - sources: /
+  - source: /
     destination: home/ubuntu/PhotoComp--Node-Express
     overwrite: true
 file_exists_behaviour: OVERWRITE
