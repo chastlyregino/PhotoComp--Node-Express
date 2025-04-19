@@ -4,6 +4,7 @@ import {
     updateOrganization,
 } from '../src/models/Organizations';
 import {
+    user,
     nonExistingOrg,
     userId,
     org,
@@ -111,7 +112,7 @@ describe(`Positive org tests`, () => {
 
     test(`UserAdmin created`, async () => {
         const orgServiceWithMock = new OrgService(orgRepository, s3Service);
-        const result = await orgServiceWithMock.createUserAdmin(org.name, userId);
+        const result = await orgServiceWithMock.createUserAdmin(org.name, userId, user.email);
 
         expect(orgRepository.createUserAdmin).toHaveBeenCalled();
         expect(result).toBe(createdUserAdmin);
@@ -134,7 +135,7 @@ describe(`Positive org tests`, () => {
 
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        const result = await orgServiceWithMock.updateOrgByName(updateOrg, userId);
+        const result = await orgServiceWithMock.updateOrgByName(updateOrg);
 
         expect(mockOrgService.validateUrl).toHaveBeenCalledTimes(2);
         expect(mockOrgService.validateUrl).toHaveBeenLastCalledWith(updateOrg.logoUrl);
@@ -224,7 +225,7 @@ describe(`Negative org tests`, () => {
         updateOrg.name = ``;
         const orgServiceWithMock = new OrgService(orgRepository);
 
-        await expect(orgServiceWithMock.updateOrgByName(updateOrg, userId)).rejects.toThrow(
+        await expect(orgServiceWithMock.updateOrgByName(updateOrg)).rejects.toThrow(
             `You need to specify the Organization name.`
         );
     });
