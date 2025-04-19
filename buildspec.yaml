@@ -1,12 +1,12 @@
 version: 0.2
 phase:
-  installl:
+  install:
       runtime-versions:
         nodejs: 18
       commands:
+        - npm install -g typescript
+        - npm install --save-dev typescript
         - npm install
-        - npm install typescript -g
-        - npm install typescript --save-dev
         - tsc --init
 artifacts:
   files:
