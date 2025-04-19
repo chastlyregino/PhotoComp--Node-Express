@@ -1,14 +1,17 @@
 version: 0.2
+
 phases:
   install:
-      runtime-versions:
-        nodejs: 18
-      commands:
-        - npm install
-        - npm install -g typescript
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - npm install
+      - npm install -g typescript
+
   build:
-      commands:
-        - npm run build
+    commands:
+      - npm run build
+
 artifacts:
   files:
     - '**/*'
