@@ -11,6 +11,8 @@ phases:
   build:
     commands:
       - npm run build
+      - cp appspec.yml dist
+      - cp -r scripts dist
 
 artifacts:
   files:
