@@ -1,3 +1,3 @@
 #!/bin/bash
 cd /home/ubuntu/PhotoComp--Node-Express
-node index.js
+node index.js > /dev/null 2>&1 &
