@@ -13,6 +13,8 @@ phases:
       - npm run build
       - cp appspec.yml dist
       - cp -r scripts dist
+      - cp package.json dist
+      - cp package-lock.json dist
 
 artifacts:
   files:
