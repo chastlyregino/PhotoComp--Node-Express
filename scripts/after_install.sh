@@ -1,3 +1,3 @@
 #!/bin/bash
 cd /home/ubuntu/photocomp-backend
-npm install
+npm ci --production=true
