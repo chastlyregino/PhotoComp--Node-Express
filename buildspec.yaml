@@ -1,0 +1,26 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - npm ci --production=false
+
+  build:
+    commands: 
+      - npm run build
+      - npm ci --production=true --ignore-scripts
+
+  post_build:
+    commands:
+      - cp package.json dist/
+      - cp package-lock.json dist/
+      - cp -r scripts dist/
+      - cp appspec.yaml dist/
+
+artifacts:
+  base-directory: 'dist'
+  files:
+    - '**/*'
+    - '../.env'
+  discard-paths: no
