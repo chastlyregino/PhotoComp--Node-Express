@@ -11,4 +11,4 @@ export MAIL_USERNAME=chasregino@gmail.com
 export MAIL_PASSWORD=gibprzfucmvjafef
 export PORT=3000
 
-node dist/index.js
+node dist/src/index.js
