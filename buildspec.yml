@@ -9,7 +9,6 @@ phases:
   build:
     commands: 
       - npm run build
-      - npm ci --production=true --ignore-scripts
 
   post_build:
     commands:
