@@ -15,11 +15,10 @@ phases:
       - cp package.json dist/
       - cp package-lock.json dist/
       - cp -r scripts dist/
-      - cp appspec.yaml dist/
+      - cp appspec.yml dist/
 
 artifacts:
   base-directory: 'dist'
   files:
     - '**/*'
-    - '../.env'
   discard-paths: no
