@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc -p tsconfig.prod.json",
         "start": "ts-node src/index.ts",
         "dev": "nodemon --exec ts-node src/index.ts",
         "test": "jest",
@@ -32,7 +32,8 @@
         "prettier": "^3.5.3",
         "supertest": "^7.1.0",
         "ts-jest": "^29.3.0",
-        "ts-node": "^10.9.2"
+        "ts-node": "^10.9.2",
+        "typescript": "^5.8.2"
     },
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.772.0",
@@ -49,7 +50,6 @@
         "photocomp--node-express": "file:",
         "sharp": "^0.33.2",
         "swagger-ui-express": "^5.0.1",
-        "typescript": "^5.8.2",
         "uuid": "^11.1.0",
         "winston": "3.14.2"
     }
