@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'SAM Template & CloudFormation DynamoDB table template for PhotoComp'
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: PhotoComp
+    Description: Name of the application
+
+  Environment:
+    Type: String
+    Default: Dev
+    AllowedValues:
+      - Dev
+      - Test
+      - Prod
+    Description: Deployment environment
+  
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 512
+    Architectures:
+      - x86_64
+
+Resources:
+  PhotoCompFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image  # Lambda packaged as an image
+      Environment:
+        Variables:
+          TABLE_NAME: PhotoCompTable
+          JWT_SECRET: your_jwt_secret_here
+          EXPIRES_IN: 1h
+          REGION: us-east-1
+          S3_BUCKET_NAME: photo-comp-s3-bucket
+          MAIL_HOST: gmail
+          MAIL_USERNAME: chasregino@gmail.com
+          MAIL_PASSWORD: gibprzfucmvjafef
+          PORT: 3000
+      Events:
+        PhotoCompFunctionProxy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: v1
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  # PhotoCompTable:
+  #   Type: AWS::DynamoDB::Table
+  #     Properties:
+  #       # Use dynamic table name with environment to make it unique
+  #       TableName: !Sub '${ApplicationName}-${Environment}-Table'
+  #         BillingMode: PAY_PER_REQUEST
+  #         AttributeDefinitions:
+  #           - AttributeName: PK
+  #             AttributeType: S
+  #           - AttributeName: SK
+  #             AttributeType: S
+  #           - AttributeName: GSI1PK
+  #             AttributeType: S
+  #           - AttributeName: GSI1SK
+  #             AttributeType: S
+  #           - AttributeName: GSI2PK
+  #             AttributeType: S
+  #           - AttributeName: GSI2SK
+  #             AttributeType: S
+  #         KeySchema:
+  #           - AttributeName: PK
+  #             KeyType: HASH
+  #           - AttributeName: SK
+  #             KeyType: RANGE
+  #         GlobalSecondaryIndexes:
+  #           - IndexName: GSI1PK-GSI1SK-INDEX
+  #             KeySchema:
+  #               - AttributeName: GSI1PK
+  #                 KeyType: HASH
+  #               - AttributeName: GSI1SK
+  #                 KeyType: RANGE
+  #               Projection:
+  #                 ProjectionType: ALL
+  #           - IndexName: GSI2PK-GSI2SK-INDEX # Added new GSI for photo queries by event
+  #             KeySchema:
+  #               - AttributeName: GSI2PK
+  #                 KeyType: HASH
+  #               - AttributeName: GSI2SK
+  #                 KeyType: RANGE
+  #             Projection:
+  #               ProjectionType: ALL
+  #         PointInTimeRecoverySpecification:
+  #           PointInTimeRecoveryEnabled: false
+  #         SSESpecification:
+  #           SSEEnabled: true
+  #         Tags:
+  #           - Key: Application
+  #             Value: !Ref ApplicationName
+  #           - Key: Environment
+  #             Value: !Ref Environment

@@ -20,7 +20,7 @@ import { userRouter } from './controllers/userController';
 // Load environment variables
 dotenv.config();
 
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -90,6 +90,6 @@ app.all(/(.*)/, (req, res, next) => {
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-});
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+// });

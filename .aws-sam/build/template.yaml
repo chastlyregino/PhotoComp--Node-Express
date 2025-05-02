@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template & CloudFormation DynamoDB table template for PhotoComp
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: PhotoComp
+    Description: Name of the application
+  Environment:
+    Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
+    Description: Deployment environment
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 512
+    Architectures:
+    - x86_64
+Resources:
+  PhotoCompFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Environment:
+        Variables:
+          TABLE_NAME: PhotoCompTable
+          JWT_SECRET: your_jwt_secret_here
+          EXPIRES_IN: 1h
+          REGION: us-east-1
+          S3_BUCKET_NAME: photo-comp-s3-bucket
+          MAIL_HOST: gmail
+          MAIL_USERNAME: chasregino@gmail.com
+          MAIL_PASSWORD: gibprzfucmvjafef
+          PORT: 3000
+      Events:
+        PhotoCompFunctionProxy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+      ImageUri: photocompfunction:v1
+    Metadata:
+      DockerContext: /Users/chastlyregino/Documents/Tech Stuff/GitRepos/DERN_NERD/photoComp/PhotoComp--Node-Express
+      DockerTag: v1
+      Dockerfile: Dockerfile
+      SamResourceId: PhotoCompFunction
+Outputs:
+  ApiUrl:
+    Description: API Gateway URL
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
