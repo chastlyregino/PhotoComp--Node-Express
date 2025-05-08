@@ -7,4 +7,4 @@ region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "ApplicationName=\"PhotoComp\" Environment=\"Dev\""
-image_repositories = ["PhotoCompApi=533267362219.dkr.ecr.us-east-1.amazonaws.com/photocompnodesam4c7438db/photocompapiec5032bfrepo"]
+image_repositories = ["PhotoCompFunction=533267362219.dkr.ecr.us-east-1.amazonaws.com/photocompnodesam4c7438db/photocompfunctionaeb8ae90repo"]

@@ -1,7 +1,8 @@
 FROM public.ecr.aws/lambda/nodejs:18
 
-WORKDIR /src/pcsam
+WORKDIR /var/task
 
+COPY . .
 # Copy function code
 COPY package*.json ./
 COPY tsconfig*.json ./
@@ -10,9 +11,9 @@ COPY tsconfig*.json ./
 RUN npm install -g typescript
 RUN npm install
 
-COPY . .
-
 RUN tsc -p tsconfig.prod.json && ls -l dist
 
+RUN cp dist/lambda.js . && cp -r dist/* .
+
 # Set the Lambda handler
-CMD [ "dist/lambda.lambdaHandler" ]
+CMD [ "lambda.lambdaHandler" ]

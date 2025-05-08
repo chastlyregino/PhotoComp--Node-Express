@@ -1,4 +1,4 @@
-import handler from '@vendia/serverless-express';
+import serverlessExpress from '@codegenie/serverless-express';
 import { app } from './index'; // adjust to your app's entry point
 
-export const lambdaHandler = handler({app});
+export const lambdaHandler = serverlessExpress({app});
