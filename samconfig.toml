@@ -6,5 +6,5 @@ s3_prefix = "photocomp-node-sam"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "ApplicationName=\"PhotoComp\" Environment=\"Dev\""
+parameter_overrides = "ApplicationName=\"PhotoComp\" Environment=\"Prod\""
 image_repositories = ["PhotoCompFunction=533267362219.dkr.ecr.us-east-1.amazonaws.com/photocompnodesam4c7438db/photocompfunctionaeb8ae90repo"]
